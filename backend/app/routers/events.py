@@ -8,7 +8,7 @@ from app.schemas.event import EventCreate, EventOut, EventUpdate
 router = APIRouter()
 
 
-@router.get("/", response_model=list[EventOut])
+@router.get("", response_model=list[EventOut])
 def get_events(
     db: Annotated[Session, Depends(get_db)],
 ):
@@ -26,7 +26,7 @@ def get_user_events(
     return db.query(Event).filter(Event.host_id == user_id).all()
 
 
-@router.post("/", response_model=EventOut)
+@router.post("", response_model=EventOut)
 def event(
     event_in: EventCreate,
     db: Annotated[Session, Depends(get_db)],

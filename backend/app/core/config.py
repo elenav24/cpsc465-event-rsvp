@@ -7,6 +7,5 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://user:password@localhost/dbname",
 )
-CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY", "sk-...")
-DEBUG = os.getenv("DEBUG", "true").lower() in ("true", "1", "yes")
+DEBUG = os.getenv("DEBUG", "").lower() in ("true", "1", "yes")
 ENV = os.getenv("ENV", "production")

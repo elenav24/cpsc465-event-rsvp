@@ -37,4 +37,4 @@ dist/
 *.egg-info/
 
 # Deployment
-.vercel/
+push.sh
