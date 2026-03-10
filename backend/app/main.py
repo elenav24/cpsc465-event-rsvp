@@ -36,15 +36,3 @@ app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(events.router, prefix="/events", tags=["events"])
 
 handler = Mangum(app)
-
-
-
-@app.get("/health/db")
-def test_db_connection():
-    try:
-        # We use 'with' to ensure the connection closes immediately
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
-        return {"status": "healthy", "database": "connected"}
-    except Exception as e:
-        return {"status": "unhealthy", "error": str(e)}
