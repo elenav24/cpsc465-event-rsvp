@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv
+**/.env
+**/.env.*
+
+# FastAPI / Uvicorn
+*.log
+
+# Database
+*.db
+*.sqlite3
+
+# Migrations
+alembic/versions/__pycache__/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Deployment
+.vercel/
