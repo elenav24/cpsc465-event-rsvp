@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 from typing import Optional
 from datetime import datetime
 
@@ -12,10 +12,11 @@ class EventOut(BaseModel):
     title: str
     host_id: int
     description: Optional[str] = None
+    flyer_url: Optional[str] = None
     created_at: datetime
 
     class Config:
-        form_attributes = True
+        from_attributes = True
 
 class EventUpdate(BaseModel):
     title: Optional[str] = None
