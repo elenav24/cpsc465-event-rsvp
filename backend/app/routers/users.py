@@ -15,7 +15,7 @@ def get_users(
     return db.query(User).all()
 
 
-@router.get("/users/{user_id}", response_model=UserOut | None)
+@router.get("/{user_id}", response_model=UserOut | None)
 def get_user(
     user_id: int,
     db: Annotated[Session, Depends(get_db)],
@@ -24,7 +24,7 @@ def get_user(
     return db.query(User).filter(User.id == user_id).first()
 
 
-@router.post("/users", response_model=UserOut)
+@router.post("", response_model=UserOut)
 def create_user(
     user_in: UserCreate,
     db: Annotated[Session, Depends(get_db)],
