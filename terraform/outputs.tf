@@ -23,3 +23,13 @@ output "rds_endpoint" {
   value       = aws_db_instance.postgres.address
   sensitive   = true
 }
+
+output "frontend_bucket_name" {
+  description = "S3 bucket for frontend static site"
+  value       = aws_s3_bucket.frontend.bucket
+}
+
+output "frontend_url" {
+  description = "S3 static website URL"
+  value       = aws_s3_bucket_website_configuration.frontend.website_endpoint
+}
