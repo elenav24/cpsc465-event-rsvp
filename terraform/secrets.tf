@@ -14,4 +14,8 @@ resource "aws_secretsmanager_secret_version" "app_secrets" {
     COGNITO_REGION       = var.aws_region
     COGNITO_USER_POOL_ID = var.cognito_user_pool_id
   })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
 }

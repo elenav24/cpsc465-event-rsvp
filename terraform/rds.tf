@@ -44,9 +44,8 @@ resource "aws_db_instance" "postgres" {
   deletion_protection       = true
   backup_retention_period   = 0
   storage_encrypted         = true
-  publicly_accessible       = true # TEMPORARY: remove after migrations
 
   lifecycle {
-    ignore_changes = [password]
+    ignore_changes = [password, username]
   }
 }
