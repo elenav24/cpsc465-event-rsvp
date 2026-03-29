@@ -61,12 +61,10 @@ resource "aws_cognito_user_pool_client" "web" {
 
   callback_urls = [
     "http://localhost:5173",
-    "http://${var.app_name}-frontend.s3-website-${var.aws_region}.amazonaws.com",
   ]
 
   logout_urls = [
     "http://localhost:5173",
-    "http://${var.app_name}-frontend.s3-website-${var.aws_region}.amazonaws.com",
   ]
 
   prevent_user_existence_errors = "ENABLED"
