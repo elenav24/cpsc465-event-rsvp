@@ -66,7 +66,7 @@ resource "aws_lambda_function" "app" {
   }
 
   lifecycle {
-    ignore_changes = [image_uri] # updated by CI/CD, not Terraform
+    ignore_changes = [image_uri, environment] # image updated by CI/CD; env vars set once
   }
 
   vpc_config {

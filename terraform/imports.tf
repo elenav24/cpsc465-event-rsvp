@@ -8,6 +8,11 @@ import {
 }
 
 import {
+  to = aws_security_group.rds
+  id = "sg-0f5d5017f081f0f71"
+}
+
+import {
   to = aws_s3_bucket.flyers
   id = "event-rsvp-flyers"
 }
