@@ -1,7 +1,8 @@
-import { FormEvent, useState } from 'react'
+import { useState } from 'react'
 import { CognitoUser, CognitoUserAttribute } from 'amazon-cognito-identity-js'
 import userPool from './cognitoConfig'
 import { useAuth } from './AuthContext'
+import { redirectToGoogle } from './googleLogin'
 
 export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
   const { login } = useAuth()
@@ -12,7 +13,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const handleRegister = async (e: FormEvent) => {
+  const handleRegister = async (e: { preventDefault(): void }) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
@@ -27,7 +28,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
     }).then(() => setStep('confirm')).catch((err) => setError(err.message)).finally(() => setLoading(false))
   }
 
-  const handleConfirm = async (e: FormEvent) => {
+  const handleConfirm = async (e: { preventDefault(): void }) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
@@ -78,6 +79,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
       />
       {error && <p className="error">{error}</p>}
       <button type="submit" disabled={loading}>{loading ? 'Creating account…' : 'Sign up'}</button>
+      <div className="divider">or</div>
+      <button type="button" className="google-btn" onClick={redirectToGoogle}>Continue with Google</button>
       <button type="button" className="link" onClick={onSwitch}>Already have an account? Sign in</button>
     </form>
   )
