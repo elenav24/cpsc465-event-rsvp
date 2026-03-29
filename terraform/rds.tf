@@ -1,26 +1,23 @@
 # Reference the existing RDS security group
 resource "aws_security_group" "rds" {
-  name        = "event-rsvp-rds-sg"
-  description = "Security group for RDS PostgreSQL"
+  name        = "rds-sg"
+  description = "rds security group for event-rsvp"
   vpc_id      = data.aws_vpc.main.id
 
-  ingress {
-    description              = "PostgreSQL from Lambda"
-    from_port                = 5432
-    to_port                  = 5432
-    protocol                 = "tcp"
-    security_groups          = [aws_security_group.lambda.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+  lifecycle {
+    ignore_changes = [ingress, egress, tags]
   }
 }
 
-# Allow Lambda to connect to RDS on port 5432 — defined inline on aws_security_group.rds
+resource "aws_security_group_rule" "rds_from_lambda" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.rds.id
+  source_security_group_id = aws_security_group.lambda.id
+  description              = "PostgreSQL from Lambda"
+}
 
 resource "aws_db_subnet_group" "main" {
   name = "event-rsvp-db-subnet-group"
