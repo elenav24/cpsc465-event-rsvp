@@ -182,6 +182,9 @@ jobs:
 
       - name: Install & Build
         working-directory: frontend
+        env:
+          VITE_COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
+          VITE_COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
         run: |
           npm ci
           npm run build

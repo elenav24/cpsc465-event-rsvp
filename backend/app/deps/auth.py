@@ -2,7 +2,10 @@ import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwk, jwt
+from sqlalchemy.orm import Session
 from app.core.config import COGNITO_REGION, COGNITO_USER_POOL_ID
+from app.deps.db import get_db
+from app.db.models.user import User
 
 bearer_scheme = HTTPBearer()
 
@@ -38,21 +41,44 @@ def _verify_token(token: str) -> dict:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
 
-def require_auth(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)) -> str:
-    """Returns the Cognito user sub (user ID)."""
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User:
+    """Validates JWT and lazy-creates the user row on first login."""
     payload = _verify_token(credentials.credentials)
     sub = payload.get("sub")
     if not sub:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing sub in token")
-    return sub
+
+    user = db.query(User).filter(User.cognito_sub == sub).first()
+    if not user:
+        user = User(cognito_sub=sub, email=payload.get("email"))
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    return user
 
 
-def get_optional_auth_id(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))) -> str | None:
-    """Returns sub if a valid token is present, otherwise None."""
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Returns the User if a valid token is present, otherwise None."""
     if credentials is None:
         return None
     try:
         payload = _verify_token(credentials.credentials)
-        return payload.get("sub")
+        sub = payload.get("sub")
+        if not sub:
+            return None
+        user = db.query(User).filter(User.cognito_sub == sub).first()
+        if not user:
+            user = User(cognito_sub=sub, email=payload.get("email"))
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        return user
     except HTTPException:
         return None
