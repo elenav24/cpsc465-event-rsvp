@@ -1,8 +1,8 @@
 const domain = import.meta.env.VITE_COGNITO_DOMAIN
 const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID
-const redirectUri = encodeURIComponent(window.location.origin)
 
 export function redirectToGoogle() {
+  const redirectUri = encodeURIComponent(window.location.origin)
   window.location.href =
     `${domain}/oauth2/authorize` +
     `?client_id=${clientId}` +
