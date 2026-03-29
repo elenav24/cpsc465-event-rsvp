@@ -60,7 +60,6 @@ jobs:
     name: Build & Deploy Lambda
     runs-on: ubuntu-latest
     needs: terraform
-    if: contains(github.event.head_commit.modified, 'backend/') || contains(github.event.head_commit.added, 'backend/')
 
     steps:
       - uses: actions/checkout@v4
