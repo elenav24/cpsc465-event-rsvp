@@ -1,4 +1,4 @@
-# cpsc465-event-rsvp
+# cohosted - an event rsvp app to meet all your event hosting needs
 
 ## http://event-rsvp-frontend.s3-website-us-east-1.amazonaws.com/
 
