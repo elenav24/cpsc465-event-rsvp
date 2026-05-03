@@ -1,5 +1,10 @@
-resource "aws_ecr_repository" "app" {
-  name                 = "event-rsvp"
+locals {
+  services = ["events", "users"]
+}
+
+resource "aws_ecr_repository" "services" {
+  for_each             = toset(local.services)
+  name                 = "${var.app_name}-${each.key}"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -7,9 +12,9 @@ resource "aws_ecr_repository" "app" {
   }
 }
 
-# Keep only the last 5 images to control storage costs
-resource "aws_ecr_lifecycle_policy" "app" {
-  repository = aws_ecr_repository.app.name
+resource "aws_ecr_lifecycle_policy" "services" {
+  for_each   = toset(local.services)
+  repository = aws_ecr_repository.services[each.key].name
 
   policy = jsonencode({
     rules = [{

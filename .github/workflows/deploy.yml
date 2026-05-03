@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'backend/**'
+      - 'backend/services/**'
       - 'frontend/**'
       - 'terraform/**'
       - '.github/workflows/deploy.yml'
@@ -20,7 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       terraform: ${{ steps.filter.outputs.terraform }}
-      backend: ${{ steps.filter.outputs.backend }}
+      events: ${{ steps.filter.outputs.events }}
+      users: ${{ steps.filter.outputs.users }}
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
       - uses: actions/checkout@v4
@@ -31,8 +32,10 @@ jobs:
             terraform:
               - 'terraform/**'
               - '.github/workflows/deploy.yml'
-            backend:
-              - 'backend/**'
+            events:
+              - 'backend/services/events/**'
+            users:
+              - 'backend/services/users/**'
             frontend:
               - 'frontend/**'
 
@@ -45,10 +48,6 @@ jobs:
     defaults:
       run:
         working-directory: terraform
-    outputs:
-      ecr_url: ${{ steps.tf_outputs.outputs.ecr_url }}
-      lambda_name: ${{ steps.tf_outputs.outputs.lambda_name }}
-      frontend_bucket: ${{ steps.tf_outputs.outputs.frontend_bucket }}
 
     steps:
       - uses: actions/checkout@v4
@@ -77,21 +76,14 @@ jobs:
             -var="google_client_id=${{ secrets.GOOGLE_CLIENT_ID }}" \
             -var="google_client_secret=${{ secrets.GOOGLE_CLIENT_SECRET }}"
 
-      - name: Capture Outputs
-        id: tf_outputs
-        run: |
-          echo "ecr_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
-          echo "lambda_name=$(terraform output -raw lambda_function_name)" >> $GITHUB_OUTPUT
-          echo "frontend_bucket=$(terraform output -raw frontend_bucket_name)" >> $GITHUB_OUTPUT
-
-  # ── 2. Build & push Docker image, update Lambda ───────────────────────────
-  deploy-backend:
-    name: Build & Deploy Lambda
+  # ── 2. Deploy events service ──────────────────────────────────────────────
+  deploy-events:
+    name: Deploy Events Service
     runs-on: ubuntu-latest
     needs: [changes, terraform]
     if: |
       always() &&
-      needs.changes.outputs.backend == 'true' &&
+      needs.changes.outputs.events == 'true' &&
       (needs.terraform.result == 'success' || needs.terraform.result == 'skipped')
 
     steps:
@@ -105,7 +97,6 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set up QEMU
@@ -114,43 +105,106 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Fetch Terraform Outputs
-        id: tf_outputs
+      - name: Resolve ECR URL
+        id: ecr
         run: |
-          echo "ecr_url=$(aws ecr describe-repositories --repository-names ${{ env.APP_NAME }} --query 'repositories[0].repositoryUri' --output text)" >> $GITHUB_OUTPUT
-          echo "lambda_name=${{ env.APP_NAME }}" >> $GITHUB_OUTPUT
+          echo "url=$(aws ecr describe-repositories --repository-names ${{ env.APP_NAME }}-events --query 'repositories[0].repositoryUri' --output text)" >> $GITHUB_OUTPUT
 
-      - name: Build, Tag, and Push Image to ECR
+      - name: Build, Tag, and Push Image
         run: |
           docker build --platform linux/arm64 --provenance=false \
-            -t ${{ steps.tf_outputs.outputs.ecr_url }}:latest \
-            -t ${{ steps.tf_outputs.outputs.ecr_url }}:${{ github.sha }} \
-            ./backend
-          docker push ${{ steps.tf_outputs.outputs.ecr_url }}:latest
-          docker push ${{ steps.tf_outputs.outputs.ecr_url }}:${{ github.sha }}
+            -t ${{ steps.ecr.outputs.url }}:latest \
+            -t ${{ steps.ecr.outputs.url }}:${{ github.sha }} \
+            ./backend/services/events
+          docker push ${{ steps.ecr.outputs.url }}:latest
+          docker push ${{ steps.ecr.outputs.url }}:${{ github.sha }}
 
-      - name: Update Lambda Function Code
+      - name: Update Lambda
         run: |
           aws lambda update-function-code \
-            --function-name ${{ steps.tf_outputs.outputs.lambda_name }} \
-            --image-uri ${{ steps.tf_outputs.outputs.ecr_url }}:latest
+            --function-name ${{ env.APP_NAME }}-events \
+            --image-uri ${{ steps.ecr.outputs.url }}:latest
 
       - name: Wait for Lambda Update
         run: |
           aws lambda wait function-updated \
-            --function-name ${{ steps.tf_outputs.outputs.lambda_name }}
+            --function-name ${{ env.APP_NAME }}-events
 
       - name: Run Migrations
         run: |
           aws lambda invoke \
-            --function-name ${{ steps.tf_outputs.outputs.lambda_name }} \
+            --function-name ${{ env.APP_NAME }}-events \
             --payload '{"action":"migrate"}' \
             --cli-binary-format raw-in-base64-out \
             --log-type Tail \
             /tmp/migrate-response.json
           cat /tmp/migrate-response.json
 
-  # ── 3. Build & deploy frontend to S3 ─────────────────────────────────────
+  # ── 3. Deploy users service ───────────────────────────────────────────────
+  deploy-users:
+    name: Deploy Users Service
+    runs-on: ubuntu-latest
+    needs: [changes, terraform]
+    if: |
+      always() &&
+      needs.changes.outputs.users == 'true' &&
+      (needs.terraform.result == 'success' || needs.terraform.result == 'skipped')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Resolve ECR URL
+        id: ecr
+        run: |
+          echo "url=$(aws ecr describe-repositories --repository-names ${{ env.APP_NAME }}-users --query 'repositories[0].repositoryUri' --output text)" >> $GITHUB_OUTPUT
+
+      - name: Build, Tag, and Push Image
+        run: |
+          docker build --platform linux/arm64 --provenance=false \
+            -t ${{ steps.ecr.outputs.url }}:latest \
+            -t ${{ steps.ecr.outputs.url }}:${{ github.sha }} \
+            ./backend/services/users
+          docker push ${{ steps.ecr.outputs.url }}:latest
+          docker push ${{ steps.ecr.outputs.url }}:${{ github.sha }}
+
+      - name: Update Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ env.APP_NAME }}-users \
+            --image-uri ${{ steps.ecr.outputs.url }}:latest
+
+      - name: Wait for Lambda Update
+        run: |
+          aws lambda wait function-updated \
+            --function-name ${{ env.APP_NAME }}-users
+
+      - name: Run Migrations
+        run: |
+          aws lambda invoke \
+            --function-name ${{ env.APP_NAME }}-users \
+            --payload '{"action":"migrate"}' \
+            --cli-binary-format raw-in-base64-out \
+            --log-type Tail \
+            /tmp/migrate-response.json
+          cat /tmp/migrate-response.json
+
+  # ── 4. Build & deploy frontend to S3 ─────────────────────────────────────
   deploy-frontend:
     name: Deploy Frontend
     runs-on: ubuntu-latest
@@ -170,11 +224,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Fetch Frontend Bucket Name
-        id: tf_outputs
-        run: |
-          echo "frontend_bucket=${{ env.APP_NAME }}-frontend" >> $GITHUB_OUTPUT
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -193,9 +242,9 @@ jobs:
 
       - name: Sync to S3
         run: |
-          aws s3 sync frontend/dist s3://${{ steps.tf_outputs.outputs.frontend_bucket }} \
+          aws s3 sync frontend/dist s3://${{ env.APP_NAME }}-frontend \
             --delete \
             --cache-control "public,max-age=31536000,immutable" \
             --exclude "index.html"
-          aws s3 cp frontend/dist/index.html s3://${{ steps.tf_outputs.outputs.frontend_bucket }}/index.html \
+          aws s3 cp frontend/dist/index.html s3://${{ env.APP_NAME }}-frontend/index.html \
             --cache-control "no-cache,no-store,must-revalidate"

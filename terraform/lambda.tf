@@ -24,7 +24,7 @@ resource "aws_iam_role_policy_attachment" "lambda_vpc" {
 }
 
 data "aws_iam_policy_document" "lambda_permissions" {
-  # S3 flyer uploads
+  # S3 flyer uploads (events service only, but shared role keeps things simple)
   statement {
     actions   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
     resources = ["${aws_s3_bucket.flyers.arn}/*"]
@@ -43,39 +43,69 @@ resource "aws_iam_role_policy" "lambda_permissions" {
   policy = data.aws_iam_policy_document.lambda_permissions.json
 }
 
-resource "aws_lambda_function" "app" {
-  function_name = "event-rsvp-lambda"
+locals {
+  subnet_ids = [
+    "subnet-069240ff7fc06095a",
+    "subnet-0bab5aba308c9c0a6",
+    "subnet-0d8d668d6ab9bc7f0",
+    "subnet-0f21e879f77fff5ba",
+  ]
+
+  lambda_common_env = {
+    DATABASE_URL         = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
+    ENV                  = var.environment
+    COGNITO_REGION       = var.aws_region
+    COGNITO_USER_POOL_ID = var.cognito_user_pool_id
+  }
+}
+
+# ── Events Lambda ─────────────────────────────────────────────────────────────
+resource "aws_lambda_function" "events" {
+  function_name = "${var.app_name}-events"
   role          = aws_iam_role.lambda.arn
   package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.app.repository_url}:latest"
+  image_uri     = "${aws_ecr_repository.services["events"].repository_url}:latest"
   architectures = ["arm64"]
   timeout       = 30
   memory_size   = 512
 
   environment {
-    variables = {
-      # Pull secrets at runtime via the app's dotenv/os.getenv
-      # These are injected directly for Lambda cold-start speed
-      DATABASE_URL     = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
-      S3_BUCKET        = aws_s3_bucket.flyers.bucket
-      S3_REGION            = var.aws_region
-      ENV                  = var.environment
-      COGNITO_REGION       = var.aws_region
-      COGNITO_USER_POOL_ID = var.cognito_user_pool_id
-    }
+    variables = merge(local.lambda_common_env, {
+      S3_BUCKET  = aws_s3_bucket.flyers.bucket
+      S3_REGION  = var.aws_region
+    })
   }
 
   lifecycle {
-    ignore_changes = [image_uri, environment] # image updated by CI/CD; env vars set once
+    ignore_changes = [image_uri, environment]
   }
 
   vpc_config {
-    subnet_ids         = [
-      "subnet-069240ff7fc06095a",
-      "subnet-0bab5aba308c9c0a6",
-      "subnet-0d8d668d6ab9bc7f0",
-      "subnet-0f21e879f77fff5ba",
-    ]
+    subnet_ids         = local.subnet_ids
+    security_group_ids = [aws_security_group.lambda.id]
+  }
+}
+
+# ── Users Lambda ──────────────────────────────────────────────────────────────
+resource "aws_lambda_function" "users" {
+  function_name = "${var.app_name}-users"
+  role          = aws_iam_role.lambda.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.services["users"].repository_url}:latest"
+  architectures = ["arm64"]
+  timeout       = 30
+  memory_size   = 512
+
+  environment {
+    variables = local.lambda_common_env
+  }
+
+  lifecycle {
+    ignore_changes = [image_uri, environment]
+  }
+
+  vpc_config {
+    subnet_ids         = local.subnet_ids
     security_group_ids = [aws_security_group.lambda.id]
   }
 }
