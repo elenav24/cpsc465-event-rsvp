@@ -18,7 +18,15 @@ from botocore.exceptions import ClientError
 from app.core.config import AWS_REGION
 
 logger = logging.getLogger(__name__)
-_scheduler = boto3.client("scheduler", region_name=AWS_REGION)
+
+_scheduler = None
+
+
+def _get_scheduler():
+    global _scheduler
+    if _scheduler is None:
+        _scheduler = boto3.client("scheduler", region_name=AWS_REGION)
+    return _scheduler
 
 # ARN of the notifications Lambda — set as env var
 import os
@@ -67,7 +75,7 @@ def create_reminder_schedule(
     }
 
     try:
-        _scheduler.create_schedule(
+        _get_scheduler().create_schedule(
             Name=rule_name,
             ScheduleExpression=schedule_expression,
             ScheduleExpressionTimezone="UTC",
@@ -88,7 +96,7 @@ def create_reminder_schedule(
 def delete_reminder_schedule(rule_name: str) -> None:
     """Deletes an EventBridge Scheduler schedule by name."""
     try:
-        _scheduler.delete_schedule(Name=rule_name)
+        _get_scheduler().delete_schedule(Name=rule_name)
     except ClientError as e:
         if e.response["Error"]["Code"] != "ResourceNotFoundException":
             logger.warning("Failed to delete schedule %s: %s", rule_name, e)

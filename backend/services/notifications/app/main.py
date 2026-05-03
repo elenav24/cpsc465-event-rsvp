@@ -21,11 +21,18 @@ import boto3
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-_sns = boto3.client("sns")
+_sns = None
+
+
+def _get_sns():
+    global _sns
+    if _sns is None:
+        _sns = boto3.client("sns")
+    return _sns
 
 
 def _send_sms(phone_number: str, message: str) -> None:
-    _sns.publish(
+    _get_sns().publish(
         PhoneNumber=phone_number,
         Message=message,
         MessageAttributes={

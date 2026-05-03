@@ -10,22 +10,29 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from app.config import CONNECTIONS_TABLE
 
-dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table(CONNECTIONS_TABLE)
+_dynamodb = None
+_table = None
+
+
+def _get_table():
+    global _dynamodb, _table
+    if _table is None:
+        _dynamodb = boto3.resource("dynamodb")
+        _table = _dynamodb.Table(CONNECTIONS_TABLE)
+    return _table
 
 
 def handle(event: dict, context) -> dict:
     connection_id: str = event["requestContext"]["connectionId"]
 
-    # Query the GSI to find which event this connection belongs to
-    response = table.query(
+    response = _get_table().query(
         IndexName="connection_id-index",
         KeyConditionExpression=Key("connection_id").eq(connection_id),
     )
 
     items = response.get("Items", [])
     for item in items:
-        table.delete_item(
+        _get_table().delete_item(
             Key={
                 "event_id": item["event_id"],
                 "connection_id": connection_id,
