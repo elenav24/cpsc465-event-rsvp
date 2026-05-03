@@ -1,2 +1,1 @@
 # notifications service
-# v2
