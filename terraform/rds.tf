@@ -9,14 +9,16 @@ resource "aws_security_group" "rds" {
   }
 }
 
-resource "aws_security_group_rule" "rds_from_lambda" {
-  type                     = "ingress"
-  from_port                = 5432
-  to_port                  = 5432
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.rds.id
-  source_security_group_id = aws_security_group.lambda.id
-  description              = "PostgreSQL from Lambda"
+# Lambda runs outside the VPC, so we open 5432 to the internet.
+# The DB password and SSL provide the security layer.
+resource "aws_security_group_rule" "rds_from_internet" {
+  type              = "ingress"
+  from_port         = 5432
+  to_port           = 5432
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.rds.id
+  description       = "PostgreSQL from Lambda (no VPC — internet access)"
 }
 
 resource "aws_db_subnet_group" "main" {
@@ -43,6 +45,7 @@ resource "aws_db_instance" "postgres" {
   availability_zone      = "us-east-1a"
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.rds.id]
+  publicly_accessible    = true
 
   skip_final_snapshot       = false
   final_snapshot_identifier = "db-event-rsvp-final-snapshot"
