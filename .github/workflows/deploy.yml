@@ -248,6 +248,17 @@ jobs:
             /tmp/migrate-response.json
           cat /tmp/migrate-response.json
 
+      - name: Update users Lambda env
+        run: |
+          aws lambda update-function-configuration \
+            --function-name ${{ env.APP_NAME }}-users \
+            --environment "Variables={
+              DATABASE_URL=${{ secrets.DATABASE_URL }},
+              ENV=production,
+              COGNITO_REGION=${{ env.AWS_REGION }},
+              COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID }}
+            }"
+
   # ── 4. Deploy chat service ────────────────────────────────────────────────
   deploy-chat:
     name: Deploy Chat Service
