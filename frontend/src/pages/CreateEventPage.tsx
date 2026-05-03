@@ -1,21 +1,74 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { createEvent } from '../api/events'
 
 export default function CreateEventPage() {
   const navigate = useNavigate()
-  const [features, setFeatures] = useState({ potluck: false, polls: false, chat: true })
+
+  // Form state
+  const [title, setTitle] = useState('')
+  const [date, setDate] = useState('')
+  const [time, setTime] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [endTime, setEndTime] = useState('')
+  const [location, setLocation] = useState('')
+  const [description, setDescription] = useState('')
   const [vibeSelected, setVibeSelected] = useState(0)
+  const [features, setFeatures] = useState({ potluck: false, polls: false, chat: true })
+  const [flyerFile, setFlyerFile] = useState<File | null>(null)
+  const [flyerPreview, setFlyerPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const toggleFeature = (k: keyof typeof features) =>
     setFeatures((f) => ({ ...f, [k]: !f[k] }))
 
-  const handleCreate = async () => {
+  const handleFlyerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFlyerFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setFlyerPreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim()) {
+      setError('Event title is required.')
+      return
+    }
+    setError(null)
     setLoading(true)
-    // Simulate API call — replace with real fetch to /events
-    await new Promise((res) => setTimeout(res, 600))
-    setLoading(false)
-    navigate('/events')
+
+    try {
+      const formData = new FormData()
+      formData.append('title', title.trim())
+      if (description) formData.append('description', description)
+      if (location) formData.append('location', location)
+
+      // Combine date + time into ISO string
+      if (date) {
+        const startIso = time ? `${date}T${time}:00` : `${date}T00:00:00`
+        formData.append('start_dt', startIso)
+      }
+      if (endDate) {
+        const endIso = endTime ? `${endDate}T${endTime}:00` : `${endDate}T23:59:00`
+        formData.append('end_dt', endIso)
+      }
+
+      if (flyerFile) {
+        formData.append('flyer', flyerFile)
+      }
+
+      const event = await createEvent(formData)
+      navigate(`/events/${event.id}`)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create event. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -25,101 +78,199 @@ export default function CreateEventPage() {
         Fill in the details below to create your event space. Don't stress, you can always change things later.
       </p>
 
-      <div className="create-grid">
-        {/* Section 1: Basics */}
-        <div className="create-section">
-          <div className="section-title">
-            <span className="section-num">1</span> The Basics
-          </div>
-          <label className="field-label">Event Title</label>
-          <input className="field-input" placeholder="e.g., Sarah's Birthday Bash" />
-          <div className="date-time-row">
-            <div>
-              <label className="field-label">Date</label>
-              <input className="field-input" type="date" style={{ marginBottom: 0 }} />
-            </div>
-            <div>
-              <label className="field-label">Time</label>
-              <input className="field-input" type="time" style={{ marginBottom: 0 }} />
-            </div>
-          </div>
-          <div style={{ height: '1rem' }} />
-          <label className="field-label">Location</label>
-          <input className="field-input" placeholder="🔍 Search address or venue..." />
-          <label className="field-label">Description</label>
-          <textarea className="field-input" placeholder="Tell your guests what to expect..." />
+      {error && (
+        <div style={{ background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '0.75rem 1rem', marginBottom: '1.5rem', color: '#c00', maxWidth: 960, margin: '0 auto 1.5rem' }}>
+          ⚠ {error}
         </div>
+      )}
 
-        {/* Section 2: Vibe Check */}
-        <div className="create-section">
-          <div className="section-title">
-            <span className="section-num">2</span> Vibe Check
+      <form onSubmit={handleCreate}>
+        <div className="create-grid">
+          {/* Section 1: Basics */}
+          <div className="create-section">
+            <div className="section-title">
+              <span className="section-num">1</span> The Basics
+            </div>
+            <label className="field-label">Event Title *</label>
+            <input
+              className="field-input"
+              placeholder="e.g., Sarah's Birthday Bash"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+            <div className="date-time-row">
+              <div>
+                <label className="field-label">Start Date</label>
+                <input
+                  className="field-input"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  style={{ marginBottom: 0 }}
+                />
+              </div>
+              <div>
+                <label className="field-label">Start Time</label>
+                <input
+                  className="field-input"
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  style={{ marginBottom: 0 }}
+                />
+              </div>
+            </div>
+            <div style={{ height: '1rem' }} />
+            <div className="date-time-row">
+              <div>
+                <label className="field-label">End Date</label>
+                <input
+                  className="field-input"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  style={{ marginBottom: 0 }}
+                />
+              </div>
+              <div>
+                <label className="field-label">End Time</label>
+                <input
+                  className="field-input"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  style={{ marginBottom: 0 }}
+                />
+              </div>
+            </div>
+            <div style={{ height: '1rem' }} />
+            <label className="field-label">Location</label>
+            <input
+              className="field-input"
+              placeholder="🔍 Search address or venue..."
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+            <label className="field-label">Description</label>
+            <textarea
+              className="field-input"
+              placeholder="Tell your guests what to expect..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </div>
-          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-            Choose a cover image that sets the mood for your gathering.
-          </p>
-          <div className="vibe-images">
-            {['🎉 Party Vibes', '🌿 Casual Hangout', '🎂 Birthday Bash'].map((label, i) => (
-              <div
-                key={i}
-                className={`vibe-img${vibeSelected === i ? ' selected' : ''}`}
-                onClick={() => setVibeSelected(i)}
+
+          {/* Section 2: Vibe Check */}
+          <div className="create-section">
+            <div className="section-title">
+              <span className="section-num">2</span> Vibe Check
+            </div>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              Upload a flyer or choose a cover style for your event.
+            </p>
+
+            {/* Flyer upload */}
+            <div
+              className="flyer-drop"
+              onClick={() => fileInputRef.current?.click()}
+              style={flyerPreview ? { padding: 0, border: 'none' } : {}}
+            >
+              {flyerPreview ? (
+                <img src={flyerPreview} alt="Flyer preview" style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 8 }} />
+              ) : (
+                <>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🖼️</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Upload a flyer</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>PNG, JPG, GIF up to 5 MB</div>
+                </>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleFlyerChange}
+            />
+            {flyerPreview && (
+              <button
+                type="button"
+                style={{ marginTop: 8, fontSize: '0.8rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={() => { setFlyerFile(null); setFlyerPreview(null) }}
               >
+                Remove flyer
+              </button>
+            )}
+
+            <div style={{ marginTop: '1.5rem' }}>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                Or choose a cover style:
+              </p>
+              <div className="vibe-images">
+                {['🎉 Party Vibes', '🌿 Casual Hangout', '🎂 Birthday Bash'].map((label, i) => (
+                  <div
+                    key={i}
+                    className={`vibe-img${vibeSelected === i ? ' selected' : ''}`}
+                    onClick={() => setVibeSelected(i)}
+                  >
+                    <div
+                      className="vibe-img-inner"
+                      style={{
+                        background:
+                          i === 0
+                            ? 'linear-gradient(135deg,#EEEDFE,#F5D0DF)'
+                            : i === 1
+                            ? 'linear-gradient(135deg,#EAF3DE,#E1F5EE)'
+                            : 'linear-gradient(135deg,#FAEEDA,#F5D0DF)',
+                      }}
+                    >
+                      <span>{label}</span>
+                    </div>
+                    <div className="vibe-check">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Supercharge */}
+          <div className="create-section supercharge-section">
+            <div className="section-title">
+              <span className="section-num">3</span> Supercharge Your Event
+            </div>
+            <div className="feature-grid">
+              {[
+                { key: 'potluck' as const, icon: '🥘', name: 'Potluck List', desc: "Let guests claim items to bring so you don't end up with 5 bags of ice." },
+                { key: 'polls' as const, icon: '📊', name: 'Group Polls', desc: "Can't decide on a date or theme? Let your guests vote on the details." },
+                { key: 'chat' as const, icon: '💬', name: 'Event Chat', desc: 'A dedicated space for hype, questions, and sharing photos after the party.' },
+              ].map((f) => (
                 <div
-                  className="vibe-img-inner"
-                  style={{
-                    background:
-                      i === 0
-                        ? 'linear-gradient(135deg,#EEEDFE,#F5D0DF)'
-                        : i === 1
-                        ? 'linear-gradient(135deg,#EAF3DE,#E1F5EE)'
-                        : 'linear-gradient(135deg,#FAEEDA,#F5D0DF)',
-                  }}
+                  key={f.key}
+                  className={`feature-toggle${features[f.key] ? ' active' : ''}`}
+                  onClick={() => toggleFeature(f.key)}
                 >
-                  <span>{label}</span>
+                  <div className="feature-check" />
+                  <div className="feature-icon">{f.icon}</div>
+                  <div className="feature-name">{f.name}</div>
+                  <div className="feature-desc">{f.desc}</div>
                 </div>
-                <div className="vibe-check">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Section 3: Supercharge */}
-        <div className="create-section supercharge-section">
-          <div className="section-title">
-            <span className="section-num">3</span> Supercharge Your Event
-          </div>
-          <div className="feature-grid">
-            {[
-              { key: 'potluck' as const, icon: '🥘', name: 'Potluck List', desc: "Let guests claim items to bring so you don't end up with 5 bags of ice." },
-              { key: 'polls' as const, icon: '📊', name: 'Group Polls', desc: "Can't decide on a date or theme? Let your guests vote on the details." },
-              { key: 'chat' as const, icon: '💬', name: 'Event Chat', desc: 'A dedicated space for hype, questions, and sharing photos after the party.' },
-            ].map((f) => (
-              <div
-                key={f.key}
-                className={`feature-toggle${features[f.key] ? ' active' : ''}`}
-                onClick={() => toggleFeature(f.key)}
-              >
-                <div className="feature-check" />
-                <div className="feature-icon">{f.icon}</div>
-                <div className="feature-name">{f.name}</div>
-                <div className="feature-desc">{f.desc}</div>
-              </div>
-            ))}
-          </div>
+        <div className="create-actions">
+          <button type="button" className="btn-cancel" onClick={() => navigate('/events')}>Cancel</button>
+          <button type="submit" className="btn-create-event" disabled={loading}>
+            {loading ? 'Creating…' : 'Create Event'}
+          </button>
         </div>
-      </div>
-
-      <div className="create-actions">
-        <button className="btn-cancel" onClick={() => navigate('/events')}>Cancel</button>
-        <button className="btn-create-event" onClick={handleCreate} disabled={loading}>
-          {loading ? 'Creating…' : 'Create Event'}
-        </button>
-      </div>
+      </form>
 
       <style>{`
         .create-page {
@@ -194,6 +345,7 @@ export default function CreateEventPage() {
           margin-bottom: 1rem;
           background: white;
           color: var(--text-dark);
+          box-sizing: border-box;
         }
         .field-input:focus { border-color: var(--pink); }
         textarea.field-input { resize: vertical; min-height: 100px; }
@@ -202,6 +354,16 @@ export default function CreateEventPage() {
           grid-template-columns: 1fr 1fr;
           gap: 0.75rem;
         }
+        .flyer-drop {
+          border: 2px dashed var(--border);
+          border-radius: var(--radius-sm);
+          padding: 2rem;
+          text-align: center;
+          cursor: pointer;
+          transition: border-color 0.2s;
+          overflow: hidden;
+        }
+        .flyer-drop:hover { border-color: var(--pink); }
         .vibe-images {
           display: flex;
           flex-direction: column;
@@ -217,7 +379,7 @@ export default function CreateEventPage() {
         }
         .vibe-img.selected { border-color: var(--pink); }
         .vibe-img-inner {
-          height: 80px;
+          height: 60px;
           display: flex;
           align-items: center;
           justify-content: center;

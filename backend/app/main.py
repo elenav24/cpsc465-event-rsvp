@@ -50,4 +50,9 @@ def handler(event, context):
     if event.get("action") == "migrate":
         run_migrations()
         return {"statusCode": 200, "body": "Migrations complete"}
+    # Auto-run migrations on every cold start so new columns are always present
+    try:
+        run_migrations()
+    except Exception:
+        pass
     return _mangum_handler(event, context)
