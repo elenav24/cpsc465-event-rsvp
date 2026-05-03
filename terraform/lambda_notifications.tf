@@ -40,8 +40,7 @@ resource "aws_lambda_function" "notifications" {
 
   environment {
     variables = {
-      ENV        = var.environment
-      AWS_REGION = var.aws_region
+      ENV = var.environment
     }
   }
 
