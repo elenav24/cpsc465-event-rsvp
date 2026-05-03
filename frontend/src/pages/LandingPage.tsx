@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import Footer from '../components/Footer'
+// import Footer from '../components/Footer'
 
 // Sparkle SVG paths from the Figma design
 const SPARKLE_LARGE = "M29.5884 40.5885L26.694 50.7186L23.7996 40.5885C22.2795 35.2677 18.1203 31.1085 12.7996 29.5884L2.6694 26.694L12.7996 23.7996C18.1204 22.2795 22.2795 18.1203 23.7996 12.7996L26.694 2.6694L29.5884 12.7996C31.1085 18.1204 35.2677 22.2795 40.5885 23.7996L50.7186 26.694L40.5885 29.5884C35.2677 31.1085 31.1085 35.2677 29.5884 40.5885Z"
@@ -68,7 +68,7 @@ export default function LandingPage() {
         </Link>
       </div>
 
-      <Footer />
+      {/* <Footer /> */}
 
       <style>{`
         .landing-page {

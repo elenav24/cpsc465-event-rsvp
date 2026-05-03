@@ -3,46 +3,46 @@ import { useAuth } from '../auth/AuthContext'
 import LogoIcon from './LogoIcon'
 
 export default function Nav() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-  const loggedIn = !!user
+    const { user, logout } = useAuth()
+    const navigate = useNavigate()
+    const loggedIn = !!user
 
-  const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
+    const handleLogout = () => {
+        logout()
+        navigate('/')
+    }
 
-  return (
-    <nav className="nav">
-      {/* Logo — left */}
-      <Link to={loggedIn ? '/events' : '/'} className="nav-logo">
-        <LogoIcon size={40} />
-        <span className="nav-logo-text">cohosted</span>
-      </Link>
+    return (
+        <nav className="nav">
+            {/* Logo — left */}
+            <Link to={loggedIn ? '/events' : '/'} className="nav-logo">
+                <LogoIcon size={40} />
+                <span className="nav-logo-text">cohosted</span>
+            </Link>
 
-      {/* Center links — absolutely centered in the nav */}
-      <div className="nav-center">
-        <a className="nav-link">How It Works</a>
-        <a className="nav-link">Browse Templates</a>
-      </div>
+            {/* Center links — absolutely centered in the nav */}
+            <div className="nav-center">
+                <a className="nav-link">How It Works</a>
+                <a className="nav-link">Browse Templates</a>
+            </div>
 
-      {/* Right actions */}
-      <div className="nav-actions">
-        {loggedIn ? (
-          <>
-            <Link to="/events" className="nav-link">My Events</Link>
-            <Link to="/events/new" className="nav-pill">+ Create Event</Link>
-            <button className="nav-text-btn" onClick={handleLogout}>Sign Out</button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" className="nav-pill">Log In</Link>
-            <Link to="/signup" className="nav-text-btn">Sign Up</Link>
-          </>
-        )}
-      </div>
+            {/* Auth — right */}
+            <div className="nav-actions">
+                {loggedIn ? (
+                    <>
+                        <Link to="/events" className="nav-link">My Events</Link>
+                        <Link to="/events/new" className="nav-btn-primary">+ Create Event</Link>
+                        <button className="nav-btn-ghost" onClick={handleLogout}>Sign Out</button>
+                    </>
+                ) : (
+                    <>
+                        <Link to="/login" className="nav-pill">Log In</Link>
+                        <Link to="/signup" className="nav-text-btn">Sign Up</Link>
+                    </>
+                )}
+            </div>
 
-      <style>{`
+            <style>{`
         .nav {
           position: fixed;
           top: 0;
@@ -54,19 +54,22 @@ export default function Nav() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 clamp(1rem, 2.5vw, 2.5rem);
+          padding: 0 2.5rem;
         }
 
         /* Logo */
         .nav-logo {
+          font-family: 'Cantora One', cursive;
+          font-size: 1.2rem;
+          color: #1a1a1a;
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
           text-decoration: none;
           flex-shrink: 0;
           z-index: 1;
         }
-        .nav-logo:hover { text-decoration: none; }
+        .nav-logo:hover { text-decoration: none; color: #1a1a1a; }
         .nav-logo-text {
           font-family: 'Cantora One', cursive;
           font-size: 30px;
@@ -74,7 +77,7 @@ export default function Nav() {
           line-height: 1;
         }
 
-        /* Center links — absolutely centered */
+        /* Center links — absolutely positioned so they're truly centered */
         .nav-center {
           position: absolute;
           left: 50%;
@@ -86,25 +89,25 @@ export default function Nav() {
         .nav-link {
           font-family: 'Albert Sans', sans-serif;
           font-size: 18px;
-          font-weight: 400;
-          color: #000;
+          font-weight: 500;
+          color: #444;
           text-decoration: none;
           cursor: pointer;
+          transition: color 0.2s;
           white-space: nowrap;
-          transition: opacity 0.2s;
         }
-        .nav-link:hover { opacity: 0.65; text-decoration: none; }
+        .nav-link:hover { color: var(--pink); text-decoration: none; }
 
-        /* Right side */
+        /* Right actions */
         .nav-actions {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.6rem;
           flex-shrink: 0;
           z-index: 1;
         }
 
-        /* Pink pill button — exact figma: #d06395, 100px × 38px, rounded-50px */
+/* Pink pill button — exact figma: #d06395, 100px × 38px, rounded-50px */
         .nav-pill {
           display: inline-flex;
           align-items: center;
@@ -145,12 +148,12 @@ export default function Nav() {
           align-items: center;
           transition: opacity 0.2s;
         }
-        .nav-text-btn:hover { opacity: 0.65; text-decoration: none; }
+        .nav-text-btn:hover { opacity: 0.65; color: var(--pink); text-decoration: none; }
 
         @media (max-width: 640px) {
           .nav-center { display: none; }
         }
       `}</style>
-    </nav>
-  )
+        </nav>
+    )
 }
