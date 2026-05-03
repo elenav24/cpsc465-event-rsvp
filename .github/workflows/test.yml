@@ -3,9 +3,6 @@ name: Test
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/test.yml'
 
 jobs:
   # ── Events service ────────────────────────────────────────────────────────
