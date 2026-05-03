@@ -113,6 +113,12 @@ a:hover {
   text-decoration: underline;
 }
 
+/* Links that opt out of underline */
+a.no-underline,
+a.no-underline:hover {
+  text-decoration: none;
+}
+
 button {
   font-family: inherit;
   cursor: pointer;

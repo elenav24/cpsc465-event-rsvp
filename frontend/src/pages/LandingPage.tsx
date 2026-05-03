@@ -109,16 +109,17 @@ export default function LandingPage() {
         {/* CTA Button */}
         <Link
           to="/signup"
-          className="inline-flex items-center justify-center w-[340px] h-[71px] rounded-[10px] no-underline cursor-pointer transition-all duration-200 hover:-translate-x-px hover:-translate-y-px"
+          className="inline-flex items-center justify-center w-[340px] h-[71px] rounded-[10px] no-underline cursor-pointer transition-all duration-200 hover:no-underline hover:-translate-x-px hover:-translate-y-px"
           style={{
             background: '#e1bede',
             fontFamily: "'Cantora One', cursive",
             fontSize: 'clamp(1.2rem, 2.22vw, 32px)',
             color: '#000',
-            filter: 'drop-shadow(4px 4px 2px #462749)',
+            boxShadow: '4px 4px 0px #462749',
+            textDecoration: 'none',
           }}
-          onMouseEnter={e => (e.currentTarget.style.filter = 'drop-shadow(6px 6px 4px #462749)')}
-          onMouseLeave={e => (e.currentTarget.style.filter = 'drop-shadow(4px 4px 2px #462749)')}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = '6px 6px 0px #462749' }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = '4px 4px 0px #462749' }}
         >
           Create Your First Event
         </Link>
