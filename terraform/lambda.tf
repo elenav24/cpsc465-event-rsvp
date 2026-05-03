@@ -18,22 +18,11 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_vpc" {
-  role       = aws_iam_role.lambda.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-}
-
 data "aws_iam_policy_document" "lambda_permissions" {
   # S3 flyer uploads (events service only, but shared role keeps things simple)
   statement {
     actions   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
     resources = ["${aws_s3_bucket.flyers.arn}/*"]
-  }
-
-  # Read app secrets
-  statement {
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_secretsmanager_secret.app_secrets.arn]
   }
 
   # DynamoDB access for chat service
@@ -66,13 +55,6 @@ resource "aws_iam_role_policy" "lambda_permissions" {
 }
 
 locals {
-  subnet_ids = [
-    "subnet-069240ff7fc06095a",
-    "subnet-0bab5aba308c9c0a6",
-    "subnet-0d8d668d6ab9bc7f0",
-    "subnet-0f21e879f77fff5ba",
-  ]
-
   lambda_common_env = {
     DATABASE_URL         = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
     ENV                  = var.environment
@@ -101,11 +83,6 @@ resource "aws_lambda_function" "events" {
   lifecycle {
     ignore_changes = [image_uri, environment]
   }
-
-  vpc_config {
-    subnet_ids         = local.subnet_ids
-    security_group_ids = [aws_security_group.lambda.id]
-  }
 }
 
 # ── Users Lambda ──────────────────────────────────────────────────────────────
@@ -124,11 +101,6 @@ resource "aws_lambda_function" "users" {
 
   lifecycle {
     ignore_changes = [image_uri, environment]
-  }
-
-  vpc_config {
-    subnet_ids         = local.subnet_ids
-    security_group_ids = [aws_security_group.lambda.id]
   }
 }
 
