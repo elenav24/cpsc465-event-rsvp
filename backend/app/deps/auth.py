@@ -34,7 +34,7 @@ def _verify_token(token: str) -> dict:
             token,
             public_key,
             algorithms=["RS256"],
-            options={"verify_aud": False},
+            options={"verify_aud": False, "verify_at_hash": False},
         )
         return payload
     except JWTError as e:
