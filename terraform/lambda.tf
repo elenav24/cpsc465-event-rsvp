@@ -35,6 +35,28 @@ data "aws_iam_policy_document" "lambda_permissions" {
     actions   = ["secretsmanager:GetSecretValue"]
     resources = [aws_secretsmanager_secret.app_secrets.arn]
   }
+
+  # DynamoDB access for chat service
+  statement {
+    actions = [
+      "dynamodb:PutItem",
+      "dynamodb:GetItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:Query",
+      "dynamodb:UpdateItem",
+    ]
+    resources = [
+      aws_dynamodb_table.chat_messages.arn,
+      aws_dynamodb_table.chat_connections.arn,
+      "${aws_dynamodb_table.chat_connections.arn}/index/*",
+    ]
+  }
+
+  # Allow chat Lambda to push messages back to connected WebSocket clients
+  statement {
+    actions   = ["execute-api:ManageConnections"]
+    resources = ["${aws_apigatewayv2_api.chat_ws.execution_arn}/*"]
+  }
 }
 
 resource "aws_iam_role_policy" "lambda_permissions" {
@@ -108,4 +130,41 @@ resource "aws_lambda_function" "users" {
     subnet_ids         = local.subnet_ids
     security_group_ids = [aws_security_group.lambda.id]
   }
+}
+
+# ── Chat Lambda ───────────────────────────────────────────────────────────────
+# CI/CD (deploy.yml) pushes the real image and calls `update-function-code`.
+# `lifecycle.ignore_changes` ensures Terraform never reverts that update.
+resource "aws_lambda_function" "chat" {
+  function_name = "${var.app_name}-chat"
+  role          = aws_iam_role.lambda.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.services["chat"].repository_url}:latest"
+  architectures = ["arm64"]
+  timeout       = 30
+  memory_size   = 256
+
+  environment {
+    variables = {
+      MESSAGES_TABLE    = aws_dynamodb_table.chat_messages.name
+      CONNECTIONS_TABLE = aws_dynamodb_table.chat_connections.name
+      WS_ENDPOINT       = "${aws_apigatewayv2_api.chat_ws.id}.execute-api.${var.aws_region}.amazonaws.com/${aws_apigatewayv2_stage.chat_ws.name}"
+      ENV               = var.environment
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [image_uri, environment]
+  }
+
+  # Chat Lambda does NOT need VPC — DynamoDB is a public AWS endpoint.
+  # Keeping it outside VPC avoids NAT Gateway costs and cold-start latency.
+}
+
+resource "aws_lambda_permission" "chat_ws_gateway" {
+  statement_id  = "AllowWebSocketAPIGatewayInvokeChat"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.chat.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.chat_ws.execution_arn}/*/*"
 }

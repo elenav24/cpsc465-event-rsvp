@@ -1,5 +1,5 @@
 locals {
-  services = ["events", "users"]
+  services = ["events", "users", "chat"]
 }
 
 resource "aws_ecr_repository" "services" {

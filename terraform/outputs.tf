@@ -58,3 +58,23 @@ output "cognito_domain" {
   description = "Cognito hosted UI domain"
   value       = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com"
 }
+
+output "chat_ws_url" {
+  description = "WebSocket URL for the chat service"
+  value       = "${aws_apigatewayv2_stage.chat_ws.invoke_url}"
+}
+
+output "chat_messages_table" {
+  description = "DynamoDB table name for chat messages"
+  value       = aws_dynamodb_table.chat_messages.name
+}
+
+output "chat_connections_table" {
+  description = "DynamoDB table name for WebSocket connections"
+  value       = aws_dynamodb_table.chat_connections.name
+}
+
+output "ecr_chat_url" {
+  description = "ECR repository URL for the chat service"
+  value       = aws_ecr_repository.services["chat"].repository_url
+}
