@@ -160,7 +160,6 @@ jobs:
               COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID }},
               S3_BUCKET=${{ env.APP_NAME }}-flyers,
               S3_REGION=${{ env.AWS_REGION }},
-              AWS_REGION=${{ env.AWS_REGION }},
               ANNOUNCEMENTS_SNS_TOPIC_ARN=$SNS_ARN,
               SCHEDULER_ROLE_ARN=$SCHEDULER_ROLE,
               NOTIFICATIONS_LAMBDA_ARN=$NOTIF_ARN
