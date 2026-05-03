@@ -1,45 +1,35 @@
 import { Link } from 'react-router-dom'
 
-// ── Figma SVG paths ──────────────────────────────────────────
-// 4-pointed sparkle star (large)
-const P_SPARKLE_PINK_LG   = "M29.5884 40.5885L26.694 50.7186L23.7996 40.5885C22.2795 35.2677 18.1203 31.1085 12.7996 29.5884L2.6694 26.694L12.7996 23.7996C18.1204 22.2795 22.2795 18.1203 23.7996 12.7996L26.694 2.6694L29.5884 12.7996C31.1085 18.1204 35.2677 22.2795 40.5885 23.7996L50.7186 26.694L40.5885 29.5884C35.2677 31.1085 31.1085 35.2677 29.5884 40.5885Z"
-const P_SPARKLE_PINK_SM   = "M7.94196 11.9481L7.51964 13.6373L7.09732 11.9481C6.60413 9.97538 5.0639 8.43515 3.09126 7.94196L1.40197 7.51964L3.09126 7.09732C5.0639 6.60413 6.60413 5.0639 7.09732 3.0912L7.51964 1.40197L7.94196 3.0912C8.43515 5.0639 9.97538 6.60413 11.948 7.09732L13.6373 7.51964L11.948 7.94196C9.97538 8.43515 8.43515 9.97538 7.94196 11.9481Z"
-const P_SPARKLE_PURPLE_LG = "M30.7523 42.185L27.744 52.7137L24.7358 42.185C23.1559 36.655 18.8331 32.3322 13.303 30.7523L2.7744 27.744L13.303 24.7358C18.8332 23.1559 23.1559 18.8331 24.7358 13.303L27.744 2.7744L30.7523 13.303C32.3322 18.8332 36.655 23.1559 42.185 24.7358L52.7137 27.744L42.185 30.7523C36.655 32.3322 32.3322 36.655 30.7523 42.185Z"
-const P_SPARKLE_PURPLE_SM = "M8.25437 12.4181L7.81543 14.1737L7.37649 12.4181C6.86391 10.3678 5.2631 8.76695 3.21286 8.25437L1.45711 7.81543L3.21286 7.37649C5.2631 6.86391 6.86391 5.2631 7.37649 3.21279L7.81543 1.45711L8.25437 3.21279C8.76695 5.2631 10.3678 6.86391 12.418 7.37649L14.1737 7.81543L12.418 8.25437C10.3678 8.76695 8.76695 10.3678 8.25437 12.4181Z"
 // Filled pink star (Container10 in Figma)
 const P_STAR_PINK = "M12.8775 6.20651C15.1577 2.06884 16.298 0 18.0026 0C19.7072 0 20.8473 2.06884 23.1274 6.20651L23.7175 7.27698C24.3654 8.45278 24.6894 9.04068 25.1946 9.42858C25.6998 9.81647 26.329 9.96047 27.5874 10.2485L28.7328 10.5106C33.1609 11.524 35.375 12.0307 35.9016 13.7441C36.4284 15.4574 34.9191 17.2429 31.9003 20.8133L31.1192 21.7373C30.2614 22.7518 29.8325 23.2591 29.6397 23.8868C29.4466 24.5144 29.5114 25.1914 29.6412 26.545L29.7591 27.7776C30.2157 32.5416 30.444 34.9237 29.0647 35.9826C27.6857 37.0415 25.6127 36.0759 21.4668 34.145L20.3942 33.6456C19.216 33.0969 18.6271 32.8226 18.0026 32.8226C17.3781 32.8226 16.789 33.0969 15.611 33.6456L14.5382 34.145C10.3922 36.0759 8.31928 37.0415 6.94025 35.9826C5.56119 34.9237 5.7894 32.5416 6.24578 27.7776L6.36386 26.545C6.49356 25.1914 6.55839 24.5144 6.36545 23.8868C6.17249 23.2591 5.74357 22.7518 4.88574 21.7373L4.10476 20.8133C1.08602 17.2429 -0.423365 15.4574 0.103366 13.7441C0.63012 12.0307 2.84414 11.524 7.2722 10.5106L8.41778 10.2485C9.67598 9.96047 10.3051 9.81647 10.8104 9.42858C11.3156 9.04068 11.6396 8.45278 12.2874 7.27698L12.8775 6.20651Z"
 
-// Pink sparkle cluster — large star + two small stars positioned within a single viewBox
-// viewBox is sized to contain all three shapes without clipping
-function SparkleClusterPink() {
+// A single 4-pointed twinkle star drawn with two crossing lines
+// color and size passed as props so we can reuse it
+function TwinkleStar({ size = 28, color = '#FCCEE8', delay = '0s', duration = '2.8s' }: {
+  size?: number; color?: string; delay?: string; duration?: string
+}) {
+  const h = size / 2
+  const arm = size * 0.48   // long arm length
+  const nub = size * 0.14   // short perpendicular nub
   return (
-    <svg width="80" height="80" viewBox="-5 -5 70 70" fill="none">
-      {/* large 4-pointed star, centered ~27,27 */}
-      <path d={P_SPARKLE_PINK_LG} stroke="#FCCEE8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="5.3388" />
-      {/* small star top-left */}
-      <path d={P_SPARKLE_PINK_SM} stroke="#FCCEE8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.8"
-        transform="translate(-3, -3) scale(0.9)" />
-      {/* small star bottom-right */}
-      <path d={P_SPARKLE_PINK_SM} stroke="#FCCEE8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.8"
-        transform="translate(48, 44) scale(0.85)" />
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      fill="none"
+      style={{ animation: `star-twinkle-real ${duration} ease-in-out infinite ${delay}` }}
+    >
+      {/* vertical line */}
+      <line x1={h} y1={h - arm} x2={h} y2={h + arm} stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+      {/* horizontal line */}
+      <line x1={h - arm} y1={h} x2={h + arm} y2={h} stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+      {/* diagonal nubs for the classic 4-point star look */}
+      <line x1={h - nub} y1={h - nub} x2={h + nub} y2={h + nub} stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <line x1={h + nub} y1={h - nub} x2={h - nub} y2={h + nub} stroke={color} strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   )
 }
 
-// Purple sparkle cluster
-function SparkleClusterPurple() {
-  return (
-    <svg width="85" height="85" viewBox="-5 -5 72 72" fill="none">
-      <path d={P_SPARKLE_PURPLE_LG} stroke="#EAD4FF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="5.55" />
-      <path d={P_SPARKLE_PURPLE_SM} stroke="#EAD4FF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.9"
-        transform="translate(-3, -3) scale(0.9)" />
-      <path d={P_SPARKLE_PURPLE_SM} stroke="#EAD4FF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.9"
-        transform="translate(50, 46) scale(0.85)" />
-    </svg>
-  )
-}
-
-// Filled pink star (the spinning one from Figma — Container10)
 function StarPink() {
   return (
     <svg width="36" height="37" viewBox="0 0 36.005 36.4192" fill="none">
@@ -71,19 +61,31 @@ export default function LandingPage() {
         <StarPink />
       </div>
 
-      {/* ── Sparkle clusters ── */}
-      {/* Pink — Figma: left-[901px] top-[660px] */}
-      <div className="absolute pointer-events-none animate-sparkle-pink" style={{ left: '62vw', top: '62vh' }}>
-        <SparkleClusterPink />
+      {/* ── Twinkle stars scattered across the page ── */}
+      {/* Pink stars */}
+      <div className="absolute pointer-events-none" style={{ left: '13%', top: '11%' }}>
+        <TwinkleStar size={22} color="#FCCEE8" delay="0s" duration="2.6s" />
       </div>
-      {/* Purple — Figma: left-[1126px] top-[150px] */}
-      <div className="absolute pointer-events-none animate-sparkle-purple" style={{ left: '78vw', top: 150 }}>
-        <SparkleClusterPurple />
+      <div className="absolute pointer-events-none" style={{ left: '62%', top: '58%' }}>
+        <TwinkleStar size={32} color="#FCCEE8" delay="0.7s" duration="3.1s" />
+      </div>
+      <div className="absolute pointer-events-none" style={{ left: '8%', top: '68%' }}>
+        <TwinkleStar size={16} color="#FCCEE8" delay="1.4s" duration="2.4s" />
+      </div>
+      {/* Purple/lavender stars */}
+      <div className="absolute pointer-events-none" style={{ left: '78%', top: '14%' }}>
+        <TwinkleStar size={36} color="#EAD4FF" delay="0.4s" duration="3.4s" />
+      </div>
+      <div className="absolute pointer-events-none" style={{ left: '88%', top: '52%' }}>
+        <TwinkleStar size={20} color="#EAD4FF" delay="1.8s" duration="2.9s" />
+      </div>
+      <div className="absolute pointer-events-none" style={{ left: '52%', top: '22%' }}>
+        <TwinkleStar size={14} color="#EAD4FF" delay="2.2s" duration="2.2s" />
       </div>
 
       {/* ── Hero content ── */}
       <div
-        className="relative z-10 flex-1 flex flex-col justify-center pt-[110px] pr-8 pb-12 gap-y-5"
+        className="relative z-10 flex-1 flex flex-col justify-center -top-20 pr-8 gap-y-5"
         style={{ paddingLeft: 'clamp(1.5rem, 11.9vw, 171px)' }}
       >
         {/* Title */}

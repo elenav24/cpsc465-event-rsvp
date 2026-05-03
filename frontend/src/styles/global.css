@@ -378,13 +378,15 @@ h1, h2, h3, h4, h5, h6 {
   33%       { transform: translate(10px, -15px); }
   66%       { transform: translate(-15px, 10px); }
 }
-@keyframes sparkle-rotate {
-  0%, 100% { transform: rotate(-15deg) scale(1); }
-  50%       { transform: rotate(15deg) scale(1.05); }
-}
-@keyframes float-gentle {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-10px); }
+/* star-twinkle-real: pure opacity flicker — no scale/rotation, just like a real star */
+@keyframes star-twinkle-real {
+  0%   { opacity: 0.1; }
+  15%  { opacity: 1;   }
+  30%  { opacity: 0.4; }
+  50%  { opacity: 0.9; }
+  70%  { opacity: 0.2; }
+  85%  { opacity: 0.8; }
+  100% { opacity: 0.1; }
 }
 
 .animate-pulse-glow   { animation: pulse-glow 8s ease-in-out infinite; }
@@ -393,8 +395,6 @@ h1, h2, h3, h4, h5, h6 {
 .animate-drift        { animation: drift 12s ease-in-out infinite; }
 .animate-drift-2      { animation: drift 10s ease-in-out infinite 2s; }
 .animate-drift-3      { animation: drift 14s ease-in-out infinite 3s; }
-.animate-sparkle-pink   { animation: sparkle-rotate 6s ease-in-out infinite, float-gentle 4s ease-in-out infinite; }
-.animate-sparkle-purple { animation: sparkle-rotate 5s ease-in-out infinite reverse, float-gentle 3.5s ease-in-out infinite 0.5s; }
 .animate-star-twinkle { animation: star-twinkle 4s ease-in-out infinite; }
 
 @keyframes star-twinkle {
