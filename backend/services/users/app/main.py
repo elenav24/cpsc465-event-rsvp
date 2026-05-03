@@ -28,7 +28,7 @@ class UnifiedSlashMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-app = FastAPI(redirect_slashes=False, root_path="/users")
+app = FastAPI(redirect_slashes=False)
 app.add_middleware(UnifiedSlashMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -40,7 +40,7 @@ app.add_middleware(
 
 app.include_router(users.router, prefix="/users", tags=["users"])
 
-_mangum_handler = Mangum(app, api_gateway_base_path="/users")
+_mangum_handler = Mangum(app)
 
 
 def handler(event, context):
