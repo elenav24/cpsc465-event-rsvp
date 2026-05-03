@@ -29,7 +29,7 @@ class UnifiedSlashMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-app = FastAPI(redirect_slashes=False, root_path="/events")
+app = FastAPI(redirect_slashes=False)
 app.add_middleware(UnifiedSlashMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -47,7 +47,7 @@ app.include_router(announcements.router, prefix="/events", tags=["announcements"
 app.include_router(tasks.router, prefix="/events", tags=["tasks"])
 app.include_router(reminders.router, prefix="/events", tags=["reminders"])
 
-_mangum_handler = Mangum(app, api_gateway_base_path="/events")
+_mangum_handler = Mangum(app)
 
 
 def handler(event, context):
