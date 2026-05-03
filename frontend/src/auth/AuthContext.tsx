@@ -1,5 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { CognitoUser, AuthenticationDetails, CognitoUserSession } from 'amazon-cognito-identity-js'
+import {
+  CognitoUser,
+  AuthenticationDetails,
+  CognitoUserSession,
+  CognitoIdToken,
+  CognitoAccessToken,
+  CognitoRefreshToken,
+} from 'amazon-cognito-identity-js'
 import userPool from './cognitoConfig'
 import { setTokenGetter } from '../api/client'
 import { getMe } from '../api/users'
@@ -24,7 +31,13 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-async function exchangeCodeForTokens(code: string): Promise<void> {
+interface OAuthTokens {
+  id_token: string
+  access_token: string
+  refresh_token: string
+}
+
+async function exchangeCodeForTokens(code: string): Promise<OAuthTokens> {
   const redirectUri = window.location.origin
   const res = await fetch(`${DOMAIN}/oauth2/token`, {
     method: 'POST',
@@ -37,17 +50,28 @@ async function exchangeCodeForTokens(code: string): Promise<void> {
     }),
   })
   if (!res.ok) throw new Error('Token exchange failed')
-  const tokens = await res.json()
+  return res.json() as Promise<OAuthTokens>
+}
 
-  // Store tokens so Cognito SDK can pick them up
-  const key = `CognitoIdentityServiceProvider.${CLIENT_ID}`
+/**
+ * Build a CognitoUserSession directly from raw JWT strings, bypassing the
+ * SDK's at_hash validation which fails when tokens are stored manually.
+ */
+function buildSessionFromTokens(tokens: OAuthTokens): { user: CognitoUser; session: CognitoUserSession } {
   const idPayload = JSON.parse(atob(tokens.id_token.split('.')[1]))
-  const username = idPayload['cognito:username']
+  const username = idPayload['cognito:username'] as string
 
-  localStorage.setItem(`${key}.LastAuthUser`, username)
-  localStorage.setItem(`${key}.${username}.idToken`, tokens.id_token)
-  localStorage.setItem(`${key}.${username}.accessToken`, tokens.access_token)
-  localStorage.setItem(`${key}.${username}.refreshToken`, tokens.refresh_token)
+  const session = new CognitoUserSession({
+    IdToken: new CognitoIdToken({ IdToken: tokens.id_token }),
+    AccessToken: new CognitoAccessToken({ AccessToken: tokens.access_token }),
+    RefreshToken: new CognitoRefreshToken({ RefreshToken: tokens.refresh_token }),
+  })
+
+  const cognitoUser = new CognitoUser({ Username: username, Pool: userPool })
+  // Cache the session so the SDK can refresh it later
+  cognitoUser.setSignInUserSession(session)
+
+  return { user: cognitoUser, session }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -96,7 +120,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (code) {
       window.history.replaceState({}, '', window.location.pathname)
       exchangeCodeForTokens(code)
-        .then(restore)
+        .then(async (tokens) => {
+          const { user, session } = buildSessionFromTokens(tokens)
+          setTokenGetter(() => session.getIdToken().getJwtToken())
+          const profile = await fetchProfile()
+          setState({ user, session, profile, loading: false })
+        })
         .catch(() => setState({ user: null, session: null, profile: null, loading: false }))
     } else {
       restore()
