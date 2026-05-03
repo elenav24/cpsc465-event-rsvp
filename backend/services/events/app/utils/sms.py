@@ -7,7 +7,15 @@ import boto3
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
-_sns = boto3.client("sns")
+
+_sns = None
+
+
+def _get_sns():
+    global _sns
+    if _sns is None:
+        _sns = boto3.client("sns")
+    return _sns
 
 
 def send_sms(phone_number: str, message: str) -> bool:
@@ -16,7 +24,7 @@ def send_sms(phone_number: str, message: str) -> bool:
     Returns True on success, False on failure (non-fatal).
     """
     try:
-        _sns.publish(
+        _get_sns().publish(
             PhoneNumber=phone_number,
             Message=message,
             MessageAttributes={
