@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { CognitoUser, AuthenticationDetails, CognitoUserSession } from 'amazon-cognito-identity-js'
 import userPool from './cognitoConfig'
+import { setTokenGetter } from '../api/client'
+import { getMe } from '../api/users'
+import type { UserOut } from '../api/types'
 
 const DOMAIN = import.meta.env.VITE_COGNITO_DOMAIN
 const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID
@@ -8,6 +11,7 @@ const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID
 interface AuthState {
   user: CognitoUser | null
   session: CognitoUserSession | null
+  profile: UserOut | null
   loading: boolean
 }
 
@@ -15,6 +19,7 @@ interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>
   logout: () => void
   getToken: () => string | null
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -46,48 +51,88 @@ async function exchangeCodeForTokens(code: string): Promise<void> {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({ user: null, session: null, loading: true })
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    session: null,
+    profile: null,
+    loading: true,
+  })
+
+  // Keep the API client's token getter in sync
+  useEffect(() => {
+    setTokenGetter(() => state.session?.getIdToken().getJwtToken() ?? null)
+  }, [state.session])
+
+  const fetchProfile = async (): Promise<UserOut | null> => {
+    try {
+      return await getMe()
+    } catch {
+      return null
+    }
+  }
+
+  const restore = async () => {
+    const currentUser = userPool.getCurrentUser()
+    if (!currentUser) {
+      setState({ user: null, session: null, profile: null, loading: false })
+      return
+    }
+    currentUser.getSession(async (err: Error | null, session: CognitoUserSession | null) => {
+      if (err || !session?.isValid()) {
+        setState({ user: null, session: null, profile: null, loading: false })
+        return
+      }
+      // Inject token before fetching profile
+      setTokenGetter(() => session.getIdToken().getJwtToken())
+      const profile = await fetchProfile()
+      setState({ user: currentUser, session, profile, loading: false })
+    })
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const code = params.get('code')
 
-    const restore = () => {
-      const currentUser = userPool.getCurrentUser()
-      if (!currentUser) { setState({ user: null, session: null, loading: false }); return }
-      currentUser.getSession((err: Error | null, session: CognitoUserSession | null) => {
-        if (err || !session?.isValid()) setState({ user: null, session: null, loading: false })
-        else setState({ user: currentUser, session, loading: false })
-      })
-    }
-
     if (code) {
       window.history.replaceState({}, '', window.location.pathname)
-      exchangeCodeForTokens(code).then(restore).catch(() => setState({ user: null, session: null, loading: false }))
+      exchangeCodeForTokens(code)
+        .then(restore)
+        .catch(() => setState({ user: null, session: null, profile: null, loading: false }))
     } else {
       restore()
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = (email: string, password: string) =>
     new Promise<void>((resolve, reject) => {
       const cognitoUser = new CognitoUser({ Username: email, Pool: userPool })
       const authDetails = new AuthenticationDetails({ Username: email, Password: password })
       cognitoUser.authenticateUser(authDetails, {
-        onSuccess: (session) => { setState({ user: cognitoUser, session, loading: false }); resolve() },
+        onSuccess: async (session) => {
+          setTokenGetter(() => session.getIdToken().getJwtToken())
+          const profile = await fetchProfile()
+          setState({ user: cognitoUser, session, profile, loading: false })
+          resolve()
+        },
         onFailure: reject,
       })
     })
 
   const logout = () => {
     state.user?.signOut()
-    setState({ user: null, session: null, loading: false })
+    setTokenGetter(() => null)
+    setState({ user: null, session: null, profile: null, loading: false })
   }
 
   const getToken = () => state.session?.getIdToken().getJwtToken() ?? null
 
+  const refreshProfile = async () => {
+    const profile = await fetchProfile()
+    setState((s) => ({ ...s, profile }))
+  }
+
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, getToken }}>
+    <AuthContext.Provider value={{ ...state, login, logout, getToken, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )
