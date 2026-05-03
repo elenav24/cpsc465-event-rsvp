@@ -16,6 +16,6 @@ data "aws_vpc" "main" {
 # but no longer attached to any Lambda function.
 resource "aws_security_group" "lambda" {
   name        = "${var.app_name}-lambda-sg"
-  description = "Security group for Lambda function (unused — Lambda runs outside VPC)"
+  description = "Security group for Lambda function (unused - Lambda runs outside VPC)"
   vpc_id      = data.aws_vpc.main.id
 }

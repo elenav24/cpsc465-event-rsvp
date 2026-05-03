@@ -18,7 +18,7 @@ resource "aws_security_group_rule" "rds_from_internet" {
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.rds.id
-  description       = "PostgreSQL from Lambda (no VPC — internet access)"
+  description       = "PostgreSQL from Lambda (no VPC - internet access)"
 }
 
 resource "aws_db_subnet_group" "main" {
