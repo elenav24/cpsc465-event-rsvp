@@ -60,10 +60,14 @@ resource "aws_cognito_user_pool_client" "web" {
   allowed_oauth_flows_user_pool_client = true
 
   callback_urls = [
+    "https://cohosted.cloud",
+    "https://www.cohosted.cloud",
     "http://localhost:5173",
   ]
 
   logout_urls = [
+    "https://cohosted.cloud",
+    "https://www.cohosted.cloud",
     "http://localhost:5173",
   ]
 

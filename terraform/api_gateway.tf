@@ -3,7 +3,11 @@ resource "aws_apigatewayv2_api" "main" {
   protocol_type = "HTTP"
 
   cors_configuration {
-    allow_origins = ["*"]
+    allow_origins = [
+      "https://cohosted.cloud",
+      "https://www.cohosted.cloud",
+      "http://localhost:5173",
+    ]
     allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     allow_headers = ["Content-Type", "Authorization"]
     max_age       = 300
