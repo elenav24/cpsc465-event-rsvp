@@ -1,0 +1,3 @@
+boto3==1.42.69
+botocore==1.42.69
+python-ulid==3.0.0
