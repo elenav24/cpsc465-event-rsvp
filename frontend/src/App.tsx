@@ -1,28 +1,55 @@
-import { useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
-import LoginForm from './auth/LoginForm'
-import SignupForm from './auth/SignupForm'
-import './App.css'
+import Nav from './components/Nav'
+import LandingPage from './pages/LandingPage'
+import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
+import EventsPage from './pages/EventsPage'
+import CreateEventPage from './pages/CreateEventPage'
+import EventPage from './pages/EventPage'
+import './styles/global.css'
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>Loading…</div>
+  if (!user) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
 
 export default function App() {
-  const { user, loading, logout } = useAuth()
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
-
-  if (loading) return <div className="center">Loading…</div>
-
-  if (!user) return (
-    <div className="center">
-      {mode === 'login'
-        ? <LoginForm onSwitch={() => setMode('signup')} />
-        : <SignupForm onSwitch={() => setMode('login')} />}
-    </div>
-  )
-
   return (
-    <div className="center">
-      <h1>Welcome</h1>
-      <p>{user.getUsername()}</p>
-      <button onClick={logout}>Sign out</button>
-    </div>
+    <BrowserRouter>
+      <Nav />
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route
+          path="/events"
+          element={
+            <ProtectedRoute>
+              <EventsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events/new"
+          element={
+            <ProtectedRoute>
+              <CreateEventPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events/:id"
+          element={
+            <ProtectedRoute>
+              <EventPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
