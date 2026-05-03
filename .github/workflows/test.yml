@@ -1,0 +1,171 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/test.yml'
+
+jobs:
+  # ── Events service ────────────────────────────────────────────────────────
+  test-events:
+    name: Test Events Service
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_events
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: backend/services/events
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/services/events/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-cov httpx
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_events
+        run: alembic upgrade head
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_events
+          ENV: test
+          S3_BUCKET: test-bucket
+          S3_REGION: us-east-1
+          COGNITO_REGION: us-east-1
+          COGNITO_USER_POOL_ID: test-pool
+          ANNOUNCEMENTS_SNS_TOPIC_ARN: ""
+          NOTIFICATIONS_LAMBDA_ARN: ""
+          SCHEDULER_ROLE_ARN: ""
+        run: pytest tests/ -v --cov=app --cov-report=term-missing
+
+  # ── Users service ─────────────────────────────────────────────────────────
+  test-users:
+    name: Test Users Service
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_users
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: backend/services/users
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/services/users/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-cov httpx
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_users
+        run: alembic upgrade head
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_users
+          ENV: test
+          COGNITO_REGION: us-east-1
+          COGNITO_USER_POOL_ID: test-pool
+        run: pytest tests/ -v --cov=app --cov-report=term-missing
+
+  # ── Chat service ──────────────────────────────────────────────────────────
+  test-chat:
+    name: Test Chat Service
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend/services/chat
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/services/chat/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-cov
+
+      - name: Run tests
+        env:
+          MESSAGES_TABLE: test-messages
+          CONNECTIONS_TABLE: test-connections
+          WS_ENDPOINT: localhost/test
+          ENV: test
+        run: pytest tests/ -v --cov=app --cov-report=term-missing
+
+  # ── Notifications service ─────────────────────────────────────────────────
+  test-notifications:
+    name: Test Notifications Service
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend/services/notifications
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/services/notifications/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-cov
+
+      - name: Run tests
+        env:
+          ENV: test
+        run: pytest tests/ -v --cov=app --cov-report=term-missing
