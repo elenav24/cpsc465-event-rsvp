@@ -3,14 +3,24 @@ output "api_url" {
   value       = aws_apigatewayv2_stage.default.invoke_url
 }
 
-output "ecr_repository_url" {
-  description = "ECR repository URL for Docker pushes"
-  value       = aws_ecr_repository.app.repository_url
+output "ecr_events_url" {
+  description = "ECR repository URL for the events service"
+  value       = aws_ecr_repository.services["events"].repository_url
 }
 
-output "lambda_function_name" {
-  description = "Lambda function name"
-  value       = aws_lambda_function.app.function_name
+output "ecr_users_url" {
+  description = "ECR repository URL for the users service"
+  value       = aws_ecr_repository.services["users"].repository_url
+}
+
+output "lambda_events_name" {
+  description = "Events Lambda function name"
+  value       = aws_lambda_function.events.function_name
+}
+
+output "lambda_users_name" {
+  description = "Users Lambda function name"
+  value       = aws_lambda_function.users.function_name
 }
 
 output "s3_bucket_name" {
