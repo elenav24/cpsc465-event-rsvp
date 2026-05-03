@@ -1,12 +1,14 @@
 """Tests for RSVP endpoints and potluck claim auto-release."""
-import pytest
 from tests.conftest import TEST_USER_SUB, OTHER_USER_SUB
 
 
-def _create_event_and_join(client, other_client):
+def _setup(client, set_user):
+    """Host creates event, other user joins."""
+    set_user(TEST_USER_SUB)
     event = client.post("/events/events", data={"title": "RSVP Test"}).json()
     token = event["invite_token"]
-    other_client.post(f"/events/events/join/{token}")
+    set_user(OTHER_USER_SUB)
+    client.post(f"/events/events/join/{token}")
     return event["id"]
 
 
@@ -31,29 +33,33 @@ def test_invalid_rsvp_status(client):
     assert res.status_code == 422
 
 
-def test_rsvp_no_releases_potluck_claim(client, other_client):
-    event_id = _create_event_and_join(client, other_client)
+def test_rsvp_no_releases_potluck_claim(client, set_user):
+    event_id = _setup(client, set_user)
 
     # Host creates a potluck item
+    set_user(TEST_USER_SUB)
     item = client.post(f"/events/events/{event_id}/potluck", json={
         "name": "Chips", "quantity_needed": 2
     }).json()
 
     # Other user RSVPs yes and claims the item
-    other_client.put(f"/events/events/{event_id}/rsvps", json={"status": "yes"})
-    other_client.post(f"/events/events/{event_id}/potluck/{item['id']}/claim")
+    set_user(OTHER_USER_SUB)
+    client.put(f"/events/events/{event_id}/rsvps", json={"status": "yes"})
+    client.post(f"/events/events/{event_id}/potluck/{item['id']}/claim")
 
     # Verify claim exists
-    items = other_client.get(f"/events/events/{event_id}/potluck").json()
+    items = client.get(f"/events/events/{event_id}/potluck").json()
     assert items[0]["claims_count"] == 1
 
     # Other user changes RSVP to no — claim should be released
-    other_client.put(f"/events/events/{event_id}/rsvps", json={"status": "no"})
-    items = other_client.get(f"/events/events/{event_id}/potluck").json()
+    client.put(f"/events/events/{event_id}/rsvps", json={"status": "no"})
+    items = client.get(f"/events/events/{event_id}/potluck").json()
     assert items[0]["claims_count"] == 0
 
 
-def test_non_member_cannot_rsvp(other_client):
-    # other_client is not a member of any event here
-    res = other_client.put("/events/events/99999/rsvps", json={"status": "yes"})
+def test_non_member_cannot_rsvp(client, set_user):
+    set_user(TEST_USER_SUB)
+    event_id = client.post("/events/events", data={"title": "E"}).json()["id"]
+    set_user(OTHER_USER_SUB)
+    res = client.put(f"/events/events/{event_id}/rsvps", json={"status": "yes"})
     assert res.status_code == 403

@@ -1,14 +1,9 @@
 """Tests for event CRUD and invite link endpoints."""
-import pytest
+from tests.conftest import TEST_USER_SUB, OTHER_USER_SUB
 
 
 def _create_event(client, title="Test Event"):
-    return client.post("/events/events", data={
-        "title": title,
-        "description": "A test event",
-        "location": "123 Main St",
-        "viewable_by_link": "false",
-    })
+    return client.post("/events/events", data={"title": title})
 
 
 def test_create_event(client):
@@ -43,25 +38,28 @@ def test_delete_event(client):
     assert res.status_code == 204
 
 
-def test_non_member_cannot_update(client, other_client):
+def test_non_member_cannot_update(client, set_user):
     event_id = _create_event(client).json()["id"]
-    res = other_client.put(f"/events/events/{event_id}", json={"title": "Hacked"})
+    set_user(OTHER_USER_SUB)
+    res = client.put(f"/events/events/{event_id}", json={"title": "Hacked"})
     assert res.status_code == 403
 
 
-def test_join_via_invite(client, other_client):
+def test_join_via_invite(client, set_user):
     event = _create_event(client).json()
     token = event["invite_token"]
-    res = other_client.post(f"/events/events/join/{token}")
+    set_user(OTHER_USER_SUB)
+    res = client.post(f"/events/events/join/{token}")
     assert res.status_code == 201
     assert res.json()["role"] == "attendee"
 
 
-def test_revoked_invite_cannot_be_used(client, other_client):
+def test_revoked_invite_cannot_be_used(client, set_user):
     event = _create_event(client).json()
     token = event["invite_token"]
     client.post(f"/events/events/{event['id']}/invite/revoke")
-    res = other_client.post(f"/events/events/join/{token}")
+    set_user(OTHER_USER_SUB)
+    res = client.post(f"/events/events/join/{token}")
     assert res.status_code == 404
 
 
