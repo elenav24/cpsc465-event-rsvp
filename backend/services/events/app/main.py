@@ -6,7 +6,8 @@ from mangum import Mangum
 from alembic.config import Config
 from alembic import command
 from dotenv import load_dotenv
-from app.routers import events
+
+from app.routers import events, rsvps, polls, potluck, announcements, tasks, reminders
 
 load_dotenv()
 
@@ -39,6 +40,12 @@ app.add_middleware(
 )
 
 app.include_router(events.router, prefix="/events", tags=["events"])
+app.include_router(rsvps.router, prefix="/events", tags=["rsvps"])
+app.include_router(polls.router, prefix="/events", tags=["polls"])
+app.include_router(potluck.router, prefix="/events", tags=["potluck"])
+app.include_router(announcements.router, prefix="/events", tags=["announcements"])
+app.include_router(tasks.router, prefix="/events", tags=["tasks"])
+app.include_router(reminders.router, prefix="/events", tags=["reminders"])
 
 _mangum_handler = Mangum(app, api_gateway_base_path="/events")
 
