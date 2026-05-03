@@ -154,11 +154,8 @@ resource "aws_lambda_function" "chat" {
   }
 
   lifecycle {
-    ignore_changes = [image_uri, environment]
+    ignore_changes = [image_uri]
   }
-
-  # Chat Lambda does NOT need VPC — DynamoDB is a public AWS endpoint.
-  # Keeping it outside VPC avoids NAT Gateway costs and cold-start latency.
 }
 
 resource "aws_lambda_permission" "chat_ws_gateway" {

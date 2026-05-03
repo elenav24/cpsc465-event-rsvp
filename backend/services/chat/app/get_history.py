@@ -20,10 +20,19 @@ The client receives a WebSocket message back on their own connection:
 
 import json
 import logging
+from decimal import Decimal
 import boto3
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
 from app.config import MESSAGES_TABLE, WS_ENDPOINT
+
+
+class DecimalEncoder(json.JSONEncoder):
+    """Convert DynamoDB Decimal values to int or float for JSON serialization."""
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return int(obj) if obj % 1 == 0 else float(obj)
+        return super().default(obj)
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +88,7 @@ def handle(event: dict, context) -> dict:
         "type": "history",
         "messages": messages,
         "last_key": next_last_key,
-    }).encode("utf-8")
+    }, cls=DecimalEncoder).encode("utf-8")
 
     apigw = _get_apigw_client()
     try:
