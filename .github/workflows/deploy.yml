@@ -8,6 +8,12 @@ on:
       - 'frontend/**'
       - 'terraform/**'
       - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+    inputs:
+      deploy_all:
+        description: 'Deploy all services regardless of changed files'
+        type: boolean
+        default: true
 
 env:
   AWS_REGION: us-east-1
@@ -19,14 +25,15 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
-      terraform: ${{ steps.filter.outputs.terraform }}
-      events: ${{ steps.filter.outputs.events }}
-      users: ${{ steps.filter.outputs.users }}
-      chat: ${{ steps.filter.outputs.chat }}
-      notifications: ${{ steps.filter.outputs.notifications }}
-      frontend: ${{ steps.filter.outputs.frontend }}
+      terraform: ${{ steps.set.outputs.terraform }}
+      events: ${{ steps.set.outputs.events }}
+      users: ${{ steps.set.outputs.users }}
+      chat: ${{ steps.set.outputs.chat }}
+      notifications: ${{ steps.set.outputs.notifications }}
+      frontend: ${{ steps.set.outputs.frontend }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -44,6 +51,18 @@ jobs:
               - 'backend/services/notifications/**'
             frontend:
               - 'frontend/**'
+
+      # If triggered manually with deploy_all=true, force everything to true
+      - name: Resolve outputs
+        id: set
+        run: |
+          ALL="${{ github.event_name == 'workflow_dispatch' && inputs.deploy_all == true }}"
+          echo "terraform=$([ "$ALL" = "true" ] && echo true || echo ${{ steps.filter.outputs.terraform }})" >> $GITHUB_OUTPUT
+          echo "events=$([ "$ALL" = "true" ] && echo true || echo ${{ steps.filter.outputs.events }})" >> $GITHUB_OUTPUT
+          echo "users=$([ "$ALL" = "true" ] && echo true || echo ${{ steps.filter.outputs.users }})" >> $GITHUB_OUTPUT
+          echo "chat=$([ "$ALL" = "true" ] && echo true || echo ${{ steps.filter.outputs.chat }})" >> $GITHUB_OUTPUT
+          echo "notifications=$([ "$ALL" = "true" ] && echo true || echo ${{ steps.filter.outputs.notifications }})" >> $GITHUB_OUTPUT
+          echo "frontend=$([ "$ALL" = "true" ] && echo true || echo ${{ steps.filter.outputs.frontend }})" >> $GITHUB_OUTPUT
 
   # ── 1. Apply infrastructure changes ──────────────────────────────────────
   terraform:
