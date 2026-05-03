@@ -8,7 +8,7 @@ import {
   getPotluck, createPotluckItem, claimPotluckItem, unclaimPotluckItem, deletePotluckItem,
   getTasks, createTask, updateTask, deleteTask,
   getAnnouncements, createAnnouncement, deleteAnnouncement,
-  regenerateInvite, revokeInvite,
+  regenerateInvite,
 } from '../api/events'
 import { EventChatSocket } from '../api/chat'
 import type {
@@ -630,7 +630,7 @@ function AnnouncementsTab({ eventId, myId, isHost }: { eventId: number; myId: st
 }
 
 // ── Guests Tab ────────────────────────────────────────────────────────────────
-function GuestsTab({ eventId, myId, isHost, rsvps }: { eventId: number; myId: string; isHost: boolean; rsvps: RSVPOut[] }) {
+function GuestsTab({ eventId, myId, isHost: _isHost, rsvps }: { eventId: number; myId: string; isHost: boolean; rsvps: RSVPOut[] }) {
   const [members, setMembers] = useState<MemberOut[]>([])
   const [loading, setLoading] = useState(true)
 
