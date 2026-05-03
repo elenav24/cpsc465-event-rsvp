@@ -28,16 +28,31 @@ from app.config import MESSAGES_TABLE, WS_ENDPOINT
 
 
 class DecimalEncoder(json.JSONEncoder):
-    """Convert DynamoDB Decimal values to int or float for JSON serialization."""
     def default(self, obj):
         if isinstance(obj, Decimal):
             return int(obj) if obj % 1 == 0 else float(obj)
         return super().default(obj)
 
+
 logger = logging.getLogger(__name__)
 
-dynamodb = boto3.resource("dynamodb")
-messages_table = dynamodb.Table(MESSAGES_TABLE)
+_dynamodb = None
+_messages_table = None
+
+
+def _get_messages_table():
+    global _dynamodb, _messages_table
+    if _messages_table is None:
+        _dynamodb = boto3.resource("dynamodb")
+        _messages_table = _dynamodb.Table(MESSAGES_TABLE)
+    return _messages_table
+
+
+def _get_apigw_client():
+    return boto3.client(
+        "apigatewaymanagementapi",
+        endpoint_url=f"https://{WS_ENDPOINT}",
+    )
 
 
 def _get_apigw_client():
@@ -70,7 +85,7 @@ def handle(event: dict, context) -> dict:
             "message_id": last_key,
         }
 
-    response = messages_table.query(**query_kwargs)
+    response = _get_messages_table().query(**query_kwargs)
     items = response.get("Items", [])
 
     # Determine pagination cursor for the next page

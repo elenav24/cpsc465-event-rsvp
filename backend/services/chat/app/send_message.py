@@ -28,16 +28,25 @@ from app.config import MESSAGES_TABLE, CONNECTIONS_TABLE, WS_ENDPOINT
 
 logger = logging.getLogger(__name__)
 
-dynamodb = boto3.resource("dynamodb")
-messages_table = dynamodb.Table(MESSAGES_TABLE)
-connections_table = dynamodb.Table(CONNECTIONS_TABLE)
+# Lazy-initialized so tests can patch before boto3 connects
+_dynamodb = None
+_messages_table = None
+_connections_table = None
 
-# Messages expire after 90 days
+
+def _get_tables():
+    global _dynamodb, _messages_table, _connections_table
+    if _messages_table is None:
+        _dynamodb = boto3.resource("dynamodb")
+        _messages_table = _dynamodb.Table(MESSAGES_TABLE)
+        _connections_table = _dynamodb.Table(CONNECTIONS_TABLE)
+    return _messages_table, _connections_table
+
+
 MSG_TTL_SECONDS = 60 * 60 * 24 * 90
 
 
 def _get_apigw_client():
-    """Build the API Gateway Management API client pointing at our WS stage."""
     return boto3.client(
         "apigatewaymanagementapi",
         endpoint_url=f"https://{WS_ENDPOINT}",
@@ -55,9 +64,10 @@ def handle(event: dict, context) -> dict:
     if not event_id or not sender_id or not content:
         return {"statusCode": 400, "body": "Missing event_id, sender_id, or content"}
 
-    # Generate a time-sortable unique ID for the message
+    messages_table, connections_table = _get_tables()
+
     message_id = str(ULID())
-    timestamp = int(time.time() * 1000)  # ms epoch
+    timestamp = int(time.time() * 1000)
 
     message_item = {
         "event_id": event_id,
@@ -71,7 +81,6 @@ def handle(event: dict, context) -> dict:
 
     messages_table.put_item(Item=message_item)
 
-    # Build the payload to broadcast (exclude TTL field)
     broadcast_payload = json.dumps({
         "type": "message",
         "message_id": message_id,
@@ -82,7 +91,6 @@ def handle(event: dict, context) -> dict:
         "timestamp": timestamp,
     }).encode("utf-8")
 
-    # Fan out to all connections for this event
     apigw = _get_apigw_client()
     connections_response = connections_table.query(
         KeyConditionExpression=Key("event_id").eq(event_id)
@@ -96,12 +104,10 @@ def handle(event: dict, context) -> dict:
         except ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code in ("GoneException", "410"):
-                # Connection is no longer active — clean it up
                 stale_connections.append(conn)
             else:
                 logger.warning("Failed to send to %s: %s", cid, e)
 
-    # Clean up stale connections
     for conn in stale_connections:
         connections_table.delete_item(
             Key={"event_id": conn["event_id"], "connection_id": conn["connection_id"]}

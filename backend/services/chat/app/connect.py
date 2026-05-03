@@ -12,10 +12,19 @@ import time
 import boto3
 from app.config import CONNECTIONS_TABLE
 
-dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table(CONNECTIONS_TABLE)
+# Lazy-initialized so tests can patch before boto3 connects
+_dynamodb = None
+_table = None
 
-# Connections expire after 24 hours (handles ungraceful disconnects)
+
+def _get_table():
+    global _dynamodb, _table
+    if _table is None:
+        _dynamodb = boto3.resource("dynamodb")
+        _table = _dynamodb.Table(CONNECTIONS_TABLE)
+    return _table
+
+
 TTL_SECONDS = 60 * 60 * 24
 
 
@@ -25,10 +34,9 @@ def handle(event: dict, context) -> dict:
     event_id: str = query_params.get("event_id", "")
 
     if not event_id:
-        # Reject the connection — clients must supply event_id
         return {"statusCode": 400, "body": "Missing event_id query parameter"}
 
-    table.put_item(
+    _get_table().put_item(
         Item={
             "event_id": str(event_id),
             "connection_id": connection_id,

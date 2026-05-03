@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 def test_reminder_invocation():
     """EventBridge Scheduler sends a direct payload with phone_number."""
     from app.main import handler
-    with patch("app.main._sns") as mock_sns:
-        mock_sns.publish = MagicMock()
+    mock_sns = MagicMock()
+    with patch("app.main._get_sns", return_value=mock_sns):
         event = {
             "phone_number": "+15551234567",
             "message": "Reminder: your event starts in 1 hour!",
@@ -22,8 +22,8 @@ def test_reminder_invocation():
 def test_reminder_missing_phone_is_noop():
     """Malformed reminder payload should not crash."""
     from app.main import handler
-    with patch("app.main._sns") as mock_sns:
-        mock_sns.publish = MagicMock()
+    mock_sns = MagicMock()
+    with patch("app.main._get_sns", return_value=mock_sns):
         res = handler({"message": "no phone"}, None)
         assert res["statusCode"] == 200
         mock_sns.publish.assert_not_called()

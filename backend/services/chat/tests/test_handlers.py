@@ -28,8 +28,8 @@ def test_connect_missing_event_id():
 
 def test_connect_success():
     from app.connect import handle
-    with patch("app.connect.table") as mock_table:
-        mock_table.put_item = MagicMock()
+    mock_table = MagicMock()
+    with patch("app.connect._get_table", return_value=mock_table):
         event = _ws_event("$connect", query_params={"event_id": "42"})
         res = handle(event, None)
         assert res["statusCode"] == 200
@@ -40,11 +40,11 @@ def test_connect_success():
 
 def test_disconnect_cleans_up():
     from app.disconnect import handle
-    with patch("app.disconnect.table") as mock_table:
-        mock_table.query.return_value = {
-            "Items": [{"event_id": "42", "connection_id": "conn-123"}]
-        }
-        mock_table.delete_item = MagicMock()
+    mock_table = MagicMock()
+    mock_table.query.return_value = {
+        "Items": [{"event_id": "42", "connection_id": "conn-123"}]
+    }
+    with patch("app.disconnect._get_table", return_value=mock_table):
         event = _ws_event("$disconnect")
         res = handle(event, None)
         assert res["statusCode"] == 200
@@ -62,16 +62,15 @@ def test_send_message_missing_fields():
 
 def test_send_message_success():
     from app.send_message import handle
-    with patch("app.send_message.messages_table") as mock_msg, \
-         patch("app.send_message.connections_table") as mock_conn, \
-         patch("app.send_message._get_apigw_client") as mock_apigw:
+    mock_messages = MagicMock()
+    mock_connections = MagicMock()
+    mock_connections.query.return_value = {
+        "Items": [{"event_id": "1", "connection_id": "conn-abc"}]
+    }
+    mock_apigw = MagicMock()
 
-        mock_msg.put_item = MagicMock()
-        mock_conn.query.return_value = {
-            "Items": [{"event_id": "1", "connection_id": "conn-abc"}]
-        }
-        mock_client = MagicMock()
-        mock_apigw.return_value = mock_client
+    with patch("app.send_message._get_tables", return_value=(mock_messages, mock_connections)), \
+         patch("app.send_message._get_apigw_client", return_value=mock_apigw):
 
         event = _ws_event("sendMessage", body={
             "action": "sendMessage",
@@ -82,5 +81,5 @@ def test_send_message_success():
         })
         res = handle(event, None)
         assert res["statusCode"] == 200
-        mock_msg.put_item.assert_called_once()
-        mock_client.post_to_connection.assert_called_once()
+        mock_messages.put_item.assert_called_once()
+        mock_apigw.post_to_connection.assert_called_once()
