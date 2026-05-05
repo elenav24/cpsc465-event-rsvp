@@ -55,7 +55,7 @@ function JoinPage() {
     }
     if (!token) { navigate('/events', { replace: true }); return }
     joinViaInvite(token)
-      .then((member) => navigate(`/events/${member.event_id}`, { replace: true }))
+      .then((result) => navigate(`/events/${result.event_uuid}`, { replace: true }))
       .catch(() => navigate('/events', { replace: true }))
   }, [token, user, loading, navigate])
 
@@ -77,7 +77,7 @@ function PendingInviteResolver() {
     if (!token) return
     sessionStorage.removeItem('pendingInviteToken')
     joinViaInvite(token)
-      .then((member) => navigate(`/events/${member.event_id}`, { replace: true }))
+      .then((result) => navigate(`/events/${result.event_uuid}`, { replace: true }))
       .catch(() => { })
   }, [user, navigate])
 
