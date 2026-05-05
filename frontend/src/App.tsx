@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useAuth } from './auth/AuthContext'
 import Nav from './components/Nav'
@@ -87,6 +87,13 @@ function PendingInviteResolver() {
   return null
 }
 
+function AppFooter() {
+  const { pathname } = useLocation()
+  // Event detail page gets a compact footer; it sits inside the fixed-height layout
+  const compact = /^\/events\/[^/]+$/.test(pathname)
+  return <Footer compact={compact} />
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -133,7 +140,7 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <Footer />
+        <AppFooter />
       </OAuthGate>
     </BrowserRouter>
   )

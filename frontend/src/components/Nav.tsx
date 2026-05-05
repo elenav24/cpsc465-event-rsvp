@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import LogoIcon from './LogoIcon'
 
 export default function Nav() {
     const { user, profile, logout } = useAuth()
     const navigate = useNavigate()
+    const { pathname } = useLocation()
     const loggedIn = !!user
     const [menuOpen, setMenuOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
+
+    // On the event detail page the body doesn't scroll, so window.scrollY never
+    // changes. Treat it as always-scrolled so the nav stays solid.
+    const isEventPage = /^\/events\/[^/]+$/.test(pathname)
+    const isScrolled = isEventPage || scrolled
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 40)
@@ -25,7 +31,7 @@ export default function Nav() {
     const displayName = profile?.display_name ?? profile?.email?.split('@')[0] ?? 'Account'
 
     return (
-        <nav className="nav">
+        <nav className="nav" style={isScrolled ? { background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border)' } : undefined}>
             {/* Logo — left */}
             <Link to={loggedIn ? '/events' : '/'} className="nav-logo">
                 <LogoIcon size={40} />
@@ -34,8 +40,8 @@ export default function Nav() {
 
             {/* Center links — desktop only, fade out on scroll */}
             <div className="nav-center" style={{
-                opacity: scrolled ? 0 : 1,
-                pointerEvents: scrolled ? 'none' : 'auto',
+                opacity: isScrolled ? 0 : 1,
+                pointerEvents: isScrolled ? 'none' : 'auto',
                 transition: 'opacity 0.3s ease',
             }}>
 
