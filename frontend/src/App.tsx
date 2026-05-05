@@ -15,14 +15,9 @@ import Footer from './components/Footer.tsx'
 
 // Block all rendering until auth state is resolved — covers OAuth callbacks,
 // returning users with an existing session token, and fresh page loads.
-// Also stays blank while a ?code= OAuth exchange is in flight (loading=true).
-const hasOAuthCode = new URLSearchParams(window.location.search).has('code')
-
 function OAuthGate({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth()
-  // Always block on loading — this covers session restore AND OAuth exchange.
-  // hasOAuthCode ensures we never flash content while the code is being exchanged.
-  if (loading || hasOAuthCode) return null
+  if (loading) return null
   return <>{children}</>
 }
 
