@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import {
@@ -37,7 +37,7 @@ function copyToClipboard(text: string) {
 }
 
 // ── Chat Tab ──────────────────────────────────────────────────────────────────
-function ChatTab({ eventId, myId, myName, token }: { eventId: string; myId: string; myName: string; token: string }) {
+function ChatTab({ eventId, myId, myName, token, onMessagesChange }: { eventId: string; myId: string; myName: string; token: string; onMessagesChange?: (msgs: WsMessage[]) => void }) {
   const [messages, setMessages] = useState<WsMessage[]>([])
   const [input, setInput] = useState('')
   const [connected, setConnected] = useState(false)
@@ -51,8 +51,15 @@ function ChatTab({ eventId, myId, myName, token }: { eventId: string; myId: stri
       token,
       senderId: myId,
       senderName: myName,
-      onMessage: (msg) => setMessages(prev => [...prev, msg]),
-      onHistory: (msgs) => setMessages(msgs),
+      onMessage: (msg) => setMessages(prev => {
+        const next = [...prev, msg]
+        onMessagesChange?.(next)
+        return next
+      }),
+      onHistory: (msgs) => {
+        setMessages(msgs)
+        onMessagesChange?.(msgs)
+      },
       onConnect: () => setConnected(true),
       onDisconnect: () => setConnected(false),
     })
@@ -698,9 +705,33 @@ function AnnouncementsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId
   )
 }
 
+// ── Markdown renderer ─────────────────────────────────────────────────────────
+function MarkdownContent({ content }: { content: string }) {
+  const html = useMemo(() => {
+    const { marked } = require('marked') as typeof import('marked')
+    marked.setOptions({ breaks: true })
+    return marked.parse(content) as string
+  }, [content])
+  return (
+    <div
+      className="ai-markdown"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  )
+}
+
 // ── AI Assistant Tab ──────────────────────────────────────────────────────────
-function AiTab({ eventUuid }: { eventUuid: string }) {
-  const [messages, setMessages] = useState<AiMessage[]>([])
+function AiTab({
+  eventUuid,
+  messages,
+  setMessages,
+  chatMessages,
+}: {
+  eventUuid: string
+  messages: AiMessage[]
+  setMessages: React.Dispatch<React.SetStateAction<AiMessage[]>>
+  chatMessages: WsMessage[]
+}) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -715,14 +746,25 @@ function AiTab({ eventUuid }: { eventUuid: string }) {
     if (!text || loading) return
     setInput('')
     setError(null)
-    const next: AiMessage[] = [...messages, { role: 'user', content: text }]
-    setMessages(next)
+
+    // Prepend recent chat messages as context in the first user message
+    // so the AI has live chat data without it appearing in the conversation UI
+    const contextPrefix = chatMessages.length > 0
+      ? `[Recent event chat for context — ${chatMessages.length} messages from ${[...new Set(chatMessages.map(m => m.sender_name))].join(', ')}]\n\n`
+      : ''
+    const fullContent = contextPrefix ? `${contextPrefix}${text}` : text
+
+    const next: AiMessage[] = [...messages, { role: 'user', content: fullContent }]
+    // Show the user's message without the injected context prefix
+    setMessages([...messages, { role: 'user', content: text }])
     setLoading(true)
     try {
       const { reply } = await askAi(eventUuid, next)
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
+      // Remove the optimistic user message on error
+      setMessages(prev => prev.slice(0, -1))
     } finally {
       setLoading(false)
     }
@@ -743,9 +785,12 @@ function AiTab({ eventUuid }: { eventUuid: string }) {
             <div className="chat-bubble-avatar">
               {msg.role === 'user' ? 'You' : '✨'}
             </div>
-            <div className="chat-bubble" style={msg.role === 'assistant' ? { background: 'var(--purple-pale)', color: 'var(--text-dark)', whiteSpace: 'pre-wrap' } : undefined}>
+            <div className="chat-bubble" style={msg.role === 'assistant' ? { background: 'var(--purple-pale)', color: 'var(--text-dark)' } : undefined}>
               <div className="chat-bubble-name">{msg.role === 'user' ? 'You' : 'AI Assistant'}</div>
-              <div className="chat-bubble-text" style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+              {msg.role === 'assistant'
+                ? <MarkdownContent content={msg.content} />
+                : <div className="chat-bubble-text">{msg.content}</div>
+              }
             </div>
           </div>
         ))}
@@ -1104,6 +1149,8 @@ export default function EventPage() {
   const [guestCount, setGuestCount] = useState(0)
   const [flyerOpen, setFlyerOpen] = useState(false)
   const [inviteLinkVisible, setInviteLinkVisible] = useState(false)
+  const [aiMessages, setAiMessages] = useState<AiMessage[]>([])
+  const [liveChatMessages, setLiveChatMessages] = useState<WsMessage[]>([])
 
   const eventUuid = id ?? ''
   const myId = profile?.cognito_sub ?? ''
@@ -1265,10 +1312,10 @@ export default function EventPage() {
         {/* Tab content */}
         <div className="main-tab-content">
           {activeTab === 'chat' && (
-            <ChatTab eventId={eventUuid} myId={myId} myName={myName} token={token} />
+            <ChatTab eventId={eventUuid} myId={myId} myName={myName} token={token} onMessagesChange={setLiveChatMessages} />
           )}
           {activeTab === 'ai' && (
-            <AiTab eventUuid={eventUuid} />
+            <AiTab eventUuid={eventUuid} messages={aiMessages} setMessages={setAiMessages} chatMessages={liveChatMessages} />
           )}
           {activeTab === 'polls' && (
             <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -1621,6 +1668,23 @@ export default function EventPage() {
         .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
         @keyframes ai-bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-4px); opacity: 1; } }
         .ai-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--pink); animation: ai-bounce 1.2s ease-in-out infinite; }
+        .ai-markdown { font-size: 0.85rem; line-height: 1.6; color: var(--text-dark); }
+        .ai-markdown p { margin: 0 0 0.5em; }
+        .ai-markdown p:last-child { margin-bottom: 0; }
+        .ai-markdown ul, .ai-markdown ol { margin: 0.25em 0 0.5em 1.25em; padding: 0; }
+        .ai-markdown li { margin-bottom: 0.2em; }
+        .ai-markdown strong { font-weight: 700; }
+        .ai-markdown em { font-style: italic; }
+        .ai-markdown code { background: rgba(0,0,0,0.08); border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 0.82em; }
+        .ai-markdown pre { background: rgba(0,0,0,0.08); border-radius: 6px; padding: 0.75em 1em; overflow-x: auto; margin: 0.5em 0; }
+        .ai-markdown pre code { background: none; padding: 0; }
+        .ai-markdown h1, .ai-markdown h2, .ai-markdown h3 { font-family: 'Albert Sans', sans-serif; font-weight: 700; margin: 0.5em 0 0.25em; color: var(--text-dark); }
+        .ai-markdown h1 { font-size: 1rem; }
+        .ai-markdown h2 { font-size: 0.95rem; }
+        .ai-markdown h3 { font-size: 0.9rem; }
+        .ai-markdown blockquote { border-left: 3px solid var(--pink-pale); margin: 0.5em 0; padding-left: 0.75em; color: var(--text-muted); }
+        .ai-markdown a { color: var(--pink); text-decoration: underline; }
+        .ai-markdown hr { border: none; border-top: 1px solid var(--border); margin: 0.5em 0; }
 
         @media (max-width: 900px) {
           .event-page { flex-direction: column; height: auto; overflow: visible; margin-top: var(--nav-height); }
