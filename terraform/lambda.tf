@@ -46,6 +46,18 @@ data "aws_iam_policy_document" "lambda_permissions" {
     actions   = ["execute-api:ManageConnections"]
     resources = ["${aws_apigatewayv2_api.chat_ws.execution_arn}/*"]
   }
+
+  # Allow notifications Lambda to send SMS via SNS direct publish
+  statement {
+    actions   = ["sns:Publish"]
+    resources = ["*"]
+  }
+
+  # Allow notifications Lambda to send email via SES
+  statement {
+    actions   = ["ses:SendEmail", "ses:SendRawEmail"]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "lambda_permissions" {
