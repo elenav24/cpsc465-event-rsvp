@@ -99,14 +99,14 @@ def _send_announcement_sms(event, announcement: Announcement, db: Session):
         return
 
     sns = boto3.client("sns")
-    message = f"[{event.title}] {announcement.body}"
     try:
         sns.publish(
             TopicArn=topic_arn,
             Message=json.dumps({
                 "event_id": event.id,
                 "announcement_id": announcement.id,
-                "message": message,
+                "message": announcement.body,
+                "author_id": announcement.author_id,
             }),
             Subject="cohosted announcement",
         )
