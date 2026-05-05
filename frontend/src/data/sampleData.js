@@ -1,3 +1,10 @@
+export const sampleMessages = [
+  { id: 1, user: "Sarah J.", text: "So excited for this!! 🎉", mine: false, initials: "SJ" },
+  { id: 2, user: "Mike T.", text: "I'll bring the potato salad!", mine: false, initials: "MT" },
+  { id: 3, user: "You", text: "Can't wait to see everyone 🔥", mine: true, initials: "ME" },
+  { id: 4, user: "Jess D.", text: "What time should we actually arrive?", mine: false, initials: "JD" },
+];
+
 export const sampleEvents = [
   {
     id: 1,
@@ -20,11 +27,4 @@ export const sampleEvents = [
     attendees: ["SJ", "MT", "JD"],
     count: 8,
   },
-];
-
-export const sampleMessages = [
-  { id: 1, user: "Sarah J.", text: "So excited for this!! 🎉", mine: false, initials: "SJ" },
-  { id: 2, user: "Mike T.", text: "I'll bring the potato salad!", mine: false, initials: "MT" },
-  { id: 3, user: "You", text: "Can't wait to see everyone 🔥", mine: true, initials: "ME" },
-  { id: 4, user: "Jess D.", text: "What time should we actually arrive?", mine: false, initials: "JD" },
 ];
