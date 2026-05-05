@@ -84,9 +84,10 @@ function PendingInviteResolver() {
 
 function AppFooter() {
   const { pathname } = useLocation()
-  // Event detail page gets a compact footer; it sits inside the fixed-height layout
-  const compact = /^\/events\/[^/]+$/.test(pathname)
-  return <Footer compact={compact} />
+  // Hide footer entirely on the event detail page — it uses a fixed-height layout
+  // and the footer would push it out of the viewport and break internal scrolling.
+  if (/^\/events\/[^/]+$/.test(pathname)) return null
+  return <Footer />
 }
 
 export default function App() {

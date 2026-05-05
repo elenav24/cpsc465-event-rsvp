@@ -1419,7 +1419,7 @@ export default function EventPage() {
       </div>
 
       <style>{`
-        .event-page { display: flex; width: 100%; overflow: hidden; height: calc(100svh - var(--nav-height)); margin-top: var(--nav-height); }
+        .event-page { display: flex; flex-direction: row-reverse; width: 100%; overflow: hidden; height: calc(100svh - var(--nav-height)); margin-top: var(--nav-height); }
 
         /* ── Main (left) ── */
         .event-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; height: 100%; }
@@ -1442,7 +1442,7 @@ export default function EventPage() {
         .main-tab-content > div { flex: 1; overflow-y: auto; min-height: 0; }
 
         /* ── Sidebar (right) ── */
-        .event-sidebar { width: 300px; flex-shrink: 0; background: white; border-left: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .event-sidebar { width: 40%; flex-shrink: 0; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
         .sidebar-hero { width: 100%; height: 150px; background: linear-gradient(135deg, var(--purple-pale) 0%, var(--pink-pale) 100%); flex-shrink: 0; overflow: hidden; position: relative; }
         .sidebar-hero img { width: 100%; height: 100%; object-fit: cover; }
         .sidebar-hero-clickable { cursor: zoom-in; }
@@ -1527,7 +1527,7 @@ export default function EventPage() {
 
         @media (max-width: 900px) {
           .event-page { flex-direction: column; height: auto; overflow: visible; margin-top: var(--nav-height); }
-          .event-sidebar { width: 100%; height: auto; flex-shrink: 0; border-left: none; border-bottom: 1px solid var(--border); }
+          .event-sidebar { width: 100%; height: auto; flex-shrink: 0; border-right: none; border-bottom: 1px solid var(--border); }
           .sidebar-scroll { max-height: 60vh; }
           .event-main { height: calc(100svh - var(--nav-height)); flex-shrink: 0; }
         }
