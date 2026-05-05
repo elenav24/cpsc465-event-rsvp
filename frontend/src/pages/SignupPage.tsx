@@ -171,7 +171,7 @@ export default function SignupPage() {
 
       <style>{`
         .auth-page {
-          min-height: 100vh;
+          flex: 1;
           display: flex;
           flex-direction: column;
           padding-top: var(--nav-height);

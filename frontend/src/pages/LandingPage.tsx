@@ -38,7 +38,7 @@ function StarPink() {
 export default function LandingPage() {
     return (
         <div
-            className="relative w-full min-h-screen flex flex-col overflow-hidden"
+            className="relative w-full flex-1 flex flex-col overflow-hidden"
             style={{ background: 'linear-gradient(134.032deg, #FFECE0 6.214%, #FFFFFF 49.723%, #EFECFF 93.233%)' }}
         >
             {/* ── Background blobs ── */}

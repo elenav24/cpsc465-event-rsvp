@@ -121,7 +121,7 @@ export default function EventsPage() {
       <style>{`
         .page {
           padding: calc(var(--nav-height) + 2.5rem) 3rem 3rem;
-          min-height: 100vh;
+          flex: 1;
           width: 100%;
         }
         .page-header {

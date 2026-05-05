@@ -983,7 +983,7 @@ export default function EventPage() {
       </div>
 
       <style>{`
-        .event-page { display: flex; min-height: 100vh; padding-top: var(--nav-height); width: 100%; }
+        .event-page { display: flex; flex: 1; padding-top: var(--nav-height); width: 100%; }
         .event-main { flex: 1; overflow-y: auto; }
         .event-hero { width: 100%; height: 280px; background: linear-gradient(135deg, var(--purple-pale) 0%, var(--pink-pale) 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
         .event-hero-badge { position: absolute; top: 20px; left: 24px; background: white; border-radius: 100px; padding: 5px 14px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-sm); font-weight: 500; }

@@ -11,6 +11,7 @@ import EventPage from './pages/EventPage'
 import ProfilePage from './pages/ProfilePage'
 import { joinViaInvite } from './api/events'
 import HowItWorks from './pages/HowItWorks'
+import Footer from './components/Footer.tsx'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -67,6 +68,7 @@ function PendingInviteResolver() {
 export default function App() {
   return (
     <BrowserRouter>
+<<<<<<< Updated upstream
       <Nav />
       <PendingInviteResolver />
       <Routes>
@@ -109,6 +111,53 @@ export default function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+=======
+      <OAuthGate>
+        <Nav />
+        <PendingInviteResolver />
+        <Routes>
+          <Route path="/" element={<PublicOnlyRoute><LandingPage /></PublicOnlyRoute>} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/join/:token" element={<JoinPage />} />
+          <Route
+            path="/events"
+            element={
+              <ProtectedRoute>
+                <EventsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/new"
+            element={
+              <ProtectedRoute>
+                <CreateEventPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/:id"
+            element={
+              <ProtectedRoute>
+                <EventPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        <Footer/>
+      </OAuthGate>
+>>>>>>> Stashed changes
     </BrowserRouter>
   )
 }

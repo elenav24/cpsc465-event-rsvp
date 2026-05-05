@@ -1,3 +1,7 @@
+<<<<<<< Updated upstream
+=======
+import { useState, useEffect } from 'react'
+>>>>>>> Stashed changes
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import LogoIcon from './LogoIcon'
@@ -6,6 +10,17 @@ export default function Nav() {
     const { user, profile, logout } = useAuth()
     const navigate = useNavigate()
     const loggedIn = !!user
+<<<<<<< Updated upstream
+=======
+    const [menuOpen, setMenuOpen] = useState(false)
+    const [scrolled, setScrolled] = useState(false)
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 40)
+        window.addEventListener('scroll', onScroll, { passive: true })
+        return () => window.removeEventListener('scroll', onScroll)
+    }, [])
+>>>>>>> Stashed changes
 
     const handleLogout = () => {
         logout()
@@ -22,8 +37,17 @@ export default function Nav() {
                 <span className="nav-logo-text">cohosted</span>
             </Link>
 
+<<<<<<< Updated upstream
             {/* Center links — absolutely centered in the nav */}
             <div className="nav-center">
+=======
+            {/* Center links — desktop only, fade out on scroll */}
+            <div className="nav-center" style={{
+                opacity: scrolled ? 0 : 1,
+                pointerEvents: scrolled ? 'none' : 'auto',
+                transition: 'opacity 0.3s ease',
+            }}>
+>>>>>>> Stashed changes
                 <Link to="/how-it-works" className="nav-link">How It Works</Link>
                 <a className="nav-link">Browse Templates</a>
             </div>
