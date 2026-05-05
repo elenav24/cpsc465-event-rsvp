@@ -48,8 +48,9 @@ export function revokeInvite(eventUuid: string): Promise<EventOut> {
   return apiFetch('events', `/${eventUuid}/invite/revoke`, { method: 'POST' })
 }
 
-export function joinViaInvite(token: string): Promise<JoinResult> {
-  return apiFetch('events', `/join/${token}`, { method: 'POST' })
+export function joinViaInvite(token: string, displayName?: string): Promise<JoinResult> {
+  const params = displayName ? `?display_name=${encodeURIComponent(displayName)}` : ''
+  return apiFetch('events', `/join/${token}${params}`, { method: 'POST' })
 }
 
 // ── Members ───────────────────────────────────────────────────────────────────

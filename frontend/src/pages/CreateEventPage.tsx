@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createEvent } from '../api/events'
+import { useAuth } from '../auth/AuthContext'
 
 export default function CreateEventPage() {
   const navigate = useNavigate()
+  const { profile } = useAuth()
 
   // Form state
   const [title, setTitle] = useState('')
@@ -61,6 +63,10 @@ export default function CreateEventPage() {
       if (flyerFile) {
         formData.append('flyer', flyerFile)
       }
+
+      // Pass display name so the host member record shows a real name
+      const displayName = profile?.display_name ?? profile?.email
+      if (displayName) formData.append('display_name', displayName)
 
       const event = await createEvent(formData)
       navigate(`/events/${event.uuid}`)

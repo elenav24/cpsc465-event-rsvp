@@ -89,6 +89,7 @@ def create_event(
     recurrence_rule: Optional[str] = Form(None),
     recurrence_end_dt: Optional[str] = Form(None),
     viewable_by_link: bool = Form(False),
+    display_name: Optional[str] = Form(None),
     flyer: Optional[UploadFile] = File(None),
 ):
     from datetime import datetime
@@ -122,7 +123,7 @@ def create_event(
     db.flush()  # get event.id before adding member
 
     # Add creator as host member
-    db.add(EventMember(event_id=event.id, user_id=user_id, role="host"))
+    db.add(EventMember(event_id=event.id, user_id=user_id, role="host", display_name=display_name))
     db.commit()
     db.refresh(event)
     return event
@@ -200,6 +201,7 @@ def join_via_invite(
     invite_token: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
+    display_name: Optional[str] = None,
 ):
     """
     Called after login when the user has an invite token.
@@ -217,6 +219,11 @@ def join_via_invite(
 
     existing = _get_member(event.id, user_id, db)
     if existing:
+        # Update display_name if it was missing before
+        if display_name and not existing.display_name:
+            existing.display_name = display_name
+            db.commit()
+            db.refresh(existing)
         return JoinResult(
             id=existing.id,
             event_id=existing.event_id,
@@ -226,7 +233,7 @@ def join_via_invite(
             joined_at=existing.joined_at,
         )
 
-    member = EventMember(event_id=event.id, user_id=user_id, role="attendee")
+    member = EventMember(event_id=event.id, user_id=user_id, role="attendee", display_name=display_name)
     db.add(member)
 
     # Clean up any pending invite records for this token

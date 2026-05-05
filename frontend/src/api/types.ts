@@ -30,6 +30,7 @@ export interface MemberOut {
   event_id: number
   user_id: string
   role: 'host' | 'co_host' | 'attendee'
+  display_name: string | null
   joined_at: string
 }
 

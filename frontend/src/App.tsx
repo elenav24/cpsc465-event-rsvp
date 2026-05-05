@@ -43,7 +43,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 /** Handles /join/:token — joins the event then redirects to it */
 function JoinPage() {
   const { token } = useParams<{ token: string }>()
-  const { user, loading } = useAuth()
+  const { user, loading, profile } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -55,10 +55,11 @@ function JoinPage() {
       return
     }
     if (!token) { navigate('/events', { replace: true }); return }
-    joinViaInvite(token)
+    const displayName = profile?.display_name ?? profile?.email ?? undefined
+    joinViaInvite(token, displayName)
       .then((result) => navigate(`/events/${result.event_uuid}`, { replace: true }))
       .catch(() => navigate('/events', { replace: true }))
-  }, [token, user, loading, navigate])
+  }, [token, user, loading, navigate, profile])
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: 'var(--text-muted)' }}>
@@ -69,7 +70,7 @@ function JoinPage() {
 
 /** After login, resolve any pending invite token stored in sessionStorage */
 function PendingInviteResolver() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -77,10 +78,11 @@ function PendingInviteResolver() {
     const token = sessionStorage.getItem('pendingInviteToken')
     if (!token) return
     sessionStorage.removeItem('pendingInviteToken')
-    joinViaInvite(token)
+    const displayName = profile?.display_name ?? profile?.email ?? undefined
+    joinViaInvite(token, displayName)
       .then((result) => navigate(`/events/${result.event_uuid}`, { replace: true }))
       .catch(() => { })
-  }, [user, navigate])
+  }, [user, navigate, profile])
 
   return null
 }

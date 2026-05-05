@@ -51,6 +51,7 @@ class MemberOut(BaseModel):
     event_id: int
     user_id: str
     role: str
+    display_name: Optional[str] = None
     joined_at: datetime
 
     model_config = {"from_attributes": True}

@@ -23,6 +23,8 @@ class EventMember(Base):
     event_id: Mapped[int] = mapped_column(Integer, ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[str] = mapped_column(String, nullable=False, index=True)  # cognito_sub
     role: Mapped[str] = mapped_column(String, nullable=False, default="attendee")  # host | co_host | attendee
+    # Denormalized from users service so the guest list can show real names
+    display_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     # Denormalized from users service for SMS delivery
     phone_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     sms_opted_in: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
