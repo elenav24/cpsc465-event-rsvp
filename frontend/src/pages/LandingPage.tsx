@@ -61,7 +61,7 @@ export default function LandingPage() {
 
             {/* ── Filled pink spinning star ── */}
             <div
-                className="absolute pointer-events-none animate-star-twinkle left-[180px] top-[140px] opacity-[0.34]"
+                className="absolute pointer-events-none animate-star-twinkle left-[180px] top-[130px] opacity-[0.34]"
                 style={{ transform: 'rotate(-150.86deg) scaleY(-1)' }}
             >
                 <StarPink />
@@ -86,9 +86,27 @@ export default function LandingPage() {
             <div className="absolute pointer-events-none left-[52%] top-[22%]">
                 <TwinkleStar size={14} color="#EAD4FF" delay="2.2s" duration="2.2s" />
             </div>
+            <div className="absolute pointer-events-none left-[35%] top-[72%]">
+                <TwinkleStar size={18} color="#FCCEE8" delay="0.9s" duration="2.7s" />
+            </div>
+            <div className="absolute pointer-events-none left-[71%] top-[38%]">
+                <TwinkleStar size={12} color="#EAD4FF" delay="1.6s" duration="2.3s" />
+            </div>
+            <div className="absolute pointer-events-none left-[44%] top-[85%]">
+                <TwinkleStar size={24} color="#EAD4FF" delay="3.0s" duration="3.2s" />
+            </div>
+            <div className="absolute pointer-events-none left-[92%] top-[28%]">
+                <TwinkleStar size={14} color="#FCCEE8" delay="0.3s" duration="2.5s" />
+            </div>
+            <div className="absolute pointer-events-none left-[22%] top-[45%]">
+                <TwinkleStar size={10} color="#FCCEE8" delay="2.6s" duration="2.0s" />
+            </div>
+            <div className="absolute pointer-events-none left-[57%] top-[78%]">
+                <TwinkleStar size={28} color="#EAD4FF" delay="1.1s" duration="3.5s" />
+            </div>
 
             {/* ── Hero content ── */}
-            <div className="relative z-10 flex-1 flex flex-col md:flex-row items-center -top-20 w-full pl-10 md:pl-16 lg:pl-24 xl:pl-40 pr-10">
+            <div className="relative z-10 flex-1 flex flex-col md:flex-row items-center justify-between -top-20 w-full pl-10 md:px-16 lg:px-24 xl:px-40">
 
                 {/* ── Left half: text ── */}
                 <div className="flex flex-col justify-center items-center md:items-start gap-8 w-full md:w-1/2 text-center md:text-left">
@@ -134,7 +152,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* ── Right half: photo card centered ── */}
-                <div className=" flex items-center justify-center py-8 md:py-0">
+                <div className="w-full md:w-1/2 flex items-center justify-center py-8 md:py-0">
 
                     {/* Mobile: no tilt */}
                     <div className="relative md:hidden" style={{ width: 'min(260px, 70vw)', aspectRatio: '4 / 5' }}>
@@ -149,9 +167,9 @@ export default function LandingPage() {
 
                     {/* Desktop: tilted with hover */}
                     <div
-                        className="relative hidden md:block cursor-default"
+                        className="relative hidden md:block cursor-default top-4"
                         style={{
-                            width: 'clamp(200px, 20vw, 300px)',
+                            width: 'clamp(230px, 23vw, 340px)',
                             aspectRatio: '4 / 5',
                             transform: 'rotate(2.5deg)',
                             transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
