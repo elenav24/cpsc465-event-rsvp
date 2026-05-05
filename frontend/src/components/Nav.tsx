@@ -121,13 +121,13 @@ export default function Nav() {
                     <>
                         <Link
                             to="/login"
-                            className="inline-flex items-center justify-center bg-[#d06395] text-white font-sans text-[16px] font-bold border-none rounded-[50px] px-[22px] h-[36px] cursor-pointer no-underline whitespace-nowrap transition-[background,transform] duration-200 hover:bg-[#b8527f] hover:-translate-y-px hover:no-underline hover:text-white"
+                            className="inline-flex items-center justify-center bg-[#d06395] text-white font-sans text-[18px] font-bold border-none rounded-[50px] px-[22px] h-[36px] cursor-pointer no-underline whitespace-nowrap transition-[background,transform] duration-200 hover:bg-[#b8527f] hover:-translate-y-px hover:no-underline"
                         >
                             Log In
                         </Link>
                         <Link
                             to="/signup"
-                            className="font-sans text-[16px] font-normal text-black bg-transparent border-none cursor-pointer px-2 py-1 no-underline inline-flex items-center transition-opacity duration-200 hover:opacity-65 hover:text-pink hover:no-underline"
+                            className="font-sans text-[18px] font-medium text-black bg-transparent border-none cursor-pointer px-2 py-1 no-underline inline-flex items-center transition-opacity duration-200 hover:text-pink hover:no-underline"
                         >
                             Sign Up
                         </Link>
