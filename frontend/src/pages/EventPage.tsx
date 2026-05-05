@@ -743,10 +743,10 @@ function RemindersTab({ eventUuid, hasStartDt }: { eventUuid: string; hasStartDt
   return (
     <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
       <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 600, marginBottom: '0.25rem' }}>
-        🔔 SMS Reminders
+        🔔 Email Reminders
       </div>
       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-        Get a text message before the event starts. Requires a phone number and SMS opt-in on your profile.
+        Get an email before the event starts. You'll receive reminders at the times you select below.
       </div>
 
       {error && <div style={{ color: '#c00', fontSize: '0.82rem', background: '#fff0f0', padding: '0.5rem', borderRadius: 6 }}>{error}</div>}
@@ -1108,37 +1108,16 @@ export default function EventPage() {
     </div>
   )
 
+
   if (!event) return null
 
   return (
     <div className="event-page">
+      {/* Main — tabs are the focus */}
       <div className="event-main">
-        {/* Hero */}
-        <div className="event-hero">
-          {event.flyer_url ? (
-            <img src={event.flyer_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            <>
-              <div className="event-hero-badge">
-                {event.start_dt ? formatDate(event.start_dt) : 'Date TBD'}
-              </div>
-              <div className="event-hero-text">
-                Events are <span>better</span> when everyone plays a part
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="event-content">
-          {error && (
-            <div style={{ background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '0.75rem', marginBottom: '1rem', color: '#c00', fontSize: '0.85rem' }}>
-              {error}
-            </div>
-          )}
-
+        <div className="main-header">
           <div className="event-cat-badge">🎉 Event</div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <h1 className="event-title">{event.title}</h1>
             {isHost && !editing && (
               <button onClick={() => setEditing(true)} className="btn-edit-event" aria-label="Edit event">
@@ -1149,15 +1128,6 @@ export default function EventPage() {
               </button>
             )}
           </div>
-
-          {editing && (
-            <EditEventPanel
-              event={event}
-              onSave={(updated) => { setEvent(updated); setEditing(false) }}
-              onCancel={() => setEditing(false)}
-            />
-          )}
-
           {event.location && (
             <div className="event-location">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -1167,306 +1137,306 @@ export default function EventPage() {
               {event.location}
             </div>
           )}
-
-          {/* RSVP row */}
-          <div className="event-rsvp-row">
-            {myRsvp?.status === 'yes' ? (
-              <>
-                <span style={{ fontSize: '0.88rem', color: '#1a7a3c', fontWeight: 600 }}>You're going!</span>
-                <button className="btn-cantmake" onClick={() => handleRsvp('no')} disabled={rsvpLoading}>
-                  Can't Make It
-                </button>
-                <button className="btn-maybe" onClick={() => handleRsvp('maybe')} disabled={rsvpLoading}>
-                  Maybe
-                </button>
-              </>
-            ) : myRsvp?.status === 'no' ? (
-              <>
-                <span style={{ fontSize: '0.88rem', color: '#c00', fontWeight: 600 }}>Not going</span>
-                <button className="btn-going" onClick={() => handleRsvp('yes')} disabled={rsvpLoading}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="8" r="6.5" stroke="white" strokeWidth="1.5" />
-                    <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  I'm Going!
-                </button>
-              </>
-            ) : (
-              <>
-                <button className="btn-cantmake" onClick={() => handleRsvp('no')} disabled={rsvpLoading}>
-                  Can't Make It
-                </button>
-                <button className="btn-maybe" onClick={() => handleRsvp('maybe')} disabled={rsvpLoading}>
-                  Maybe
-                </button>
-                <button className="btn-going" onClick={() => handleRsvp('yes')} disabled={rsvpLoading}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="8" r="6.5" stroke="white" strokeWidth="1.5" />
-                    <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {rsvpLoading ? 'Saving...' : "I'm Going!"}
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Guest count (+1s) — only show when RSVP is yes or maybe */}
-          {(myRsvp?.status === 'yes' || myRsvp?.status === 'maybe') && (
-            <div className="guest-count-row">
-              <span className="guest-count-label">Bringing extra guests?</span>
-              <div className="guest-count-controls">
-                <button
-                  type="button"
-                  className="guest-count-btn"
-                  onClick={() => { const n = Math.max(0, guestCount - 1); setGuestCount(n); handleRsvp(myRsvp!.status, n) }}
-                  disabled={guestCount === 0 || rsvpLoading}
-                >−</button>
-                <span className="guest-count-value">{guestCount}</span>
-                <button
-                  type="button"
-                  className="guest-count-btn"
-                  onClick={() => { const n = guestCount + 1; setGuestCount(n); handleRsvp(myRsvp!.status, n) }}
-                  disabled={rsvpLoading}
-                >+</button>
-              </div>
-              {guestCount > 0 && <span className="guest-count-note">+{guestCount} guest{guestCount > 1 ? 's' : ''}</span>}
-            </div>
-          )}
-
-          <div className="event-info-grid">
-            <div className="info-card">
-              <div className="info-card-title">About the Event</div>
-              <div className="info-card-content">
-                {event.description || 'No description provided.'}
-              </div>
-              {event.start_dt && (
-                <div style={{ marginTop: '1rem' }}>
-                  <div className="detail-row">
-                    <span className="detail-icon">📅</span>
-                    <div>
-                      <div className="detail-label">Date & Time</div>
-                      <div className="detail-val">{formatDate(event.start_dt)}{event.end_dt ? ` – ${formatDate(event.end_dt)}` : ''}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {event.recurrence_rule && (
-                <div style={{ marginTop: '0.5rem' }}>
-                  <div className="detail-row">
-                    <span className="detail-icon">🔁</span>
-                    <div>
-                      <div className="detail-label">Repeats</div>
-                      <div className="detail-val">{event.recurrence_rule.charAt(0) + event.recurrence_rule.slice(1).toLowerCase()}{event.recurrence_end_dt ? ` until ${new Date(event.recurrence_end_dt).toLocaleDateString()}` : ''}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {event.viewable_by_link && (
-                <div style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: '#7F77DD', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  🔗 Viewable by anyone with the link
-                </div>
-              )}
-            </div>
-
-            <div className="info-card">
-              <div className="info-card-title">RSVP Summary</div>
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
-                {[
-                  { label: 'Going', status: 'yes', color: '#1a7a3c', bg: '#e6f9ee' },
-                  { label: 'Maybe', status: 'maybe', color: '#856404', bg: '#fffbe6' },
-                  { label: 'No', status: 'no', color: '#c00', bg: '#fff0f0' },
-                ].map(({ label, status, color, bg }) => (
-                  <div key={status} style={{ flex: 1, textAlign: 'center', background: bg, borderRadius: 8, padding: '0.75rem 0.5rem' }}>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 700, color }}>{rsvps.filter(r => r.status === status).length}</div>
-                    <div style={{ fontSize: '0.72rem', color, fontWeight: 600 }}>{label}</div>
-                  </div>
-                ))}
-              </div>
-              {(() => {
-                const totalGuests = rsvps.filter(r => r.status === 'yes').reduce((sum, r) => sum + r.guest_count, 0)
-                const goingCount = rsvps.filter(r => r.status === 'yes').length
-                return totalGuests > 0 ? (
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                    Total attending: {goingCount + totalGuests} ({goingCount} members + {totalGuests} guest{totalGuests > 1 ? 's' : ''})
-                  </div>
-                ) : null
-              })()}
-
-              {/* Invite link (host only) */}
-              {isHost && event.invite_token && event.invite_active && (
-                <div style={{ marginTop: '0.75rem' }}>
-                  <div className="info-card-title">Invite Link</div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <input
-                      readOnly
-                      value={`${window.location.origin}/join/${event.invite_token}`}
-                      style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem', background: '#fafafa', color: 'var(--text-muted)', fontFamily: 'monospace' }}
-                    />
-                    <button onClick={handleCopyInvite} style={{ background: inviteCopied ? '#1a7a3c' : 'var(--pink)', color: 'white', border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      {inviteCopied ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                  <button onClick={handleRegenerateInvite} style={{ marginTop: 6, fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Albert Sans' }}>
-                    Regenerate link
-                  </button>
-                  <button onClick={handleRevokeInvite} style={{ marginTop: 6, marginLeft: 12, fontSize: '0.75rem', color: '#c00', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Albert Sans' }}>
-                    Revoke link
-                  </button>
-                </div>
-              )}
-              {isHost && !event.invite_active && (
-                <div style={{ marginTop: '0.75rem' }}>
-                  <div className="info-card-title">Invite Link</div>
-                  <div style={{ fontSize: '0.82rem', color: '#c00', marginBottom: 6 }}>Invite link is currently disabled.</div>
-                  <button onClick={handleRegenerateInvite} style={{ fontSize: '0.78rem', color: 'var(--pink)', background: 'var(--pink-bg)', border: '1px solid var(--pink-pale)', borderRadius: 100, padding: '5px 14px', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600 }}>
-                    Generate New Link
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sidebar */}
-      <div className="event-sidebar">
-        <div className="sidebar-top">
-          <div className="sidebar-lounge">
-            <div className="lounge-avatar">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <circle cx="9" cy="6" r="3" stroke="var(--pink)" strokeWidth="1.5" />
-                <path d="M3 15c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="var(--pink)" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </div>
-            <div>
-              <div className="lounge-name">Event Lounge</div>
-              <div className="lounge-sub">Collaborate with guests</div>
-            </div>
-          </div>
         </div>
 
-        <div className="sidebar-nav">
+        {editing && (
+          <div style={{ padding: '0 1.5rem 1rem', overflowY: 'auto', flexShrink: 0, maxHeight: '60vh', borderBottom: '1px solid var(--border)', background: 'white' }}>
+            <EditEventPanel
+              event={event}
+              onSave={(updated) => { setEvent(updated); setEditing(false) }}
+              onCancel={() => setEditing(false)}
+            />
+          </div>
+        )}
+
+        {error && (
+          <div style={{ margin: '0 1.5rem 1rem', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '0.75rem', color: '#c00', fontSize: '0.85rem' }}>
+            {error}
+          </div>
+        )}
+
+        {/* Horizontal tab bar */}
+        <div className="main-tabs">
           {sidebarItems.map((item) => (
-            <div
+            <button
               key={item.key}
-              className={`sidebar-item${activeTab === item.key ? ' active' : ''}`}
+              className={`main-tab${activeTab === item.key ? ' active' : ''}`}
               onClick={() => setActiveTab(item.key)}
             >
-              {item.icon} {item.label}
-            </div>
+              <span className="main-tab-icon">{item.icon}</span>
+              <span className="main-tab-label">{item.label}</span>
+            </button>
           ))}
         </div>
 
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {/* Tab content */}
+        <div className="main-tab-content">
           {activeTab === 'chat' && (
             <ChatTab eventId={eventUuid} myId={myId} myName={myName} token={token} />
           )}
           {activeTab === 'polls' && (
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
               <PollsTab eventUuid={eventUuid} myId={myId} isHost={isHost} />
             </div>
           )}
           {activeTab === 'potluck' && (
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
               <PotluckTab eventUuid={eventUuid} myId={myId} isHost={isHost} />
             </div>
           )}
           {activeTab === 'tasks' && (
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
               <TasksTab eventUuid={eventUuid} myId={myId} isHost={isHost} members={eventMembers} />
             </div>
           )}
           {activeTab === 'announcements' && (
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
               <AnnouncementsTab eventUuid={eventUuid} myId={myId} isHost={isHost} />
             </div>
           )}
           {activeTab === 'reminders' && (
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
               <RemindersTab eventUuid={eventUuid} hasStartDt={!!event.start_dt} />
             </div>
           )}
           {activeTab === 'guests' && (
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
               <GuestsTab eventUuid={eventUuid} myId={myId} isHost={isHost} hostId={String(event.host_id)} rsvps={rsvps} />
             </div>
           )}
         </div>
+      </div>
 
-        {isHost && (
-          <div className="sidebar-bottom">
-            <button className="btn-cohost" onClick={handleCopyInvite}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="6" cy="6" r="3" stroke="var(--pink)" strokeWidth="1.5" />
-                <path d="M2 14c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="var(--pink)" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M13 6v4M11 8h4" stroke="var(--pink)" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              {inviteCopied ? 'Link Copied!' : 'Copy Invite Link'}
-            </button>
+      {/* Sidebar — event info & RSVP */}
+      <div className="event-sidebar">
+        {/* Flyer / hero */}
+        <div className="sidebar-hero">
+          {event.flyer_url ? (
+            <img src={event.flyer_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <div className="sidebar-hero-placeholder">
+              <div className="sidebar-hero-date">
+                {event.start_dt ? formatDate(event.start_dt) : 'Date TBD'}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="sidebar-scroll">
+          {/* RSVP */}
+          <div className="sidebar-section">
+            <div className="sidebar-section-title">Your RSVP</div>
+            <div className="event-rsvp-row">
+              {myRsvp?.status === 'yes' ? (
+                <>
+                  <span style={{ fontSize: '0.82rem', color: '#1a7a3c', fontWeight: 600 }}>You're going!</span>
+                  <button className="btn-maybe" onClick={() => handleRsvp('maybe')} disabled={rsvpLoading}>Maybe</button>
+                  <button className="btn-cantmake" onClick={() => handleRsvp('no')} disabled={rsvpLoading}>Can't make it</button>
+                </>
+              ) : myRsvp?.status === 'no' ? (
+                <>
+                  <span style={{ fontSize: '0.82rem', color: '#c00', fontWeight: 600 }}>Not going</span>
+                  <button className="btn-going" onClick={() => handleRsvp('yes')} disabled={rsvpLoading}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="8" r="6.5" stroke="white" strokeWidth="1.5" />
+                      <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    I'm Going!
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="btn-going" onClick={() => handleRsvp('yes')} disabled={rsvpLoading}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="8" r="6.5" stroke="white" strokeWidth="1.5" />
+                      <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {rsvpLoading ? '...' : "I'm Going!"}
+                  </button>
+                  <button className="btn-maybe" onClick={() => handleRsvp('maybe')} disabled={rsvpLoading}>Maybe</button>
+                  <button className="btn-cantmake" onClick={() => handleRsvp('no')} disabled={rsvpLoading}>No</button>
+                </>
+              )}
+            </div>
+            {(myRsvp?.status === 'yes' || myRsvp?.status === 'maybe') && (
+              <div className="guest-count-row">
+                <span className="guest-count-label">Bringing +1s?</span>
+                <div className="guest-count-controls">
+                  <button type="button" className="guest-count-btn"
+                    onClick={() => { const n = Math.max(0, guestCount - 1); setGuestCount(n); handleRsvp(myRsvp!.status, n) }}
+                    disabled={guestCount === 0 || rsvpLoading}>−</button>
+                  <span className="guest-count-value">{guestCount}</span>
+                  <button type="button" className="guest-count-btn"
+                    onClick={() => { const n = guestCount + 1; setGuestCount(n); handleRsvp(myRsvp!.status, n) }}
+                    disabled={rsvpLoading}>+</button>
+                </div>
+                {guestCount > 0 && <span className="guest-count-note">+{guestCount}</span>}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Attendance summary */}
+          <div className="sidebar-section">
+            <div className="sidebar-section-title">Attendance</div>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              {[
+                { label: 'Going', status: 'yes', color: '#1a7a3c', bg: '#e6f9ee' },
+                { label: 'Maybe', status: 'maybe', color: '#856404', bg: '#fffbe6' },
+                { label: 'No', status: 'no', color: '#c00', bg: '#fff0f0' },
+              ].map(({ label, status, color, bg }) => (
+                <div key={status} style={{ flex: 1, textAlign: 'center', background: bg, borderRadius: 6, padding: '0.5rem 0.25rem' }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color }}>{rsvps.filter(r => r.status === status).length}</div>
+                  <div style={{ fontSize: '0.65rem', color, fontWeight: 600 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+            {(() => {
+              const totalGuests = rsvps.filter(r => r.status === 'yes').reduce((sum, r) => sum + r.guest_count, 0)
+              const goingCount = rsvps.filter(r => r.status === 'yes').length
+              return totalGuests > 0 ? (
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Total: {goingCount + totalGuests} ({goingCount} + {totalGuests} guest{totalGuests > 1 ? 's' : ''})
+                </div>
+              ) : null
+            })()}
+          </div>
+
+          {/* About */}
+          <div className="sidebar-section">
+            <div className="sidebar-section-title">About</div>
+            <div style={{ fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-mid)', marginBottom: '0.75rem' }}>
+              {event.description || 'No description provided.'}
+            </div>
+            {event.start_dt && (
+              <div className="detail-row">
+                <span className="detail-icon">📅</span>
+                <div>
+                  <div className="detail-val">{formatDate(event.start_dt)}{event.end_dt ? ` – ${formatDate(event.end_dt)}` : ''}</div>
+                </div>
+              </div>
+            )}
+            {event.recurrence_rule && (
+              <div className="detail-row">
+                <span className="detail-icon">🔁</span>
+                <div>
+                  <div className="detail-val">
+                    {event.recurrence_rule.charAt(0) + event.recurrence_rule.slice(1).toLowerCase()}
+                    {event.recurrence_end_dt ? ` until ${new Date(event.recurrence_end_dt).toLocaleDateString()}` : ''}
+                  </div>
+                </div>
+              </div>
+            )}
+            {event.viewable_by_link && (
+              <div style={{ fontSize: '0.75rem', color: '#7F77DD', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                🔗 Viewable by anyone with the link
+              </div>
+            )}
+          </div>
+
+          {/* Invite link (host only) */}
+          {isHost && (
+            <div className="sidebar-section">
+              <div className="sidebar-section-title">Invite Link</div>
+              {event.invite_token && event.invite_active ? (
+                <>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                    <input
+                      readOnly
+                      value={`${window.location.origin}/join/${event.invite_token}`}
+                      style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 6, padding: '5px 8px', fontSize: '0.68rem', background: '#fafafa', color: 'var(--text-muted)', fontFamily: 'monospace', minWidth: 0 }}
+                    />
+                    <button onClick={handleCopyInvite} style={{ background: inviteCopied ? '#1a7a3c' : 'var(--pink)', color: 'white', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {inviteCopied ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={handleRegenerateInvite} style={{ fontSize: '0.72rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Albert Sans', padding: 0 }}>
+                      Regenerate
+                    </button>
+                    <button onClick={handleRevokeInvite} style={{ fontSize: '0.72rem', color: '#c00', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Albert Sans', padding: 0 }}>
+                      Revoke
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: '0.78rem', color: '#c00', marginBottom: 6 }}>Link is disabled.</div>
+                  <button onClick={handleRegenerateInvite} style={{ fontSize: '0.75rem', color: 'var(--pink)', background: 'var(--pink-bg)', border: '1px solid var(--pink-pale)', borderRadius: 100, padding: '4px 12px', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600 }}>
+                    Generate New Link
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <style>{`
-        .event-page { display: flex; flex: 1; padding-top: var(--nav-height); width: 100%; }
-        .event-main { flex: 1; overflow-y: auto; }
-        .event-hero { width: 100%; height: 280px; background: linear-gradient(135deg, var(--purple-pale) 0%, var(--pink-pale) 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-        .event-hero-badge { position: absolute; top: 20px; left: 24px; background: white; border-radius: 100px; padding: 5px 14px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-sm); font-weight: 500; }
-        .event-hero-text { font-family: 'Anton', sans-serif; font-size: 2rem; text-align: center; color: var(--text-dark); max-width: 60%; line-height: 1.2; }
-        .event-hero-text span { color: var(--pink); }
-        .event-content { padding: 2rem 2.5rem; }
-        .event-cat-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--pink-bg); border: 1px solid var(--pink-pale); border-radius: 100px; padding: 5px 14px; font-size: 0.82rem; color: var(--pink); font-weight: 600; margin-bottom: 0.75rem; }
-        .event-title { font-family: 'Anton', sans-serif; font-size: 2.2rem; margin-bottom: 4px; color: var(--text-dark); }
-        .event-location { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; }
-        .event-rsvp-row { display: flex; gap: 1rem; align-items: center; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-        .btn-going { display: flex; align-items: center; gap: 8px; background: var(--pink); color: white; border: none; border-radius: 100px; padding: 12px 28px; font-family: 'Albert Sans', sans-serif; font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .event-page { display: flex; width: 100%; overflow: hidden; height: calc(100svh - var(--nav-height)); margin-top: var(--nav-height); }
+
+        /* ── Main (left) ── */
+        .event-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; height: 100%; }
+        .main-header { padding: 1.25rem 1.5rem 0.75rem; border-bottom: 1px solid var(--border); flex-shrink: 0; background: white; }
+        .event-cat-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--pink-bg); border: 1px solid var(--pink-pale); border-radius: 100px; padding: 3px 10px; font-size: 0.75rem; color: var(--pink); font-weight: 600; margin-bottom: 0.4rem; }
+        .event-title { font-family: 'Anton', sans-serif; font-size: 1.8rem; margin: 0 0 2px; color: var(--text-dark); line-height: 1.1; }
+        .event-location { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+
+        /* Tab bar */
+        .main-tabs { display: flex; gap: 0; padding: 0 1.5rem; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; flex-shrink: 0; background: white; }
+        .main-tabs::-webkit-scrollbar { display: none; }
+        .main-tab { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: none; border: none; border-bottom: 2px solid transparent; font-family: 'Albert Sans', sans-serif; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; margin-bottom: -1px; }
+        .main-tab:hover { color: var(--text-dark); }
+        .main-tab.active { color: var(--pink); border-bottom-color: var(--pink); font-weight: 600; }
+        .main-tab-icon { display: flex; align-items: center; justify-content: center; }
+        .main-tab-icon svg { width: 14px; height: 14px; }
+
+        /* Tab content area — fills remaining height, each tab scrolls internally */
+        .main-tab-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+        .main-tab-content > div { flex: 1; overflow-y: auto; min-height: 0; }
+
+        /* ── Sidebar (right) ── */
+        .event-sidebar { width: 300px; flex-shrink: 0; background: white; border-left: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .sidebar-hero { width: 100%; height: 150px; background: linear-gradient(135deg, var(--purple-pale) 0%, var(--pink-pale) 100%); flex-shrink: 0; overflow: hidden; }
+        .sidebar-hero img { width: 100%; height: 100%; object-fit: cover; }
+        .sidebar-hero-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .sidebar-hero-date { background: white; border-radius: 100px; padding: 5px 14px; font-size: 0.78rem; font-weight: 500; color: var(--text-mid); box-shadow: var(--shadow-sm); }
+        .sidebar-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+        .sidebar-section { padding: 0.875rem 1.125rem; border-bottom: 1px solid var(--border); }
+        .sidebar-section-title { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+
+        /* RSVP buttons */
+        .event-rsvp-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .btn-going { display: flex; align-items: center; gap: 6px; background: var(--pink); color: white; border: none; border-radius: 100px; padding: 7px 14px; font-family: 'Albert Sans', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-going:hover:not(:disabled) { background: #b04068; }
         .btn-going:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-cantmake { background: none; border: 1.5px solid var(--border); border-radius: 100px; padding: 11px 24px; font-family: 'Albert Sans', sans-serif; font-size: 0.92rem; font-weight: 500; color: var(--text-mid); cursor: pointer; transition: all 0.2s; }
+        .btn-cantmake { background: none; border: 1.5px solid var(--border); border-radius: 100px; padding: 6px 12px; font-family: 'Albert Sans', sans-serif; font-size: 0.8rem; font-weight: 500; color: var(--text-mid); cursor: pointer; transition: all 0.2s; }
         .btn-cantmake:hover:not(:disabled) { border-color: #aaa; }
         .btn-cantmake:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-maybe { background: none; border: 1.5px solid var(--border); border-radius: 100px; padding: 11px 24px; font-family: 'Albert Sans', sans-serif; font-size: 0.92rem; font-weight: 500; color: var(--text-mid); cursor: pointer; transition: all 0.2s; }
+        .btn-maybe { background: none; border: 1.5px solid var(--border); border-radius: 100px; padding: 6px 12px; font-family: 'Albert Sans', sans-serif; font-size: 0.8rem; font-weight: 500; color: var(--text-mid); cursor: pointer; transition: all 0.2s; }
         .btn-maybe:hover:not(:disabled) { border-color: var(--pink); color: var(--pink); }
         .btn-maybe:disabled { opacity: 0.6; cursor: not-allowed; }
-        .event-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
-        .info-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; }
-        .info-card-title { font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.75rem; }
-        .info-card-content { font-size: 0.95rem; line-height: 1.7; color: var(--text-mid); }
-        .detail-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 0.75rem; }
-        .detail-icon { font-size: 1.1rem; margin-top: 1px; flex-shrink: 0; }
-        .detail-label { font-size: 0.82rem; font-weight: 700; color: var(--text-muted); }
-        .detail-val { font-size: 0.88rem; color: var(--text-mid); }
-        .event-sidebar { width: 280px; background: white; border-left: 1px solid var(--border); display: flex; flex-direction: column; height: calc(100vh - var(--nav-height)); position: sticky; top: var(--nav-height); }
-        .sidebar-top { padding: 1.25rem; border-bottom: 1px solid var(--border); }
-        .sidebar-lounge { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; background: var(--pink-bg); }
-        .lounge-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--purple-pale), var(--pink-pale)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .lounge-name { font-weight: 700; font-size: 0.9rem; color: var(--pink); }
-        .lounge-sub { font-size: 0.75rem; color: var(--text-muted); }
-        .sidebar-nav { display: flex; flex-direction: column; padding: 0.75rem; gap: 2px; }
-        .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.82rem; font-weight: 500; color: var(--text-mid); transition: all 0.15s; }
-        .sidebar-item svg { width: 16px; height: 16px; flex-shrink: 0; }
-        .sidebar-item:hover, .sidebar-item.active { background: var(--pink-bg); color: var(--pink); }
-        .sidebar-bottom { padding: 1rem; border-top: 1px solid var(--border); }
-        .btn-cohost { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--pink-bg); border: 1.5px solid var(--pink-pale); border-radius: var(--radius-sm); padding: 11px; font-family: 'Albert Sans', sans-serif; font-size: 0.88rem; font-weight: 600; color: var(--pink); cursor: pointer; transition: all 0.2s; }
-        .btn-cohost:hover { background: var(--pink-pale); }
-        .chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
-        .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
-        .chat-msg { display: flex; gap: 8px; align-items: flex-start; }
-        .chat-msg.mine { flex-direction: row-reverse; }
-        .chat-bubble-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--purple-pale), var(--pink-pale)); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: var(--pink); flex-shrink: 0; }
-        .chat-bubble { background: var(--pink-bg); border-radius: 14px; padding: 8px 12px; max-width: 80%; }
-        .chat-msg.mine .chat-bubble { background: var(--pink); color: white; }
-        .chat-bubble-name { font-size: 0.7rem; font-weight: 700; color: var(--pink); margin-bottom: 2px; }
-        .chat-msg.mine .chat-bubble-name { color: rgba(255,255,255,0.8); }
-        .chat-bubble-text { font-size: 0.85rem; line-height: 1.5; }
-        .chat-input-row { display: flex; gap: 8px; padding: 0.75rem 1rem; border-top: 1px solid var(--border); }
-        .chat-input { flex: 1; border: 1.5px solid var(--border); border-radius: 100px; padding: 9px 16px; font-family: 'Albert Sans', sans-serif; font-size: 0.88rem; outline: none; transition: border-color 0.2s; background: white; color: var(--text-dark); }
-        .chat-input:focus { border-color: var(--pink); }
-        .btn-send { background: var(--pink); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
-        .btn-send:hover { background: #b04068; }
-        .btn-edit-event { display: flex; align-items: center; gap: 6px; background: none; border: 1.5px solid var(--border); border-radius: 100px; padding: 8px 16px; font-family: 'Albert Sans', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--text-mid); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+
+        /* Guest count */
+        .guest-count-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .guest-count-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+        .guest-count-controls { display: flex; align-items: center; border: 1.5px solid var(--border); border-radius: 100px; overflow: hidden; }
+        .guest-count-btn { width: 26px; height: 26px; border: none; background: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-dark); transition: background 0.15s; }
+        .guest-count-btn:hover:not(:disabled) { background: var(--pink-bg); }
+        .guest-count-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .guest-count-value { width: 22px; text-align: center; font-size: 0.82rem; font-weight: 600; color: var(--text-dark); }
+        .guest-count-note { font-size: 0.75rem; color: var(--pink); font-weight: 600; }
+
+        /* Detail rows */
+        .detail-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 0.4rem; }
+        .detail-icon { font-size: 0.95rem; flex-shrink: 0; margin-top: 1px; }
+        .detail-val { font-size: 0.82rem; color: var(--text-mid); line-height: 1.5; }
+
+        /* Edit button */
+        .btn-edit-event { display: flex; align-items: center; gap: 6px; background: none; border: 1.5px solid var(--border); border-radius: 100px; padding: 5px 12px; font-family: 'Albert Sans', sans-serif; font-size: 0.75rem; font-weight: 600; color: var(--text-mid); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
         .btn-edit-event:hover { border-color: var(--pink); color: var(--pink); }
-        .edit-panel { background: white; border: 1.5px solid var(--pink-pale); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+
+        /* Edit panel */
+        .edit-panel { background: white; border: 1.5px solid var(--pink-pale); border-radius: var(--radius-lg); padding: 1.5rem; }
         .edit-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
         .edit-cancel-x { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1; padding: 0 4px; }
         .edit-cancel-x:hover { color: var(--text-dark); }
@@ -1483,18 +1453,29 @@ export default function EventPage() {
         .edit-btn-save { background: var(--pink); color: white; border: none; border-radius: 100px; padding: 9px 24px; font-family: 'Albert Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .edit-btn-save:hover:not(:disabled) { background: #b04068; }
         .edit-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
-        .guest-count-row { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; padding: 10px 14px; background: var(--pink-bg); border: 1px solid var(--pink-pale); border-radius: 8px; flex-wrap: wrap; }
-        .guest-count-label { font-size: 0.85rem; color: var(--text-mid); font-weight: 500; }
-        .guest-count-controls { display: flex; align-items: center; gap: 0; border: 1.5px solid var(--border); border-radius: 100px; overflow: hidden; }
-        .guest-count-btn { width: 32px; height: 32px; border: none; background: white; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-dark); transition: background 0.15s; }
-        .guest-count-btn:hover:not(:disabled) { background: var(--pink-bg); }
-        .guest-count-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .guest-count-value { width: 28px; text-align: center; font-size: 0.9rem; font-weight: 600; color: var(--text-dark); }
-        .guest-count-note { font-size: 0.8rem; color: var(--pink); font-weight: 600; }
-        @media (max-width: 768px) {
-          .event-page { flex-direction: column; }
-          .event-sidebar { width: 100%; height: auto; position: static; border-left: none; border-top: 1px solid var(--border); }
-          .event-info-grid { grid-template-columns: 1fr; }
+
+        /* Chat */
+        .chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+        .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
+        .chat-msg { display: flex; gap: 8px; align-items: flex-start; }
+        .chat-msg.mine { flex-direction: row-reverse; }
+        .chat-bubble-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--purple-pale), var(--pink-pale)); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: var(--pink); flex-shrink: 0; }
+        .chat-bubble { background: var(--pink-bg); border-radius: 14px; padding: 8px 12px; max-width: 80%; }
+        .chat-msg.mine .chat-bubble { background: var(--pink); color: white; }
+        .chat-bubble-name { font-size: 0.7rem; font-weight: 700; color: var(--pink); margin-bottom: 2px; }
+        .chat-msg.mine .chat-bubble-name { color: rgba(255,255,255,0.8); }
+        .chat-bubble-text { font-size: 0.85rem; line-height: 1.5; }
+        .chat-input-row { display: flex; gap: 8px; padding: 0.75rem 1rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+        .chat-input { flex: 1; border: 1.5px solid var(--border); border-radius: 100px; padding: 9px 16px; font-family: 'Albert Sans', sans-serif; font-size: 0.88rem; outline: none; transition: border-color 0.2s; background: white; color: var(--text-dark); }
+        .chat-input:focus { border-color: var(--pink); }
+        .btn-send { background: var(--pink); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
+        .btn-send:hover { background: #b04068; }
+
+        @media (max-width: 900px) {
+          .event-page { flex-direction: column; height: auto; overflow: visible; margin-top: var(--nav-height); }
+          .event-sidebar { width: 100%; height: auto; flex-shrink: 0; border-left: none; border-bottom: 1px solid var(--border); }
+          .sidebar-scroll { max-height: 60vh; }
+          .event-main { height: calc(100svh - var(--nav-height)); flex-shrink: 0; }
         }
       `}</style>
     </div>

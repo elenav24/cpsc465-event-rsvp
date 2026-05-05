@@ -73,7 +73,7 @@ export default function ProfilePage() {
           />
 
           <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-mid)', display: 'block', marginBottom: 6 }}>
-            Phone Number (for SMS reminders)
+            Phone Number (optional)
           </label>
           <input
             value={phone}
@@ -91,7 +91,7 @@ export default function ProfilePage() {
               style={{ width: 16, height: 16 }}
             />
             <span style={{ fontSize: '0.88rem', color: 'var(--text-mid)' }}>
-              Receive SMS reminders and announcements
+              Receive email reminders and announcements
             </span>
           </label>
 
