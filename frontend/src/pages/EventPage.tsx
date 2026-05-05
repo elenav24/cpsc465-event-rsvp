@@ -114,7 +114,7 @@ function ChatTab({ eventId, myId, myName, token }: { eventId: string; myId: stri
 }
 
 // ── Polls Tab ─────────────────────────────────────────────────────────────────
-function PollsTab({ eventId, myId, isHost }: { eventId: number; myId: string; isHost: boolean }) {
+function PollsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string; isHost: boolean }) {
   const [polls, setPolls] = useState<PollOut[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -125,8 +125,8 @@ function PollsTab({ eventId, myId, isHost }: { eventId: number; myId: string; is
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(() => {
-    getPolls(eventId).then(setPolls).catch(() => {}).finally(() => setLoading(false))
-  }, [eventId])
+    getPolls(eventUuid).then(setPolls).catch(() => {}).finally(() => setLoading(false))
+  }, [eventUuid])
 
   useEffect(() => { load() }, [load])
 
@@ -140,7 +140,7 @@ function PollsTab({ eventId, myId, isHost }: { eventId: number; myId: string; is
       ids = [optionId]
     }
     try {
-      const updated = await votePoll(eventId, pollId, ids)
+      const updated = await votePoll(eventUuid, pollId, ids)
       setPolls(prev => prev.map(p => p.id === pollId ? updated : p))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Vote failed')
@@ -153,7 +153,7 @@ function PollsTab({ eventId, myId, isHost }: { eventId: number; myId: string; is
     if (validOptions.length < 2) { setError('Need at least 2 options'); return }
     setSaving(true)
     try {
-      const poll = await createPoll(eventId, {
+      const poll = await createPoll(eventUuid, {
         question,
         options: validOptions.map((text, i) => ({ text, display_order: i })),
         allow_multi_select: multiSelect,
@@ -171,7 +171,7 @@ function PollsTab({ eventId, myId, isHost }: { eventId: number; myId: string; is
 
   const handleClose = async (pollId: number) => {
     try {
-      const updated = await closePoll(eventId, pollId)
+      const updated = await closePoll(eventUuid, pollId)
       setPolls(prev => prev.map(p => p.id === pollId ? updated : p))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to close poll')
@@ -180,7 +180,7 @@ function PollsTab({ eventId, myId, isHost }: { eventId: number; myId: string; is
 
   const handleDelete = async (pollId: number) => {
     try {
-      await deletePoll(eventId, pollId)
+      await deletePoll(eventUuid, pollId)
       setPolls(prev => prev.filter(p => p.id !== pollId))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to delete poll')
@@ -284,7 +284,7 @@ function PollsTab({ eventId, myId, isHost }: { eventId: number; myId: string; is
 }
 
 // ── Potluck Tab ───────────────────────────────────────────────────────────────
-function PotluckTab({ eventId, myId, isHost }: { eventId: number; myId: string; isHost: boolean }) {
+function PotluckTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string; isHost: boolean }) {
   const [items, setItems] = useState<PotluckItemOut[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -294,18 +294,18 @@ function PotluckTab({ eventId, myId, isHost }: { eventId: number; myId: string; 
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(() => {
-    getPotluck(eventId).then(setItems).catch(() => {}).finally(() => setLoading(false))
-  }, [eventId])
+    getPotluck(eventUuid).then(setItems).catch(() => {}).finally(() => setLoading(false))
+  }, [eventUuid])
 
   useEffect(() => { load() }, [load])
 
   const handleClaim = async (itemId: number, hasClaim: boolean) => {
     try {
       if (hasClaim) {
-        await unclaimPotluckItem(eventId, itemId)
+        await unclaimPotluckItem(eventUuid, itemId)
         setItems(prev => prev.map(i => i.id === itemId ? { ...i, claims: i.claims.filter(c => c.user_id !== myId), claims_count: i.claims_count - 1 } : i))
       } else {
-        const updated = await claimPotluckItem(eventId, itemId)
+        const updated = await claimPotluckItem(eventUuid, itemId)
         setItems(prev => prev.map(i => i.id === itemId ? updated : i))
       }
     } catch (e: unknown) {
@@ -318,7 +318,7 @@ function PotluckTab({ eventId, myId, isHost }: { eventId: number; myId: string; 
     if (!newName.trim()) return
     setSaving(true)
     try {
-      const item = await createPotluckItem(eventId, { name: newName.trim(), quantity_needed: newQty })
+      const item = await createPotluckItem(eventUuid, { name: newName.trim(), quantity_needed: newQty })
       setItems(prev => [...prev, item])
       setShowCreate(false)
       setNewName('')
@@ -332,7 +332,7 @@ function PotluckTab({ eventId, myId, isHost }: { eventId: number; myId: string; 
 
   const handleDelete = async (itemId: number) => {
     try {
-      await deletePotluckItem(eventId, itemId)
+      await deletePotluckItem(eventUuid, itemId)
       setItems(prev => prev.filter(i => i.id !== itemId))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to delete item')
@@ -414,7 +414,7 @@ function PotluckTab({ eventId, myId, isHost }: { eventId: number; myId: string; 
 }
 
 // ── Tasks Tab ─────────────────────────────────────────────────────────────────
-function TasksTab({ eventId, myId, isHost }: { eventId: number; myId: string; isHost: boolean }) {
+function TasksTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string; isHost: boolean }) {
   const [tasks, setTasks] = useState<TaskOut[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -423,14 +423,14 @@ function TasksTab({ eventId, myId, isHost }: { eventId: number; myId: string; is
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(() => {
-    getTasks(eventId).then(setTasks).catch(() => {}).finally(() => setLoading(false))
-  }, [eventId])
+    getTasks(eventUuid).then(setTasks).catch(() => {}).finally(() => setLoading(false))
+  }, [eventUuid])
 
   useEffect(() => { load() }, [load])
 
   const handleToggle = async (task: TaskOut) => {
     try {
-      const updated = await updateTask(eventId, task.id, { is_completed: !task.is_completed })
+      const updated = await updateTask(eventUuid, task.id, { is_completed: !task.is_completed })
       setTasks(prev => prev.map(t => t.id === task.id ? updated : t))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to update task')
@@ -439,7 +439,7 @@ function TasksTab({ eventId, myId, isHost }: { eventId: number; myId: string; is
 
   const handleVolunteer = async (task: TaskOut) => {
     try {
-      const updated = await updateTask(eventId, task.id, { assigned_to: myId })
+      const updated = await updateTask(eventUuid, task.id, { assigned_to: myId })
       setTasks(prev => prev.map(t => t.id === task.id ? updated : t))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to volunteer')
@@ -451,7 +451,7 @@ function TasksTab({ eventId, myId, isHost }: { eventId: number; myId: string; is
     if (!newTitle.trim()) return
     setSaving(true)
     try {
-      const task = await createTask(eventId, { title: newTitle.trim() })
+      const task = await createTask(eventUuid, { title: newTitle.trim() })
       setTasks(prev => [...prev, task])
       setShowCreate(false)
       setNewTitle('')
@@ -464,7 +464,7 @@ function TasksTab({ eventId, myId, isHost }: { eventId: number; myId: string; is
 
   const handleDelete = async (taskId: number) => {
     try {
-      await deleteTask(eventId, taskId)
+      await deleteTask(eventUuid, taskId)
       setTasks(prev => prev.filter(t => t.id !== taskId))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to delete task')
@@ -548,7 +548,7 @@ function TasksTab({ eventId, myId, isHost }: { eventId: number; myId: string; is
 }
 
 // ── Announcements Tab ─────────────────────────────────────────────────────────
-function AnnouncementsTab({ eventId, myId, isHost }: { eventId: number; myId: string; isHost: boolean }) {
+function AnnouncementsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string; isHost: boolean }) {
   const [announcements, setAnnouncements] = useState<AnnouncementOut[]>([])
   const [loading, setLoading] = useState(true)
   const [body, setBody] = useState('')
@@ -556,8 +556,8 @@ function AnnouncementsTab({ eventId, myId, isHost }: { eventId: number; myId: st
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(() => {
-    getAnnouncements(eventId).then(setAnnouncements).catch(() => {}).finally(() => setLoading(false))
-  }, [eventId])
+    getAnnouncements(eventUuid).then(setAnnouncements).catch(() => {}).finally(() => setLoading(false))
+  }, [eventUuid])
 
   useEffect(() => { load() }, [load])
 
@@ -566,7 +566,7 @@ function AnnouncementsTab({ eventId, myId, isHost }: { eventId: number; myId: st
     if (!body.trim()) return
     setSaving(true)
     try {
-      const ann = await createAnnouncement(eventId, body.trim())
+      const ann = await createAnnouncement(eventUuid, body.trim())
       setAnnouncements(prev => [ann, ...prev])
       setBody('')
     } catch (e: unknown) {
@@ -578,7 +578,7 @@ function AnnouncementsTab({ eventId, myId, isHost }: { eventId: number; myId: st
 
   const handleDelete = async (id: number) => {
     try {
-      await deleteAnnouncement(eventId, id)
+      await deleteAnnouncement(eventUuid, id)
       setAnnouncements(prev => prev.filter(a => a.id !== id))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to delete')
@@ -630,13 +630,13 @@ function AnnouncementsTab({ eventId, myId, isHost }: { eventId: number; myId: st
 }
 
 // ── Guests Tab ────────────────────────────────────────────────────────────────
-function GuestsTab({ eventId, myId, isHost: _isHost, rsvps }: { eventId: number; myId: string; isHost: boolean; rsvps: RSVPOut[] }) {
+function GuestsTab({ eventUuid, myId, isHost: _isHost, rsvps }: { eventUuid: string; myId: string; isHost: boolean; rsvps: RSVPOut[] }) {
   const [members, setMembers] = useState<MemberOut[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getMembers(eventId).then(setMembers).catch(() => {}).finally(() => setLoading(false))
-  }, [eventId])
+    getMembers(eventUuid).then(setMembers).catch(() => {}).finally(() => setLoading(false))
+  }, [eventUuid])
 
   if (loading) return <div style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>Loading guests...</div>
 
@@ -688,30 +688,30 @@ export default function EventPage() {
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
 
-  const eventId = Number(id)
+  const eventUuid = id ?? ''
   const myId = profile?.cognito_sub ?? ''
   const myDbId = profile?.id ?? null
   const myName = profile?.display_name ?? profile?.email ?? 'Guest'
   const token = getToken() ?? ''
 
   useEffect(() => {
-    if (!eventId) return
+    if (!eventUuid) return
     Promise.all([
-      getEvent(eventId),
-      getMyRsvp(eventId).catch(() => null),
-      getRsvps(eventId).catch(() => []),
+      getEvent(eventUuid),
+      getMyRsvp(eventUuid).catch(() => null),
+      getRsvps(eventUuid).catch(() => []),
     ]).then(([ev, rsvp, allRsvps]) => {
       setEvent(ev)
       setMyRsvp(rsvp)
       setRsvps(allRsvps as RSVPOut[])
     }).catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [eventId])
+  }, [eventUuid])
 
   const handleRsvp = async (status: RSVPStatus) => {
     setRsvpLoading(true)
     try {
-      const updated = await upsertRsvp(eventId, status)
+      const updated = await upsertRsvp(eventUuid, status)
       setMyRsvp(updated)
       setRsvps(prev => {
         const exists = prev.find(r => r.user_id === myId)
@@ -736,7 +736,7 @@ export default function EventPage() {
   const handleRegenerateInvite = async () => {
     if (!event) return
     try {
-      const updated = await regenerateInvite(eventId)
+      const updated = await regenerateInvite(eventUuid)
       setEvent(updated)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to regenerate invite')
@@ -939,31 +939,31 @@ export default function EventPage() {
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {activeTab === 'chat' && (
-            <ChatTab eventId={String(eventId)} myId={myId} myName={myName} token={token} />
+            <ChatTab eventId={eventUuid} myId={myId} myName={myName} token={token} />
           )}
           {activeTab === 'polls' && (
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              <PollsTab eventId={eventId} myId={myId} isHost={isHost} />
+              <PollsTab eventUuid={eventUuid} myId={myId} isHost={isHost} />
             </div>
           )}
           {activeTab === 'potluck' && (
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              <PotluckTab eventId={eventId} myId={myId} isHost={isHost} />
+              <PotluckTab eventUuid={eventUuid} myId={myId} isHost={isHost} />
             </div>
           )}
           {activeTab === 'tasks' && (
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              <TasksTab eventId={eventId} myId={myId} isHost={isHost} />
+              <TasksTab eventUuid={eventUuid} myId={myId} isHost={isHost} />
             </div>
           )}
           {activeTab === 'announcements' && (
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              <AnnouncementsTab eventId={eventId} myId={myId} isHost={isHost} />
+              <AnnouncementsTab eventUuid={eventUuid} myId={myId} isHost={isHost} />
             </div>
           )}
           {activeTab === 'guests' && (
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              <GuestsTab eventId={eventId} myId={myId} isHost={isHost} rsvps={rsvps} />
+              <GuestsTab eventUuid={eventUuid} myId={myId} isHost={isHost} rsvps={rsvps} />
             </div>
           )}
         </div>

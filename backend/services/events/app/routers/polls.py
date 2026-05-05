@@ -8,6 +8,7 @@ from app.deps.auth import get_current_user_sub
 from app.db.models.event_member import EventMember
 from app.db.models.poll import Poll, PollOption, PollVote
 from app.schemas.poll import PollCreate, PollVoteCreate, PollOut, PollOptionOut, PollVoteOut
+from app.routers._resolve import resolve_event
 
 router = APIRouter()
 
@@ -63,31 +64,33 @@ def _build_poll_out(poll: Poll, requester_id: str, is_privileged: bool) -> PollO
     )
 
 
-@router.get("/{event_id}/polls", response_model=list[PollOut])
+@router.get("/{event_uuid}/polls", response_model=list[PollOut])
 def get_polls(
-    event_id: int,
+    event_uuid: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    member = _require_member(event_id, user_id, db)
+    event = resolve_event(event_uuid, db)
+    member = _require_member(event.id, user_id, db)
     is_privileged = member.role in ("host", "co_host")
-    polls = db.query(Poll).filter(Poll.event_id == event_id).all()
+    polls = db.query(Poll).filter(Poll.event_id == event.id).all()
     return [_build_poll_out(p, user_id, is_privileged) for p in polls]
 
 
-@router.post("/{event_id}/polls", response_model=PollOut, status_code=status.HTTP_201_CREATED)
+@router.post("/{event_uuid}/polls", response_model=PollOut, status_code=status.HTTP_201_CREATED)
 def create_poll(
-    event_id: int,
+    event_uuid: str,
     body: PollCreate,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    member = _require_host_or_cohost(event_id, user_id, db)
+    event = resolve_event(event_uuid, db)
+    _require_host_or_cohost(event.id, user_id, db)
     if len(body.options) < 2:
         raise HTTPException(status_code=400, detail="A poll must have at least 2 options")
 
     poll = Poll(
-        event_id=event_id,
+        event_id=event.id,
         created_by=user_id,
         question=body.question,
         allow_multi_select=body.allow_multi_select,
@@ -105,18 +108,19 @@ def create_poll(
     return _build_poll_out(poll, user_id, True)
 
 
-@router.post("/{event_id}/polls/{poll_id}/vote", response_model=PollOut)
+@router.post("/{event_uuid}/polls/{poll_id}/vote", response_model=PollOut)
 def vote(
-    event_id: int,
+    event_uuid: str,
     poll_id: int,
     body: PollVoteCreate,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    member = _require_member(event_id, user_id, db)
+    event = resolve_event(event_uuid, db)
+    member = _require_member(event.id, user_id, db)
     is_privileged = member.role in ("host", "co_host")
 
-    poll = db.query(Poll).filter(Poll.id == poll_id, Poll.event_id == event_id).first()
+    poll = db.query(Poll).filter(Poll.id == poll_id, Poll.event_id == event.id).first()
     if not poll:
         raise HTTPException(status_code=404, detail="Poll not found")
 
@@ -150,15 +154,16 @@ def vote(
     return _build_poll_out(poll, user_id, is_privileged)
 
 
-@router.post("/{event_id}/polls/{poll_id}/close", response_model=PollOut)
+@router.post("/{event_uuid}/polls/{poll_id}/close", response_model=PollOut)
 def close_poll(
-    event_id: int,
+    event_uuid: str,
     poll_id: int,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_host_or_cohost(event_id, user_id, db)
-    poll = db.query(Poll).filter(Poll.id == poll_id, Poll.event_id == event_id).first()
+    event = resolve_event(event_uuid, db)
+    _require_host_or_cohost(event.id, user_id, db)
+    poll = db.query(Poll).filter(Poll.id == poll_id, Poll.event_id == event.id).first()
     if not poll:
         raise HTTPException(status_code=404, detail="Poll not found")
     poll.is_closed = True
@@ -167,15 +172,16 @@ def close_poll(
     return _build_poll_out(poll, user_id, True)
 
 
-@router.delete("/{event_id}/polls/{poll_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{event_uuid}/polls/{poll_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_poll(
-    event_id: int,
+    event_uuid: str,
     poll_id: int,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_host_or_cohost(event_id, user_id, db)
-    poll = db.query(Poll).filter(Poll.id == poll_id, Poll.event_id == event_id).first()
+    event = resolve_event(event_uuid, db)
+    _require_host_or_cohost(event.id, user_id, db)
+    poll = db.query(Poll).filter(Poll.id == poll_id, Poll.event_id == event.id).first()
     if not poll:
         raise HTTPException(status_code=404, detail="Poll not found")
     db.delete(poll)
