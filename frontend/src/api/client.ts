@@ -17,6 +17,7 @@
 // Strip trailing slash so we never get double-slashes
 const EVENTS_BASE = (import.meta.env.VITE_EVENTS_API_URL ?? '').replace(/\/$/, '')
 const USERS_BASE = (import.meta.env.VITE_USERS_API_URL ?? '').replace(/\/$/, '')
+const AI_BASE = (import.meta.env.VITE_AI_API_URL ?? '').replace(/\/$/, '')
 
 // Token getter is injected at startup by AuthContext
 let _getToken: (() => string | null) | null = null
@@ -51,11 +52,11 @@ async function handleResponse<T>(res: Response): Promise<T> {
  *                 Do NOT include the service name again — the base URL already has it.
  */
 export async function apiFetch<T>(
-  base: 'events' | 'users',
+  base: 'events' | 'users' | 'ai',
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const baseUrl = base === 'events' ? EVENTS_BASE : USERS_BASE
+  const baseUrl = base === 'events' ? EVENTS_BASE : base === 'ai' ? AI_BASE : USERS_BASE
   const url = `${baseUrl}${path}`
   const res = await fetch(url, {
     ...options,
@@ -67,4 +68,4 @@ export async function apiFetch<T>(
   return handleResponse<T>(res)
 }
 
-export { EVENTS_BASE, USERS_BASE }
+export { EVENTS_BASE, USERS_BASE, AI_BASE }

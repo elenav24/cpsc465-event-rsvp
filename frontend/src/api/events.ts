@@ -259,3 +259,18 @@ export function createReminder(eventUuid: string, offsetMinutes: number): Promis
 export function deleteReminder(eventUuid: string, reminderId: number): Promise<void> {
   return apiFetch('events', `/${eventUuid}/reminders/${reminderId}`, { method: 'DELETE' })
 }
+
+// ── AI Assistant ──────────────────────────────────────────────────────────────
+
+export interface AiMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export function askAi(eventUuid: string, messages: AiMessage[]): Promise<{ reply: string }> {
+  return apiFetch('ai', `/ai/${eventUuid}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages }),
+  })
+}

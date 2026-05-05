@@ -58,6 +58,12 @@ data "aws_iam_policy_document" "lambda_permissions" {
     actions   = ["ses:SendEmail", "ses:SendRawEmail"]
     resources = ["*"]
   }
+
+  # Allow AI Lambda to call Bedrock (Claude 3 Haiku)
+  statement {
+    actions   = ["bedrock:InvokeModel"]
+    resources = ["arn:aws:bedrock:*::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"]
+  }
 }
 
 resource "aws_iam_role_policy" "lambda_permissions" {
@@ -148,4 +154,26 @@ resource "aws_lambda_permission" "chat_ws_gateway" {
   function_name = aws_lambda_function.chat.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.chat_ws.execution_arn}/*/*"
+}
+
+# ── AI Lambda ─────────────────────────────────────────────────────────────────
+resource "aws_lambda_function" "ai" {
+  function_name = "${var.app_name}-ai"
+  role          = aws_iam_role.lambda.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.services["ai"].repository_url}:latest"
+  architectures = ["arm64"]
+  timeout       = 60   # Bedrock calls can take a few seconds
+  memory_size   = 512
+
+  environment {
+    variables = merge(local.lambda_common_env, {
+      MESSAGES_TABLE = aws_dynamodb_table.chat_messages.name
+      AWS_REGION     = var.aws_region
+    })
+  }
+
+  lifecycle {
+    ignore_changes = [image_uri, environment]
+  }
 }
