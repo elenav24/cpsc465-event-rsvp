@@ -8,3 +8,11 @@ data "aws_vpc" "main" {
     values = ["event-rsvp-vpc"]
   }
 }
+
+# Route table for the RDS subnet — needs an IGW route so the DB is reachable
+# from the internet (Lambda runs outside the VPC).
+resource "aws_route" "rds_subnet_igw" {
+  route_table_id         = "rtb-05607e6e1de265fbd"
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = "igw-0642db481432634f4"
+}
