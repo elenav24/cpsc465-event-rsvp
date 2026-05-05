@@ -11,7 +11,7 @@ import uuid
 
 # revision identifiers, used by Alembic.
 revision = "0003_add_uuid_to_events"
-down_revision = "0002_full_schema"
+down_revision = "0002_events"
 branch_labels = None
 depends_on = None
 
