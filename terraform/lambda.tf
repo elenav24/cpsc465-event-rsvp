@@ -59,10 +59,10 @@ data "aws_iam_policy_document" "lambda_permissions" {
     resources = ["*"]
   }
 
-  # Allow AI Lambda to call Bedrock (Claude 3 Haiku)
+  # Allow AI Lambda to call Bedrock (Claude 3.5 Haiku)
   statement {
     actions   = ["bedrock:InvokeModel"]
-    resources = ["arn:aws:bedrock:*::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"]
+    resources = ["arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0"]
   }
 }
 
