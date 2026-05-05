@@ -63,7 +63,7 @@ export default function CreateEventPage() {
       }
 
       const event = await createEvent(formData)
-      navigate(`/events/${event.id}`)
+      navigate(`/events/${event.uuid}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create event. Please try again.')
     } finally {

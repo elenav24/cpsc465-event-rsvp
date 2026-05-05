@@ -11,6 +11,7 @@ from app.db.models.announcement import Announcement
 from app.db.models.rsvp import RSVP
 from app.schemas.announcement import AnnouncementCreate, AnnouncementOut
 from app.utils.sms import send_sms
+from app.routers._resolve import resolve_event
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -33,21 +34,22 @@ def _require_host_or_cohost(event_id: int, user_id: str, db: Session) -> EventMe
     return member
 
 
-@router.get("/{event_id}/announcements", response_model=list[AnnouncementOut])
+@router.get("/{event_uuid}/announcements", response_model=list[AnnouncementOut])
 def get_announcements(
-    event_id: int,
+    event_uuid: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_member(event_id, user_id, db)
+    event = resolve_event(event_uuid, db)
+    _require_member(event.id, user_id, db)
     return db.query(Announcement).filter(
-        Announcement.event_id == event_id
+        Announcement.event_id == event.id
     ).order_by(Announcement.created_at.desc()).all()
 
 
-@router.post("/{event_id}/announcements", response_model=AnnouncementOut, status_code=status.HTTP_201_CREATED)
+@router.post("/{event_uuid}/announcements", response_model=AnnouncementOut, status_code=status.HTTP_201_CREATED)
 def create_announcement(
-    event_id: int,
+    event_uuid: str,
     body: AnnouncementCreate,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
@@ -56,24 +58,17 @@ def create_announcement(
     Creates an announcement and sends SMS to all opted-in members.
     SMS is best-effort — failures are logged but don't fail the request.
     """
-    _require_host_or_cohost(event_id, user_id, db)
-
-    event = db.query(Event).filter(Event.id == event_id).first()
+    event = resolve_event(event_uuid, db)
+    _require_host_or_cohost(event.id, user_id, db)
 
     announcement = Announcement(
-        event_id=event_id,
+        event_id=event.id,
         author_id=user_id,
         body=body.body,
     )
     db.add(announcement)
     db.flush()
 
-    # Fan out SMS to opted-in members
-    # We need phone numbers — query the users service DB isn't available here,
-    # so we use a cross-service pattern: store phone+sms_opted_in on EventMember
-    # via a denormalized column, OR call the users service.
-    # For now we use the SNS approach: publish to a topic and let the
-    # notifications Lambda handle delivery. This keeps services decoupled.
     _send_announcement_sms(event, announcement, db)
 
     announcement.sms_sent = True
@@ -114,17 +109,18 @@ def _send_announcement_sms(event, announcement: Announcement, db: Session):
         logger.warning("Failed to publish announcement to SNS: %s", e)
 
 
-@router.delete("/{event_id}/announcements/{announcement_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{event_uuid}/announcements/{announcement_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_announcement(
-    event_id: int,
+    event_uuid: str,
     announcement_id: int,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_host_or_cohost(event_id, user_id, db)
+    event = resolve_event(event_uuid, db)
+    _require_host_or_cohost(event.id, user_id, db)
     ann = db.query(Announcement).filter(
         Announcement.id == announcement_id,
-        Announcement.event_id == event_id,
+        Announcement.event_id == event.id,
     ).first()
     if not ann:
         raise HTTPException(status_code=404, detail="Announcement not found")

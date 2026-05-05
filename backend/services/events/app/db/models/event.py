@@ -1,3 +1,4 @@
+import uuid as _uuid
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import DateTime, String, Integer, Boolean, Text, ForeignKey, func
@@ -9,6 +10,7 @@ class Event(Base):
     __tablename__ = "events"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    uuid: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True, default=lambda: str(_uuid.uuid4()))
     title: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     location: Mapped[Optional[str]] = mapped_column(String, nullable=True)

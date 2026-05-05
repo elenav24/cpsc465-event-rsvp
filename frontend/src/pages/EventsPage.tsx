@@ -20,7 +20,7 @@ function EventCard({ event, myId, myDbId }: { event: EventOut; myId: string; myD
   const badgeClass = isHost ? '' : ' attending'
 
   return (
-    <Link to={`/events/${event.id}`} className="event-card">
+    <Link to={`/events/${event.uuid}`} className="event-card">
       <div className="event-card-img">
         {event.flyer_url ? (
           <img src={event.flyer_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
