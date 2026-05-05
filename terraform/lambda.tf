@@ -67,6 +67,16 @@ data "aws_iam_policy_document" "lambda_permissions" {
       "arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
     ]
   }
+
+  # Required for Anthropic Marketplace model subscription
+  statement {
+    actions = [
+      "aws-marketplace:ViewSubscriptions",
+      "aws-marketplace:Subscribe",
+      "aws-marketplace:Unsubscribe",
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "lambda_permissions" {
