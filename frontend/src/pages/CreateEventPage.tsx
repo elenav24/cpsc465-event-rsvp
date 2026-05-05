@@ -1,20 +1,32 @@
 import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { createEvent } from '../api/events'
 import { useAuth } from '../auth/AuthContext'
 
+interface TemplatePrefill {
+  title: string
+  description: string
+  hasPotluck: boolean
+  polls: string[]
+  tasks: string[]
+}
+
 export default function CreateEventPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { profile } = useAuth()
 
-  // Form state
-  const [title, setTitle] = useState('')
+  // Read template prefill from router state if coming from Browse Templates
+  const tpl = (location.state as { template?: TemplatePrefill } | null)?.template
+
+  // Form state — seeded from template if present
+  const [title, setTitle] = useState(tpl?.title ?? '')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [endDate, setEndDate] = useState('')
   const [endTime, setEndTime] = useState('')
-  const [location, setLocation] = useState('')
-  const [description, setDescription] = useState('')
+  const [location_, setLocation] = useState('')
+  const [description, setDescription] = useState(tpl?.description ?? '')
   const [recurrenceRule, setRecurrenceRule] = useState('')
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('')
   const [flyerFile, setFlyerFile] = useState<File | null>(null)
@@ -45,7 +57,7 @@ export default function CreateEventPage() {
       const formData = new FormData()
       formData.append('title', title.trim())
       if (description) formData.append('description', description)
-      if (location) formData.append('location', location)
+      if (location_) formData.append('location', location_)
 
       // Combine date + time into ISO string
       if (date) {
@@ -87,6 +99,13 @@ export default function CreateEventPage() {
       <p className="create-sub">
         Fill in the details below to create your event space. Don't stress, you can always change things later.
       </p>
+
+      {tpl && (
+        <div style={{ background: 'var(--pink-bg)', border: '1px solid var(--pink-pale)', borderRadius: 12, padding: '0.75rem 1.25rem', maxWidth: 960, margin: '0 auto 1.5rem', display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.9rem', color: 'var(--text-mid)' }}>
+          <span>✨</span>
+          <span>Using the <strong style={{ color: 'var(--pink)' }}>{tpl.title}</strong> template — title and description are pre-filled. Customize anything you like.</span>
+        </div>
+      )}
 
       {error && (
         <div style={{ background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '0.75rem 1rem', marginBottom: '1.5rem', color: '#c00', maxWidth: 960, margin: '0 auto 1.5rem' }}>
@@ -187,7 +206,7 @@ export default function CreateEventPage() {
             <input
               className="field-input"
               placeholder="🔍 Search address or venue..."
-              value={location}
+              value={location_}
               onChange={(e) => setLocation(e.target.value)}
             />
             <label className="field-label">Description</label>

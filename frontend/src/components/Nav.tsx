@@ -61,7 +61,8 @@ export default function Nav() {
                 pointerEvents: hideCenter ? 'none' : 'auto',
                 transition: 'opacity 0.3s ease',
             }}>
-                {!loggedIn && <Link to="/how-it-works" className="nav-link">How It Works</Link>}
+                <Link to="/how-it-works" className="nav-link">How It Works</Link>
+                <Link to="/templates" className="nav-link">Browse Templates</Link>
             </div>
 
             {/* Right actions */}
@@ -140,7 +141,7 @@ export default function Nav() {
                     ) : (
                         <>
                             <Link to="/how-it-works" className="mobile-link" onClick={() => setMobileOpen(false)}>How It Works</Link>
-                            <a className="mobile-link" onClick={() => setMobileOpen(false)}>Browse Templates</a>
+                            <Link to="/templates" className="mobile-link" onClick={() => setMobileOpen(false)}>Browse Templates</Link>
                             <Link to="/login" className="mobile-link" onClick={() => setMobileOpen(false)}>Log In</Link>
                             <Link to="/signup" className="mobile-link mobile-signup" onClick={() => setMobileOpen(false)}>Sign Up</Link>
                         </>

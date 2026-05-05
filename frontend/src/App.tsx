@@ -11,6 +11,7 @@ import EventPage from './pages/EventPage'
 import ProfilePage from './pages/ProfilePage'
 import { joinViaInvite } from './api/events'
 import HowItWorks from './pages/HowItWorks'
+import BrowseTemplatesPage from './pages/BrowseTemplatesPage'
 import Footer from './components/Footer.tsx'
 
 // Block all rendering until auth state is resolved — covers OAuth callbacks,
@@ -99,6 +100,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<PublicOnlyRoute><LandingPage /></PublicOnlyRoute>} />
           <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/templates" element={<BrowseTemplatesPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/join/:token" element={<JoinPage />} />
