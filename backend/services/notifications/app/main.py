@@ -35,9 +35,9 @@ def _get_ses():
     return _ses
 
 
-def _send_email(to_email: str, subject: str, body: str, event_title: str = "") -> bool:
+def _send_email(to_email: str, subject: str, body: str, event_title: str = "", author_name: str = "") -> bool:
     """Send an email via SES. Returns True on success, False on failure."""
-    html_body = _build_html_email(body, event_title)
+    html_body = _build_html_email(body, event_title, author_name)
     try:
         _get_ses().send_email(
             Source=FROM_EMAIL,
@@ -56,12 +56,30 @@ def _send_email(to_email: str, subject: str, body: str, event_title: str = "") -
         return False
 
 
-def _build_html_email(body: str, event_title: str = "") -> str:
-    """Build a styled HTML email for announcements."""
-    # Escape HTML in the body and convert newlines to <br>
+def _build_html_email(body: str, event_title: str = "", author_name: str = "") -> str:
+    """Build a styled HTML email for announcements with sender quote."""
     import html
     escaped_body = html.escape(body).replace("\n", "<br>")
-    event_header = f'<p style="margin:0 0 4px 0;font-size:13px;color:#888;">From your event</p><h2 style="margin:0 0 16px 0;font-size:20px;color:#1a1a1a;">{html.escape(event_title)}</h2>' if event_title else ''
+    escaped_title = html.escape(event_title) if event_title else ""
+    escaped_author = html.escape(author_name) if author_name else ""
+
+    # Generate initials for avatar
+    initials = "".join(w[0] for w in author_name.split()[:2]).upper() if author_name else "?"
+
+    author_section = ""
+    if escaped_author:
+        author_section = f"""
+          <table cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+            <tr>
+              <td style="vertical-align:middle;padding-right:12px;">
+                <div style="width:40px;height:40px;border-radius:50%;background:#c8567e;color:#fff;font-size:16px;font-weight:600;line-height:40px;text-align:center;">{initials}</div>
+              </td>
+              <td style="vertical-align:middle;">
+                <span style="font-size:15px;font-weight:600;color:#1a1a1a;">{escaped_author}</span>
+                <br><span style="font-size:12px;color:#888;">posted an announcement</span>
+              </td>
+            </tr>
+          </table>"""
 
     return f"""<!DOCTYPE html>
 <html>
@@ -71,14 +89,15 @@ def _build_html_email(body: str, event_title: str = "") -> str:
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
         <!-- Header -->
-        <tr><td style="background:linear-gradient(135deg,#c8567e,#e88da5);padding:28px 32px;">
-          <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">cohosted</h1>
+        <tr><td style="background:linear-gradient(135deg,#c8567e,#e88da5);padding:24px 32px;">
+          <h1 style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">cohosted</h1>
+          <p style="margin:6px 0 0 0;font-size:14px;color:rgba(255,255,255,0.85);">{escaped_title}</p>
         </td></tr>
         <!-- Body -->
-        <tr><td style="padding:32px;">
-          {event_header}
-          <div style="font-size:16px;line-height:1.6;color:#333333;">
-            {escaped_body}
+        <tr><td style="padding:28px 32px;">
+          {author_section}
+          <div style="background:#faf7f5;border-left:3px solid #c8567e;padding:16px 20px;border-radius:0 8px 8px 0;">
+            <p style="margin:0;font-size:16px;line-height:1.6;color:#333333;">{escaped_body}</p>
           </div>
         </td></tr>
         <!-- Footer -->
@@ -132,6 +151,18 @@ def _handle_announcement(sns_message: str) -> None:
         ).fetchone()
         event_title = event_row[0] if event_row else ""
 
+        # Get sender info
+        author_id = payload.get("author_id", "")
+        author_name = ""
+        author_picture = ""
+        if author_id:
+            author_row = conn.execute(
+                text("SELECT display_name, email FROM users WHERE cognito_sub = :sub"),
+                {"sub": author_id},
+            ).fetchone()
+            if author_row:
+                author_name = author_row[0] or author_row[1] or "Someone"
+
         rows = conn.execute(
             text(
                 "SELECT u.email FROM event_members em "
@@ -141,11 +172,11 @@ def _handle_announcement(sns_message: str) -> None:
             {"eid": event_id},
         ).fetchall()
 
-    subject = f"Cohosted: {message.split(chr(10))[0][:50]}"
+    subject = f"{event_title}: {message.split(chr(10))[0][:40]}"
     for row in rows:
         email = row[0]
         try:
-            if _send_email(email, subject, message, event_title):
+            if _send_email(email, subject, message, event_title, author_name):
                 logger.info("Sent announcement email to %s", email)
         except Exception as e:
             logger.warning("Failed to send email to %s: %s", email, e)
