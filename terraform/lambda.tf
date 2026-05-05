@@ -59,10 +59,13 @@ data "aws_iam_policy_document" "lambda_permissions" {
     resources = ["*"]
   }
 
-  # Allow AI Lambda to call Bedrock (Claude 3.5 Haiku)
+  # Allow AI Lambda to call Bedrock (Claude Haiku 4.5 via cross-region inference profile)
   statement {
-    actions   = ["bedrock:InvokeModel"]
-    resources = ["arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0"]
+    actions = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
+    resources = [
+      "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+      "arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    ]
   }
 }
 

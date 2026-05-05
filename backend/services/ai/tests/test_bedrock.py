@@ -63,7 +63,7 @@ class TestBedrockChat:
 
     def test_passes_correct_model_id(self):
         from app.config import BEDROCK_MODEL_ID
-        assert "claude-3-5-haiku" in BEDROCK_MODEL_ID
+        assert "claude-haiku-4-5" in BEDROCK_MODEL_ID
         with patch("app.bedrock._get_client") as mock_get:
             client = MagicMock()
             client.converse.return_value = _make_bedrock_response("ok")
