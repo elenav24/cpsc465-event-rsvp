@@ -7,6 +7,7 @@ from app.deps.auth import get_current_user_sub
 from app.db.models.event_member import EventMember
 from app.db.models.task import Task
 from app.schemas.task import TaskCreate, TaskUpdate, TaskOut
+from app.routers._resolve import resolve_event
 
 router = APIRouter()
 
@@ -28,36 +29,38 @@ def _require_host_or_cohost(event_id: int, user_id: str, db: Session) -> EventMe
     return member
 
 
-@router.get("/{event_id}/tasks", response_model=list[TaskOut])
+@router.get("/{event_uuid}/tasks", response_model=list[TaskOut])
 def get_tasks(
-    event_id: int,
+    event_uuid: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_member(event_id, user_id, db)
-    return db.query(Task).filter(Task.event_id == event_id).order_by(Task.created_at).all()
+    event = resolve_event(event_uuid, db)
+    _require_member(event.id, user_id, db)
+    return db.query(Task).filter(Task.event_id == event.id).order_by(Task.created_at).all()
 
 
-@router.post("/{event_id}/tasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
+@router.post("/{event_uuid}/tasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
 def create_task(
-    event_id: int,
+    event_uuid: str,
     body: TaskCreate,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_host_or_cohost(event_id, user_id, db)
+    event = resolve_event(event_uuid, db)
+    _require_host_or_cohost(event.id, user_id, db)
 
     # Validate assigned_to is a member if provided
     if body.assigned_to:
         assignee = db.query(EventMember).filter(
-            EventMember.event_id == event_id,
+            EventMember.event_id == event.id,
             EventMember.user_id == body.assigned_to,
         ).first()
         if not assignee:
             raise HTTPException(status_code=400, detail="Assigned user is not a member of this event")
 
     task = Task(
-        event_id=event_id,
+        event_id=event.id,
         created_by=user_id,
         title=body.title,
         description=body.description,
@@ -70,9 +73,9 @@ def create_task(
     return task
 
 
-@router.put("/{event_id}/tasks/{task_id}", response_model=TaskOut)
+@router.put("/{event_uuid}/tasks/{task_id}", response_model=TaskOut)
 def update_task(
-    event_id: int,
+    event_uuid: str,
     task_id: int,
     body: TaskUpdate,
     user_id: Annotated[str, Depends(get_current_user_sub)],
@@ -83,8 +86,9 @@ def update_task(
     Regular members can only mark a task complete/incomplete if it's assigned to them,
     or volunteer (assign themselves) to an unassigned task.
     """
-    member = _require_member(event_id, user_id, db)
-    task = db.query(Task).filter(Task.id == task_id, Task.event_id == event_id).first()
+    event = resolve_event(event_uuid, db)
+    member = _require_member(event.id, user_id, db)
+    task = db.query(Task).filter(Task.id == task_id, Task.event_id == event.id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
@@ -94,7 +98,7 @@ def update_task(
         # Validate assigned_to if being changed
         if body.assigned_to is not None:
             assignee = db.query(EventMember).filter(
-                EventMember.event_id == event_id,
+                EventMember.event_id == event.id,
                 EventMember.user_id == body.assigned_to,
             ).first()
             if not assignee:
@@ -119,15 +123,16 @@ def update_task(
     return task
 
 
-@router.delete("/{event_id}/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{event_uuid}/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(
-    event_id: int,
+    event_uuid: str,
     task_id: int,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_host_or_cohost(event_id, user_id, db)
-    task = db.query(Task).filter(Task.id == task_id, Task.event_id == event_id).first()
+    event = resolve_event(event_uuid, db)
+    _require_host_or_cohost(event.id, user_id, db)
+    task = db.query(Task).filter(Task.id == task_id, Task.event_id == event.id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     db.delete(task)

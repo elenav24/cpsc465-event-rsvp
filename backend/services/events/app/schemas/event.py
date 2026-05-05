@@ -27,6 +27,7 @@ class EventUpdate(BaseModel):
 
 class EventOut(BaseModel):
     id: int
+    uuid: str
     title: str
     host_id: str
     description: Optional[str] = None
@@ -53,6 +54,16 @@ class MemberOut(BaseModel):
     joined_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class JoinResult(BaseModel):
+    """Returned by the join-via-invite endpoint so the frontend can redirect."""
+    id: int
+    event_id: int
+    event_uuid: str
+    user_id: str
+    role: str
+    joined_at: datetime
 
 
 class MemberRoleUpdate(BaseModel):

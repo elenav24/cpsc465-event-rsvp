@@ -7,6 +7,7 @@ from app.deps.auth import get_current_user_sub
 from app.db.models.event_member import EventMember
 from app.db.models.potluck import PotluckItem, PotluckClaim
 from app.schemas.potluck import PotluckItemCreate, PotluckItemUpdate, PotluckItemOut, PotluckClaimOut
+from app.routers._resolve import resolve_event
 
 router = APIRouter()
 
@@ -44,27 +45,29 @@ def _build_item_out(item: PotluckItem) -> PotluckItemOut:
     )
 
 
-@router.get("/{event_id}/potluck", response_model=list[PotluckItemOut])
+@router.get("/{event_uuid}/potluck", response_model=list[PotluckItemOut])
 def get_potluck(
-    event_id: int,
+    event_uuid: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_member(event_id, user_id, db)
-    items = db.query(PotluckItem).filter(PotluckItem.event_id == event_id).all()
+    event = resolve_event(event_uuid, db)
+    _require_member(event.id, user_id, db)
+    items = db.query(PotluckItem).filter(PotluckItem.event_id == event.id).all()
     return [_build_item_out(i) for i in items]
 
 
-@router.post("/{event_id}/potluck", response_model=PotluckItemOut, status_code=status.HTTP_201_CREATED)
+@router.post("/{event_uuid}/potluck", response_model=PotluckItemOut, status_code=status.HTTP_201_CREATED)
 def create_potluck_item(
-    event_id: int,
+    event_uuid: str,
     body: PotluckItemCreate,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_host_or_cohost(event_id, user_id, db)
+    event = resolve_event(event_uuid, db)
+    _require_host_or_cohost(event.id, user_id, db)
     item = PotluckItem(
-        event_id=event_id,
+        event_id=event.id,
         created_by=user_id,
         name=body.name,
         description=body.description,
@@ -76,16 +79,17 @@ def create_potluck_item(
     return _build_item_out(item)
 
 
-@router.put("/{event_id}/potluck/{item_id}", response_model=PotluckItemOut)
+@router.put("/{event_uuid}/potluck/{item_id}", response_model=PotluckItemOut)
 def update_potluck_item(
-    event_id: int,
+    event_uuid: str,
     item_id: int,
     body: PotluckItemUpdate,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_host_or_cohost(event_id, user_id, db)
-    item = db.query(PotluckItem).filter(PotluckItem.id == item_id, PotluckItem.event_id == event_id).first()
+    event = resolve_event(event_uuid, db)
+    _require_host_or_cohost(event.id, user_id, db)
+    item = db.query(PotluckItem).filter(PotluckItem.id == item_id, PotluckItem.event_id == event.id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Potluck item not found")
     for field, value in body.model_dump(exclude_unset=True).items():
@@ -95,31 +99,33 @@ def update_potluck_item(
     return _build_item_out(item)
 
 
-@router.delete("/{event_id}/potluck/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{event_uuid}/potluck/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_potluck_item(
-    event_id: int,
+    event_uuid: str,
     item_id: int,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_host_or_cohost(event_id, user_id, db)
-    item = db.query(PotluckItem).filter(PotluckItem.id == item_id, PotluckItem.event_id == event_id).first()
+    event = resolve_event(event_uuid, db)
+    _require_host_or_cohost(event.id, user_id, db)
+    item = db.query(PotluckItem).filter(PotluckItem.id == item_id, PotluckItem.event_id == event.id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Potluck item not found")
     db.delete(item)
     db.commit()
 
 
-@router.post("/{event_id}/potluck/{item_id}/claim", response_model=PotluckItemOut, status_code=status.HTTP_201_CREATED)
+@router.post("/{event_uuid}/potluck/{item_id}/claim", response_model=PotluckItemOut, status_code=status.HTTP_201_CREATED)
 def claim_item(
-    event_id: int,
+    event_uuid: str,
     item_id: int,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
     """Attendee signs up to bring this item."""
-    _require_member(event_id, user_id, db)
-    item = db.query(PotluckItem).filter(PotluckItem.id == item_id, PotluckItem.event_id == event_id).first()
+    event = resolve_event(event_uuid, db)
+    _require_member(event.id, user_id, db)
+    item = db.query(PotluckItem).filter(PotluckItem.id == item_id, PotluckItem.event_id == event.id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Potluck item not found")
 
@@ -139,15 +145,16 @@ def claim_item(
     return _build_item_out(item)
 
 
-@router.delete("/{event_id}/potluck/{item_id}/claim", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{event_uuid}/potluck/{item_id}/claim", status_code=status.HTTP_204_NO_CONTENT)
 def unclaim_item(
-    event_id: int,
+    event_uuid: str,
     item_id: int,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
     """Attendee removes their claim."""
-    _require_member(event_id, user_id, db)
+    event = resolve_event(event_uuid, db)
+    _require_member(event.id, user_id, db)
     claim = db.query(PotluckClaim).filter(
         PotluckClaim.item_id == item_id,
         PotluckClaim.user_id == user_id,

@@ -1,4 +1,5 @@
 import secrets
+import uuid as _uuid
 from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile, File, status
 from sqlalchemy.orm import Session
@@ -8,12 +9,19 @@ from app.deps.auth import get_current_user_sub
 from app.utils.upload_to_s3 import upload_file_to_s3
 from app.db.models.event import Event
 from app.db.models.event_member import EventMember
-from app.schemas.event import EventCreate, EventOut, EventUpdate, MemberOut, MemberRoleUpdate
+from app.schemas.event import EventCreate, EventOut, EventUpdate, MemberOut, MemberRoleUpdate, JoinResult
 
 router = APIRouter()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _get_event_by_uuid_or_404(event_uuid: str, db: Session) -> Event:
+    event = db.query(Event).filter(Event.uuid == event_uuid).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event
+
 
 def _get_event_or_404(event_id: int, db: Session) -> Event:
     event = db.query(Event).filter(Event.id == event_id).first()
@@ -56,14 +64,14 @@ def get_my_events(
     return db.query(Event).filter(Event.id.in_(event_ids)).all()
 
 
-@router.get("/{event_id}", response_model=EventOut)
+@router.get("/{event_uuid}", response_model=EventOut)
 def get_event(
-    event_id: int,
+    event_uuid: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    event = _get_event_or_404(event_id, db)
-    member = _get_member(event_id, user_id, db)
+    event = _get_event_by_uuid_or_404(event_uuid, db)
+    member = _get_member(event.id, user_id, db)
     if not member and not event.viewable_by_link:
         raise HTTPException(status_code=403, detail="Access denied")
     return event
@@ -96,6 +104,7 @@ def create_event(
             raise HTTPException(status_code=500, detail="Failed to upload flyer")
 
     event = Event(
+        uuid=str(_uuid.uuid4()),
         title=title,
         description=description,
         location=location,
@@ -119,15 +128,15 @@ def create_event(
     return event
 
 
-@router.put("/{event_id}", response_model=EventOut)
+@router.put("/{event_uuid}", response_model=EventOut)
 def update_event(
-    event_id: int,
+    event_uuid: str,
     body: EventUpdate,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    event = _get_event_or_404(event_id, db)
-    _require_host_or_cohost(event_id, user_id, db)
+    event = _get_event_by_uuid_or_404(event_uuid, db)
+    _require_host_or_cohost(event.id, user_id, db)
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(event, field, value)
     db.commit()
@@ -135,14 +144,14 @@ def update_event(
     return event
 
 
-@router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{event_uuid}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_event(
-    event_id: int,
+    event_uuid: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    event = _get_event_or_404(event_id, db)
-    member = _get_member(event_id, user_id, db)
+    event = _get_event_by_uuid_or_404(event_uuid, db)
+    member = _get_member(event.id, user_id, db)
     if not member or member.role != "host":
         raise HTTPException(status_code=403, detail="Only the host can delete an event")
     db.delete(event)
@@ -151,15 +160,15 @@ def delete_event(
 
 # ── Invite link ───────────────────────────────────────────────────────────────
 
-@router.post("/{event_id}/invite/regenerate", response_model=EventOut)
+@router.post("/{event_uuid}/invite/regenerate", response_model=EventOut)
 def regenerate_invite(
-    event_id: int,
+    event_uuid: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
     """Revoke the current invite link and generate a new token."""
-    event = _get_event_or_404(event_id, db)
-    member = _get_member(event_id, user_id, db)
+    event = _get_event_by_uuid_or_404(event_uuid, db)
+    member = _get_member(event.id, user_id, db)
     if not member or member.role != "host":
         raise HTTPException(status_code=403, detail="Only the host can regenerate the invite link")
     event.invite_token = secrets.token_urlsafe(16)
@@ -169,15 +178,15 @@ def regenerate_invite(
     return event
 
 
-@router.post("/{event_id}/invite/revoke", response_model=EventOut)
+@router.post("/{event_uuid}/invite/revoke", response_model=EventOut)
 def revoke_invite(
-    event_id: int,
+    event_uuid: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
     """Disable the invite link without generating a new one."""
-    event = _get_event_or_404(event_id, db)
-    member = _get_member(event_id, user_id, db)
+    event = _get_event_by_uuid_or_404(event_uuid, db)
+    member = _get_member(event.id, user_id, db)
     if not member or member.role != "host":
         raise HTTPException(status_code=403, detail="Only the host can revoke the invite link")
     event.invite_active = False
@@ -186,7 +195,7 @@ def revoke_invite(
     return event
 
 
-@router.post("/join/{invite_token}", response_model=MemberOut, status_code=status.HTTP_201_CREATED)
+@router.post("/join/{invite_token}", response_model=JoinResult, status_code=status.HTTP_201_CREATED)
 def join_via_invite(
     invite_token: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
@@ -208,7 +217,14 @@ def join_via_invite(
 
     existing = _get_member(event.id, user_id, db)
     if existing:
-        return existing  # already a member, idempotent
+        return JoinResult(
+            id=existing.id,
+            event_id=existing.event_id,
+            event_uuid=event.uuid,
+            user_id=existing.user_id,
+            role=existing.role,
+            joined_at=existing.joined_at,
+        )
 
     member = EventMember(event_id=event.id, user_id=user_id, role="attendee")
     db.add(member)
@@ -218,7 +234,14 @@ def join_via_invite(
 
     db.commit()
     db.refresh(member)
-    return member
+    return JoinResult(
+        id=member.id,
+        event_id=member.event_id,
+        event_uuid=event.uuid,
+        user_id=member.user_id,
+        role=member.role,
+        joined_at=member.joined_at,
+    )
 
 
 @router.post("/pending-invite", status_code=status.HTTP_201_CREATED)
@@ -257,32 +280,33 @@ def register_pending_invite(
 
 # ── Members & roles ───────────────────────────────────────────────────────────
 
-@router.get("/{event_id}/members", response_model=list[MemberOut])
+@router.get("/{event_uuid}/members", response_model=list[MemberOut])
 def get_members(
-    event_id: int,
+    event_uuid: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    _require_member(event_id, user_id, db)
-    return db.query(EventMember).filter(EventMember.event_id == event_id).all()
+    event = _get_event_by_uuid_or_404(event_uuid, db)
+    _require_member(event.id, user_id, db)
+    return db.query(EventMember).filter(EventMember.event_id == event.id).all()
 
 
-@router.put("/{event_id}/members/{target_user_id}/role", response_model=MemberOut)
+@router.put("/{event_uuid}/members/{target_user_id}/role", response_model=MemberOut)
 def update_member_role(
-    event_id: int,
+    event_uuid: str,
     target_user_id: str,
     body: MemberRoleUpdate,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
     """Only the original host can change roles."""
-    event = _get_event_or_404(event_id, db)
+    event = _get_event_by_uuid_or_404(event_uuid, db)
     if event.host_id != user_id:
         raise HTTPException(status_code=403, detail="Only the original host can change roles")
     if body.role not in ("co_host", "attendee"):
         raise HTTPException(status_code=400, detail="Role must be co_host or attendee")
 
-    target = _get_member(event_id, target_user_id, db)
+    target = _get_member(event.id, target_user_id, db)
     if not target:
         raise HTTPException(status_code=404, detail="Member not found")
     if target.role == "host":
@@ -294,16 +318,16 @@ def update_member_role(
     return target
 
 
-@router.delete("/{event_id}/members/{target_user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{event_uuid}/members/{target_user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_member(
-    event_id: int,
+    event_uuid: str,
     target_user_id: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
     """Host/co-host can remove members. Members can remove themselves."""
-    event = _get_event_or_404(event_id, db)
-    requester = _get_member(event_id, user_id, db)
+    event = _get_event_by_uuid_or_404(event_uuid, db)
+    requester = _get_member(event.id, user_id, db)
     if not requester:
         raise HTTPException(status_code=403, detail="Not a member")
 
@@ -313,7 +337,7 @@ def remove_member(
     if not is_self and not is_privileged:
         raise HTTPException(status_code=403, detail="Cannot remove other members")
 
-    target = _get_member(event_id, target_user_id, db)
+    target = _get_member(event.id, target_user_id, db)
     if not target:
         raise HTTPException(status_code=404, detail="Member not found")
     if target.role == "host":

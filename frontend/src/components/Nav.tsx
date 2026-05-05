@@ -1,7 +1,4 @@
-<<<<<<< Updated upstream
-=======
 import { useState, useEffect } from 'react'
->>>>>>> Stashed changes
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import LogoIcon from './LogoIcon'
@@ -10,8 +7,6 @@ export default function Nav() {
     const { user, profile, logout } = useAuth()
     const navigate = useNavigate()
     const loggedIn = !!user
-<<<<<<< Updated upstream
-=======
     const [menuOpen, setMenuOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
 
@@ -20,11 +15,11 @@ export default function Nav() {
         window.addEventListener('scroll', onScroll, { passive: true })
         return () => window.removeEventListener('scroll', onScroll)
     }, [])
->>>>>>> Stashed changes
 
     const handleLogout = () => {
         logout()
         navigate('/')
+        setMenuOpen(false)
     }
 
     const displayName = profile?.display_name ?? profile?.email?.split('@')[0] ?? 'Account'
@@ -37,22 +32,18 @@ export default function Nav() {
                 <span className="nav-logo-text">cohosted</span>
             </Link>
 
-<<<<<<< Updated upstream
-            {/* Center links — absolutely centered in the nav */}
-            <div className="nav-center">
-=======
             {/* Center links — desktop only, fade out on scroll */}
             <div className="nav-center" style={{
                 opacity: scrolled ? 0 : 1,
                 pointerEvents: scrolled ? 'none' : 'auto',
                 transition: 'opacity 0.3s ease',
             }}>
->>>>>>> Stashed changes
+
                 <Link to="/how-it-works" className="nav-link">How It Works</Link>
                 <a className="nav-link">Browse Templates</a>
             </div>
 
-            {/* Auth — right */}
+            {/* Auth — desktop right */}
             <div className="nav-actions">
                 {loggedIn ? (
                     <>
@@ -71,6 +62,39 @@ export default function Nav() {
                 )}
             </div>
 
+            {/* Hamburger — mobile only */}
+            <button
+                className="nav-hamburger"
+                onClick={() => setMenuOpen(o => !o)}
+                aria-label="Toggle menu"
+                aria-expanded={menuOpen}
+            >
+                <span className={`ham-line ${menuOpen ? 'open-1' : ''}`} />
+                <span className={`ham-line ${menuOpen ? 'open-2' : ''}`} />
+                <span className={`ham-line ${menuOpen ? 'open-3' : ''}`} />
+            </button>
+
+            {/* Mobile dropdown */}
+            {menuOpen && (
+                <div className="nav-mobile-menu">
+                    <Link to="/how-it-works" className="mobile-link" onClick={() => setMenuOpen(false)}>How It Works</Link>
+                    <a className="mobile-link" onClick={() => setMenuOpen(false)}>Browse Templates</a>
+                    {loggedIn ? (
+                        <>
+                            <Link to="/events" className="mobile-link" onClick={() => setMenuOpen(false)}>My Events</Link>
+                            <Link to="/events/new" className="mobile-link" onClick={() => setMenuOpen(false)}>+ Create Event</Link>
+                            <Link to="/profile" className="mobile-link" onClick={() => setMenuOpen(false)}>{displayName}</Link>
+                            <button className="mobile-link mobile-signout" onClick={handleLogout}>Sign Out</button>
+                        </>
+                    ) : (
+                        <>
+                            <Link to="/login" className="mobile-link" onClick={() => setMenuOpen(false)}>Log In</Link>
+                            <Link to="/signup" className="mobile-link mobile-signup" onClick={() => setMenuOpen(false)}>Sign Up</Link>
+                        </>
+                    )}
+                </div>
+            )}
+
             <style>{`
         .nav {
           position: fixed;
@@ -86,7 +110,6 @@ export default function Nav() {
           padding: 0 2.5rem;
         }
 
-        /* Logo */
         .nav-logo {
           font-family: 'Cantora One', cursive;
           font-size: 1.2rem;
@@ -106,7 +129,6 @@ export default function Nav() {
           line-height: 1;
         }
 
-        /* Center links — absolutely positioned so they're truly centered */
         .nav-center {
           position: absolute;
           left: 50%;
@@ -127,7 +149,6 @@ export default function Nav() {
         }
         .nav-link:hover { color: var(--pink); text-decoration: none; }
 
-        /* Right actions */
         .nav-actions {
           display: flex;
           align-items: center;
@@ -136,7 +157,6 @@ export default function Nav() {
           z-index: 1;
         }
 
-/* Pink pill button — exact figma: #d06395, 100px × 38px, rounded-50px */
         .nav-pill {
           display: inline-flex;
           align-items: center;
@@ -162,7 +182,6 @@ export default function Nav() {
           color: #fff;
         }
 
-        /* Ghost text button */
         .nav-text-btn {
           font-family: 'Albert Sans', sans-serif;
           font-size: 18px;
@@ -179,7 +198,6 @@ export default function Nav() {
         }
         .nav-text-btn:hover { opacity: 0.65; color: var(--pink); text-decoration: none; }
 
-        /* Primary action button (logged-in) */
         .nav-btn-primary {
           display: inline-flex;
           align-items: center;
@@ -200,7 +218,6 @@ export default function Nav() {
         }
         .nav-btn-primary:hover { background: #b04068; transform: translateY(-1px); text-decoration: none; color: white; }
 
-        /* Ghost button (sign out) */
         .nav-btn-ghost {
           font-family: 'Albert Sans', sans-serif;
           font-size: 15px;
@@ -218,8 +235,77 @@ export default function Nav() {
         }
         .nav-btn-ghost:hover { border-color: #aaa; color: #333; }
 
-        @media (max-width: 640px) {
+        /* ── Hamburger ── */
+        .nav-hamburger {
+          display: none;
+          flex-direction: column;
+          justify-content: center;
+          gap: 5px;
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 4px;
+          z-index: 101;
+        }
+        .ham-line {
+          display: block;
+          width: 24px;
+          height: 2px;
+          background: #1a1a1a;
+          border-radius: 2px;
+          transition: transform 0.25s ease, opacity 0.25s ease;
+          transform-origin: center;
+        }
+        .open-1 { transform: translateY(7px) rotate(45deg); }
+        .open-2 { opacity: 0; }
+        .open-3 { transform: translateY(-7px) rotate(-45deg); }
+
+        /* ── Mobile dropdown ── */
+        .nav-mobile-menu {
+          position: fixed;
+          top: var(--nav-height);
+          left: 0;
+          right: 0;
+          background: rgba(255,255,255,0.97);
+          backdrop-filter: blur(12px);
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          flex-direction: column;
+          padding: 1rem 2rem 1.5rem;
+          gap: 0.25rem;
+          z-index: 99;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .mobile-link {
+          font-family: 'Albert Sans', sans-serif;
+          font-size: 18px;
+          font-weight: 500;
+          color: #333;
+          text-decoration: none;
+          padding: 12px 0;
+          border-bottom: 1px solid var(--border-light);
+          cursor: pointer;
+          background: none;
+          border-left: none;
+          border-right: none;
+          border-top: none;
+          text-align: left;
+          transition: color 0.2s;
+        }
+        .mobile-link:last-child { border-bottom: none; }
+        .mobile-link:hover { color: var(--pink); text-decoration: none; }
+        .mobile-signup {
+          margin-top: 0.5rem;
+          color: var(--pink);
+          font-weight: 700;
+        }
+        .mobile-signout { color: var(--danger); }
+
+        @media (max-width: 850px) {
           .nav-center { display: none; }
+          .nav-actions { display: none; }
+          .nav-hamburger { display: flex; }
+          .nav { padding: 0 1.25rem; }
         }
       `}</style>
         </nav>

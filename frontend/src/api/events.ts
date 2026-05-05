@@ -2,6 +2,7 @@ import { apiFetch } from './client'
 import type {
   EventOut,
   MemberOut,
+  JoinResult,
   RSVPOut,
   RSVPStatus,
   PollOut,
@@ -17,78 +18,78 @@ export function getMyEvents(): Promise<EventOut[]> {
   return apiFetch('events', '')
 }
 
-export function getEvent(id: number): Promise<EventOut> {
-  return apiFetch('events', `/${id}`)
+export function getEvent(uuid: string): Promise<EventOut> {
+  return apiFetch('events', `/${uuid}`)
 }
 
 export function createEvent(formData: FormData): Promise<EventOut> {
   return apiFetch('events', '', { method: 'POST', body: formData })
 }
 
-export function updateEvent(id: number, body: Partial<EventOut>): Promise<EventOut> {
-  return apiFetch('events', `/${id}`, {
+export function updateEvent(uuid: string, body: Partial<EventOut>): Promise<EventOut> {
+  return apiFetch('events', `/${uuid}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
 }
 
-export function deleteEvent(id: number): Promise<void> {
-  return apiFetch('events', `/${id}`, { method: 'DELETE' })
+export function deleteEvent(uuid: string): Promise<void> {
+  return apiFetch('events', `/${uuid}`, { method: 'DELETE' })
 }
 
 // ── Invite ────────────────────────────────────────────────────────────────────
 
-export function regenerateInvite(eventId: number): Promise<EventOut> {
-  return apiFetch('events', `/${eventId}/invite/regenerate`, { method: 'POST' })
+export function regenerateInvite(eventUuid: string): Promise<EventOut> {
+  return apiFetch('events', `/${eventUuid}/invite/regenerate`, { method: 'POST' })
 }
 
-export function revokeInvite(eventId: number): Promise<EventOut> {
-  return apiFetch('events', `/${eventId}/invite/revoke`, { method: 'POST' })
+export function revokeInvite(eventUuid: string): Promise<EventOut> {
+  return apiFetch('events', `/${eventUuid}/invite/revoke`, { method: 'POST' })
 }
 
-export function joinViaInvite(token: string): Promise<MemberOut> {
+export function joinViaInvite(token: string): Promise<JoinResult> {
   return apiFetch('events', `/join/${token}`, { method: 'POST' })
 }
 
 // ── Members ───────────────────────────────────────────────────────────────────
 
-export function getMembers(eventId: number): Promise<MemberOut[]> {
-  return apiFetch('events', `/${eventId}/members`)
+export function getMembers(eventUuid: string): Promise<MemberOut[]> {
+  return apiFetch('events', `/${eventUuid}/members`)
 }
 
 export function updateMemberRole(
-  eventId: number,
+  eventUuid: string,
   userId: string,
   role: 'co_host' | 'attendee',
 ): Promise<MemberOut> {
-  return apiFetch('events', `/${eventId}/members/${userId}/role`, {
+  return apiFetch('events', `/${eventUuid}/members/${userId}/role`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ role }),
   })
 }
 
-export function removeMember(eventId: number, userId: string): Promise<void> {
-  return apiFetch('events', `/${eventId}/members/${userId}`, { method: 'DELETE' })
+export function removeMember(eventUuid: string, userId: string): Promise<void> {
+  return apiFetch('events', `/${eventUuid}/members/${userId}`, { method: 'DELETE' })
 }
 
 // ── RSVPs ─────────────────────────────────────────────────────────────────────
 
-export function getRsvps(eventId: number): Promise<RSVPOut[]> {
-  return apiFetch('events', `/${eventId}/rsvps`)
+export function getRsvps(eventUuid: string): Promise<RSVPOut[]> {
+  return apiFetch('events', `/${eventUuid}/rsvps`)
 }
 
-export function getMyRsvp(eventId: number): Promise<RSVPOut> {
-  return apiFetch('events', `/${eventId}/rsvps/me`)
+export function getMyRsvp(eventUuid: string): Promise<RSVPOut> {
+  return apiFetch('events', `/${eventUuid}/rsvps/me`)
 }
 
 export function upsertRsvp(
-  eventId: number,
+  eventUuid: string,
   status: RSVPStatus,
   guestCount = 0,
 ): Promise<RSVPOut> {
-  return apiFetch('events', `/${eventId}/rsvps`, {
+  return apiFetch('events', `/${eventUuid}/rsvps`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status, guest_count: guestCount }),
@@ -97,12 +98,12 @@ export function upsertRsvp(
 
 // ── Polls ─────────────────────────────────────────────────────────────────────
 
-export function getPolls(eventId: number): Promise<PollOut[]> {
-  return apiFetch('events', `/${eventId}/polls`)
+export function getPolls(eventUuid: string): Promise<PollOut[]> {
+  return apiFetch('events', `/${eventUuid}/polls`)
 }
 
 export function createPoll(
-  eventId: number,
+  eventUuid: string,
   body: {
     question: string
     options: { text: string; display_order: number }[]
@@ -111,7 +112,7 @@ export function createPoll(
     closes_at?: string | null
   },
 ): Promise<PollOut> {
-  return apiFetch('events', `/${eventId}/polls`, {
+  return apiFetch('events', `/${eventUuid}/polls`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -119,36 +120,36 @@ export function createPoll(
 }
 
 export function votePoll(
-  eventId: number,
+  eventUuid: string,
   pollId: number,
   optionIds: number[],
 ): Promise<PollOut> {
-  return apiFetch('events', `/${eventId}/polls/${pollId}/vote`, {
+  return apiFetch('events', `/${eventUuid}/polls/${pollId}/vote`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ option_ids: optionIds }),
   })
 }
 
-export function closePoll(eventId: number, pollId: number): Promise<PollOut> {
-  return apiFetch('events', `/${eventId}/polls/${pollId}/close`, { method: 'POST' })
+export function closePoll(eventUuid: string, pollId: number): Promise<PollOut> {
+  return apiFetch('events', `/${eventUuid}/polls/${pollId}/close`, { method: 'POST' })
 }
 
-export function deletePoll(eventId: number, pollId: number): Promise<void> {
-  return apiFetch('events', `/${eventId}/polls/${pollId}`, { method: 'DELETE' })
+export function deletePoll(eventUuid: string, pollId: number): Promise<void> {
+  return apiFetch('events', `/${eventUuid}/polls/${pollId}`, { method: 'DELETE' })
 }
 
 // ── Potluck ───────────────────────────────────────────────────────────────────
 
-export function getPotluck(eventId: number): Promise<PotluckItemOut[]> {
-  return apiFetch('events', `/${eventId}/potluck`)
+export function getPotluck(eventUuid: string): Promise<PotluckItemOut[]> {
+  return apiFetch('events', `/${eventUuid}/potluck`)
 }
 
 export function createPotluckItem(
-  eventId: number,
+  eventUuid: string,
   body: { name: string; description?: string; quantity_needed?: number },
 ): Promise<PotluckItemOut> {
-  return apiFetch('events', `/${eventId}/potluck`, {
+  return apiFetch('events', `/${eventUuid}/potluck`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -156,40 +157,40 @@ export function createPotluckItem(
 }
 
 export function updatePotluckItem(
-  eventId: number,
+  eventUuid: string,
   itemId: number,
   body: { name?: string; description?: string; quantity_needed?: number },
 ): Promise<PotluckItemOut> {
-  return apiFetch('events', `/${eventId}/potluck/${itemId}`, {
+  return apiFetch('events', `/${eventUuid}/potluck/${itemId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
 }
 
-export function deletePotluckItem(eventId: number, itemId: number): Promise<void> {
-  return apiFetch('events', `/${eventId}/potluck/${itemId}`, { method: 'DELETE' })
+export function deletePotluckItem(eventUuid: string, itemId: number): Promise<void> {
+  return apiFetch('events', `/${eventUuid}/potluck/${itemId}`, { method: 'DELETE' })
 }
 
-export function claimPotluckItem(eventId: number, itemId: number): Promise<PotluckItemOut> {
-  return apiFetch('events', `/${eventId}/potluck/${itemId}/claim`, { method: 'POST' })
+export function claimPotluckItem(eventUuid: string, itemId: number): Promise<PotluckItemOut> {
+  return apiFetch('events', `/${eventUuid}/potluck/${itemId}/claim`, { method: 'POST' })
 }
 
-export function unclaimPotluckItem(eventId: number, itemId: number): Promise<void> {
-  return apiFetch('events', `/${eventId}/potluck/${itemId}/claim`, { method: 'DELETE' })
+export function unclaimPotluckItem(eventUuid: string, itemId: number): Promise<void> {
+  return apiFetch('events', `/${eventUuid}/potluck/${itemId}/claim`, { method: 'DELETE' })
 }
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 
-export function getTasks(eventId: number): Promise<TaskOut[]> {
-  return apiFetch('events', `/${eventId}/tasks`)
+export function getTasks(eventUuid: string): Promise<TaskOut[]> {
+  return apiFetch('events', `/${eventUuid}/tasks`)
 }
 
 export function createTask(
-  eventId: number,
+  eventUuid: string,
   body: { title: string; description?: string; assigned_to?: string; due_date?: string },
 ): Promise<TaskOut> {
-  return apiFetch('events', `/${eventId}/tasks`, {
+  return apiFetch('events', `/${eventUuid}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -197,37 +198,37 @@ export function createTask(
 }
 
 export function updateTask(
-  eventId: number,
+  eventUuid: string,
   taskId: number,
   body: { title?: string; description?: string; assigned_to?: string; due_date?: string; is_completed?: boolean },
 ): Promise<TaskOut> {
-  return apiFetch('events', `/${eventId}/tasks/${taskId}`, {
+  return apiFetch('events', `/${eventUuid}/tasks/${taskId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
 }
 
-export function deleteTask(eventId: number, taskId: number): Promise<void> {
-  return apiFetch('events', `/${eventId}/tasks/${taskId}`, { method: 'DELETE' })
+export function deleteTask(eventUuid: string, taskId: number): Promise<void> {
+  return apiFetch('events', `/${eventUuid}/tasks/${taskId}`, { method: 'DELETE' })
 }
 
 // ── Announcements ─────────────────────────────────────────────────────────────
 
-export function getAnnouncements(eventId: number): Promise<AnnouncementOut[]> {
-  return apiFetch('events', `/${eventId}/announcements`)
+export function getAnnouncements(eventUuid: string): Promise<AnnouncementOut[]> {
+  return apiFetch('events', `/${eventUuid}/announcements`)
 }
 
-export function createAnnouncement(eventId: number, body: string): Promise<AnnouncementOut> {
-  return apiFetch('events', `/${eventId}/announcements`, {
+export function createAnnouncement(eventUuid: string, body: string): Promise<AnnouncementOut> {
+  return apiFetch('events', `/${eventUuid}/announcements`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ body }),
   })
 }
 
-export function deleteAnnouncement(eventId: number, announcementId: number): Promise<void> {
-  return apiFetch('events', `/${eventId}/announcements/${announcementId}`, {
+export function deleteAnnouncement(eventUuid: string, announcementId: number): Promise<void> {
+  return apiFetch('events', `/${eventUuid}/announcements/${announcementId}`, {
     method: 'DELETE',
   })
 }

@@ -9,6 +9,7 @@ from app.db.models.event_member import EventMember
 from app.db.models.reminder import ReminderPreference
 from app.schemas.reminder import ReminderCreate, ReminderOut
 from app.utils.scheduler import create_reminder_schedule, delete_reminder_schedule
+from app.routers._resolve import resolve_event
 
 router = APIRouter()
 
@@ -23,23 +24,24 @@ def _require_member(event_id: int, user_id: str, db: Session) -> EventMember:
     return member
 
 
-@router.get("/{event_id}/reminders", response_model=list[ReminderOut])
+@router.get("/{event_uuid}/reminders", response_model=list[ReminderOut])
 def get_my_reminders(
-    event_id: int,
+    event_uuid: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
     """Returns the current user's reminder preferences for this event."""
-    _require_member(event_id, user_id, db)
+    event = resolve_event(event_uuid, db)
+    _require_member(event.id, user_id, db)
     return db.query(ReminderPreference).filter(
-        ReminderPreference.event_id == event_id,
+        ReminderPreference.event_id == event.id,
         ReminderPreference.user_id == user_id,
     ).all()
 
 
-@router.post("/{event_id}/reminders", response_model=ReminderOut, status_code=status.HTTP_201_CREATED)
+@router.post("/{event_uuid}/reminders", response_model=ReminderOut, status_code=status.HTTP_201_CREATED)
 def create_reminder(
-    event_id: int,
+    event_uuid: str,
     body: ReminderCreate,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
@@ -49,15 +51,15 @@ def create_reminder(
     and a phone number on their profile (checked via the users service).
     Creates an EventBridge Scheduler rule to fire at the right time.
     """
-    _require_member(event_id, user_id, db)
+    event = resolve_event(event_uuid, db)
+    _require_member(event.id, user_id, db)
 
-    event = db.query(Event).filter(Event.id == event_id).first()
-    if not event or not event.start_dt:
+    if not event.start_dt:
         raise HTTPException(status_code=400, detail="Event has no start time set — cannot schedule reminder")
 
     # Check for duplicate offset
     existing = db.query(ReminderPreference).filter(
-        ReminderPreference.event_id == event_id,
+        ReminderPreference.event_id == event.id,
         ReminderPreference.user_id == user_id,
         ReminderPreference.offset_minutes == body.offset_minutes,
     ).first()
@@ -65,9 +67,8 @@ def create_reminder(
         raise HTTPException(status_code=400, detail="Reminder with this offset already exists")
 
     # Get user's phone number from EventMember denormalized field
-    # (phone is synced from users service at join time — see join_via_invite)
     member = db.query(EventMember).filter(
-        EventMember.event_id == event_id,
+        EventMember.event_id == event.id,
         EventMember.user_id == user_id,
     ).first()
 
@@ -79,7 +80,7 @@ def create_reminder(
         )
 
     rule_name = create_reminder_schedule(
-        event_id=event_id,
+        event_id=event.id,
         user_id=user_id,
         phone_number=phone,
         event_title=event.title,
@@ -88,7 +89,7 @@ def create_reminder(
     )
 
     pref = ReminderPreference(
-        event_id=event_id,
+        event_id=event.id,
         user_id=user_id,
         offset_minutes=body.offset_minutes,
         scheduler_rule_name=rule_name,
@@ -99,16 +100,17 @@ def create_reminder(
     return pref
 
 
-@router.delete("/{event_id}/reminders/{reminder_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{event_uuid}/reminders/{reminder_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_reminder(
-    event_id: int,
+    event_uuid: str,
     reminder_id: int,
     user_id: Annotated[str, Depends(get_current_user_sub)],
     db: Annotated[Session, Depends(get_db)],
 ):
+    event = resolve_event(event_uuid, db)
     pref = db.query(ReminderPreference).filter(
         ReminderPreference.id == reminder_id,
-        ReminderPreference.event_id == event_id,
+        ReminderPreference.event_id == event.id,
         ReminderPreference.user_id == user_id,
     ).first()
     if not pref:

@@ -13,6 +13,26 @@ import { joinViaInvite } from './api/events'
 import HowItWorks from './pages/HowItWorks'
 import Footer from './components/Footer.tsx'
 
+// Block all rendering until auth state is resolved — covers OAuth callbacks,
+// returning users with an existing session token, and fresh page loads.
+// Also stays blank while a ?code= OAuth exchange is in flight (loading=true).
+const hasOAuthCode = new URLSearchParams(window.location.search).has('code')
+
+function OAuthGate({ children }: { children: React.ReactNode }) {
+  const { loading } = useAuth()
+  // Always block on loading — this covers session restore AND OAuth exchange.
+  // hasOAuthCode ensures we never flash content while the code is being exchanged.
+  if (loading || hasOAuthCode) return null
+  return <>{children}</>
+}
+
+function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>Loading…</div>
+  if (user) return <Navigate to="/events" replace />
+  return <>{children}</>
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>Loading…</div>
@@ -36,7 +56,7 @@ function JoinPage() {
     }
     if (!token) { navigate('/events', { replace: true }); return }
     joinViaInvite(token)
-      .then((member) => navigate(`/events/${member.event_id}`, { replace: true }))
+      .then((result) => navigate(`/events/${result.event_uuid}`, { replace: true }))
       .catch(() => navigate('/events', { replace: true }))
   }, [token, user, loading, navigate])
 
@@ -58,8 +78,8 @@ function PendingInviteResolver() {
     if (!token) return
     sessionStorage.removeItem('pendingInviteToken')
     joinViaInvite(token)
-      .then((member) => navigate(`/events/${member.event_id}`, { replace: true }))
-      .catch(() => {})
+      .then((result) => navigate(`/events/${result.event_uuid}`, { replace: true }))
+      .catch(() => { })
   }, [user, navigate])
 
   return null
@@ -68,7 +88,6 @@ function PendingInviteResolver() {
 export default function App() {
   return (
     <BrowserRouter>
-<<<<<<< Updated upstream
       <Nav />
       <PendingInviteResolver />
       <Routes>
@@ -111,7 +130,6 @@ export default function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-=======
       <OAuthGate>
         <Nav />
         <PendingInviteResolver />
@@ -157,7 +175,6 @@ export default function App() {
         </Routes>
         <Footer/>
       </OAuthGate>
->>>>>>> Stashed changes
     </BrowserRouter>
   )
 }

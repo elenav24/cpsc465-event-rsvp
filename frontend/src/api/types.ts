@@ -6,6 +6,7 @@
 
 export interface EventOut {
   id: number
+  uuid: string
   title: string
   /** monolith uses integer DB id; services use cognito sub string — accept both */
   host_id: number | string
@@ -27,6 +28,15 @@ export interface EventOut {
 export interface MemberOut {
   id: number
   event_id: number
+  user_id: string
+  role: 'host' | 'co_host' | 'attendee'
+  joined_at: string
+}
+
+export interface JoinResult {
+  id: number
+  event_id: number
+  event_uuid: string
   user_id: string
   role: 'host' | 'co_host' | 'attendee'
   joined_at: string
