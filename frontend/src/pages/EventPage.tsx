@@ -650,14 +650,18 @@ function GuestsTab({ eventUuid, myId, isHost: _isHost, rsvps }: { eventUuid: str
       {members.map(m => {
         const rsvpStatus = rsvpMap[m.user_id]
         const isMe = m.user_id === myId
+        const name = isMe ? 'You' : (m.display_name || m.user_id.slice(0, 8) + '…')
+        const initials = isMe
+          ? (m.display_name || 'Y').slice(0, 2).toUpperCase()
+          : (m.display_name ? m.display_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : m.user_id.slice(0, 2).toUpperCase())
         return (
           <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, var(--purple-pale), var(--pink-pale))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'var(--pink)', flexShrink: 0 }}>
-              {m.user_id.slice(0, 2).toUpperCase()}
+              {initials}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-dark)' }}>
-                {isMe ? 'You' : m.user_id.slice(0, 12) + '...'}
+                {name}
               </div>
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{m.role.replace('_', ' ')}</div>
             </div>
