@@ -14,11 +14,16 @@ import HowItWorks from './pages/HowItWorks'
 import BrowseTemplatesPage from './pages/BrowseTemplatesPage'
 import Footer from './components/Footer.tsx'
 
+// Stays true for the lifetime of this page load if it started with ?code=
+// This prevents any content from rendering during the OAuth token exchange.
+const isOAuthCallback = new URLSearchParams(window.location.search).has('code')
+
 // Block all rendering until auth state is resolved — covers OAuth callbacks,
 // returning users with an existing session token, and fresh page loads.
 function OAuthGate({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth()
-  if (loading) return null
+  // During an OAuth callback, stay blank until window.location.replace fires.
+  if (loading || isOAuthCallback) return null
   return <>{children}</>
 }
 

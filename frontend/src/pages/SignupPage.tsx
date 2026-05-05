@@ -71,23 +71,30 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-body">
-        <div className="auth-card">
+    <div className="flex-1 flex flex-col pt-[var(--nav-height)] w-full">
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="bg-white rounded-[var(--radius-xl)] border border-border w-full max-w-[480px] px-10 py-12 shadow-[var(--shadow)] max-[480px]:px-5 max-[480px]:py-8">
           {step === 'register' ? (
             <>
-              <h1 className="auth-title">Create an account</h1>
+              <h1 className="font-heading text-[1.9rem] text-center mb-8 text-text-dark">Create an account</h1>
 
-              <button type="button" className="btn-google" onClick={redirectToGoogle}>
+              <button
+                type="button"
+                className="w-full flex items-center justify-center gap-[10px] bg-white border-[1.5px] border-border rounded-full py-3 font-sans text-[0.95rem] font-medium cursor-pointer transition-all duration-200 hover:border-[#aaa] hover:shadow-[var(--shadow-sm)]"
+                onClick={redirectToGoogle}
+              >
                 <GoogleIcon /> Continue with Google
               </button>
 
-              <div className="auth-or">OR</div>
+              {/* OR divider */}
+              <div className="flex items-center gap-4 my-6 text-text-muted text-[0.85rem] before:content-[''] before:flex-1 before:h-px before:bg-border after:content-[''] after:flex-1 after:h-px after:bg-border">
+                OR
+              </div>
 
               <form onSubmit={handleRegister}>
-                <label className="auth-label">Email address</label>
+                <label className="text-[0.88rem] text-[#555] mb-[6px] flex justify-between">Email address</label>
                 <input
-                  className="auth-input"
+                  className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[11px] font-sans text-[0.95rem] outline-none transition-[border-color] duration-200 mb-4 bg-white text-text-dark focus:border-pink"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -97,14 +104,14 @@ export default function SignupPage() {
                   autoFocus
                 />
 
-                <label className="auth-label">
+                <label className="text-[0.88rem] text-[#555] mb-[6px] flex justify-between">
                   Your password
-                  <span className="forgot-link" onClick={() => setShowPw((p) => !p)}>
+                  <span className="text-[0.82rem] text-text-muted underline cursor-pointer" onClick={() => setShowPw((p) => !p)}>
                     {showPw ? 'Hide' : 'Show'}
                   </span>
                 </label>
                 <input
-                  className="auth-input"
+                  className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[11px] font-sans text-[0.95rem] outline-none transition-[border-color] duration-200 mb-4 bg-white text-text-dark focus:border-pink"
                   type={showPw ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -114,29 +121,40 @@ export default function SignupPage() {
                   autoComplete="new-password"
                 />
 
-                {error && <p className="auth-error" role="alert">⚠ {error}</p>}
+                {error && <p className="text-danger text-[0.85rem] mb-4" role="alert">⚠ {error}</p>}
 
-                <button type="submit" className="btn-submit" disabled={loading}>
+                <button
+                  type="submit"
+                  className="w-full bg-pink text-white border-none rounded-full py-[14px] font-sans text-[1rem] font-semibold cursor-pointer transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed hover:enabled:bg-accent-dark"
+                  disabled={loading}
+                >
                   {loading ? 'Creating account…' : 'Sign up'}
                 </button>
               </form>
 
-              <div className="auth-switch">
-                <div className="auth-switch-bar">Already have an account?</div>
-                <Link to="/login" className="btn-switch">Log in</Link>
+              <div className="text-center mt-8">
+                <div className="flex items-center gap-4 mb-4 text-text-muted text-[0.85rem] before:content-[''] before:flex-1 before:h-px before:bg-border after:content-[''] after:flex-1 after:h-px after:bg-border">
+                  Already have an account?
+                </div>
+                <Link
+                  to="/login"
+                  className="block w-full bg-transparent border-[1.5px] border-border rounded-full py-3 font-sans text-[0.95rem] font-semibold text-pink cursor-pointer transition-all duration-200 text-center no-underline hover:border-pink hover:bg-pink-bg hover:no-underline hover:text-pink"
+                >
+                  Log in
+                </Link>
               </div>
             </>
           ) : (
             <>
-              <h1 className="auth-title">Check your email</h1>
-              <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+              <h1 className="font-heading text-[1.9rem] text-center mb-8 text-text-dark">Check your email</h1>
+              <p className="text-center text-text-muted mb-6 text-[0.9rem]">
                 We sent a 6-digit code to <strong>{email}</strong>
               </p>
 
               <form onSubmit={handleConfirm}>
-                <label className="auth-label">Confirmation code</label>
+                <label className="text-[0.88rem] text-[#555] mb-[6px] flex justify-between">Confirmation code</label>
                 <input
-                  className="auth-input"
+                  className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[11px] font-sans text-[0.95rem] outline-none transition-[border-color] duration-200 mb-4 bg-white text-text-dark focus:border-pink text-center"
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
@@ -145,20 +163,24 @@ export default function SignupPage() {
                   autoComplete="one-time-code"
                   inputMode="numeric"
                   autoFocus
-                  style={{ letterSpacing: '4px', fontSize: '1.2rem', textAlign: 'center' }}
+                  style={{ letterSpacing: '4px', fontSize: '1.2rem' }}
                 />
 
-                {error && <p className="auth-error" role="alert">⚠ {error}</p>}
+                {error && <p className="text-danger text-[0.85rem] mb-4" role="alert">⚠ {error}</p>}
 
-                <button type="submit" className="btn-submit" disabled={loading}>
+                <button
+                  type="submit"
+                  className="w-full bg-pink text-white border-none rounded-full py-[14px] font-sans text-[1rem] font-semibold cursor-pointer transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed hover:enabled:bg-accent-dark"
+                  disabled={loading}
+                >
                   {loading ? 'Confirming…' : 'Confirm & sign in'}
                 </button>
               </form>
 
-              <div className="auth-switch">
-                <div className="auth-switch-bar" />
+              <div className="text-center mt-8">
+                <div className="flex items-center gap-4 mb-4 before:content-[''] before:flex-1 before:h-px before:bg-border after:content-[''] after:flex-1 after:h-px after:bg-border" />
                 <button
-                  className="btn-switch"
+                  className="block w-full bg-transparent border-[1.5px] border-border rounded-full py-3 font-sans text-[0.95rem] font-semibold text-pink cursor-pointer transition-all duration-200 text-center hover:border-pink hover:bg-pink-bg hover:text-pink"
                   onClick={() => { setStep('register'); setError(null) }}
                 >
                   ← Back
@@ -168,163 +190,6 @@ export default function SignupPage() {
           )}
         </div>
       </div>
-
-      <style>{`
-        .auth-page {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          padding-top: var(--nav-height);
-          width: 100%;
-        }
-        .auth-body {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 3rem 1rem;
-        }
-        .auth-card {
-          background: white;
-          border-radius: var(--radius-xl);
-          border: 1px solid var(--border);
-          padding: 3rem 2.5rem;
-          width: 100%;
-          max-width: 480px;
-          box-shadow: var(--shadow);
-        }
-        .auth-title {
-          font-family: 'Cantora One', cursive;
-          font-size: 1.9rem;
-          text-align: center;
-          margin-bottom: 2rem;
-          color: var(--text-dark);
-        }
-        .btn-google {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          background: white;
-          border: 1.5px solid var(--border);
-          border-radius: 100px;
-          padding: 12px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 0.95rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-google:hover {
-          border-color: #aaa;
-          box-shadow: var(--shadow-sm);
-        }
-        .auth-or {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin: 1.5rem 0;
-          color: var(--text-muted);
-          font-size: 0.85rem;
-        }
-        .auth-or::before, .auth-or::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: var(--border);
-        }
-        .auth-label {
-          font-size: 0.88rem;
-          color: var(--text-mid);
-          margin-bottom: 6px;
-          display: flex;
-          justify-content: space-between;
-        }
-        .auth-input {
-          width: 100%;
-          border: 1.5px solid var(--border);
-          border-radius: var(--radius-sm);
-          padding: 11px 14px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 0.95rem;
-          outline: none;
-          transition: border-color 0.2s;
-          margin-bottom: 1rem;
-          background: white;
-          color: var(--text-dark);
-        }
-        .auth-input:focus { border-color: var(--pink); }
-        .auth-error {
-          color: var(--danger);
-          font-size: 0.85rem;
-          margin-bottom: 1rem;
-        }
-        .btn-submit {
-          width: 100%;
-          background: var(--pink);
-          color: white;
-          border: none;
-          border-radius: 100px;
-          padding: 14px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 1rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-submit:hover:not(:disabled) { background: #b04068; }
-        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-        .forgot-link {
-          font-size: 0.82rem;
-          color: var(--text-muted);
-          text-decoration: underline;
-          cursor: pointer;
-        }
-        .auth-switch {
-          text-align: center;
-          margin-top: 2rem;
-        }
-        .auth-switch-bar {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin-bottom: 1rem;
-          color: var(--text-muted);
-          font-size: 0.85rem;
-        }
-        .auth-switch-bar::before, .auth-switch-bar::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: var(--border);
-        }
-        .btn-switch {
-          display: block;
-          width: 100%;
-          background: none;
-          border: 1.5px solid var(--border);
-          border-radius: 100px;
-          padding: 12px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: var(--pink);
-          cursor: pointer;
-          transition: all 0.2s;
-          text-align: center;
-          text-decoration: none;
-        }
-        .btn-switch:hover {
-          border-color: var(--pink);
-          background: var(--pink-bg);
-          text-decoration: none;
-          color: var(--pink);
-        }
-        @media (max-width: 480px) {
-          .auth-card { padding: 2rem 1.25rem; }
-        }
-      `}</style>
     </div>
   )
 }

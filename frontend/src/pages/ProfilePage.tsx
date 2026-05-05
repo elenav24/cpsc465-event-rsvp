@@ -34,42 +34,42 @@ export default function ProfilePage() {
   }
 
   return (
-    <div style={{ padding: 'calc(var(--nav-height) + 2.5rem) 2rem 3rem', maxWidth: 480, margin: '0 auto', minHeight: '100vh' }}>
-      <h1 style={{ fontFamily: "'Cantora One', cursive", fontSize: '2rem', marginBottom: '0.5rem', color: 'var(--text-dark)' }}>
+    <div className="pt-[calc(var(--nav-height)+2.5rem)] px-8 pb-12 max-w-[480px] mx-auto min-h-screen">
+      <h1 className="font-heading text-[2rem] mb-2 text-text-dark">
         Your Profile
       </h1>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>
+      <p className="text-text-muted text-[0.9rem] mb-8">
         Update how your name appears to other guests.
       </p>
 
-      <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '2rem' }}>
+      <div className="bg-white border border-border rounded-[var(--radius-lg)] p-8">
         <form onSubmit={handleSave}>
-          <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-mid)', display: 'block', marginBottom: 6 }}>
+          <label className="text-[0.85rem] font-semibold text-[#555] block mb-[6px]">
             Email
           </label>
           <input
             readOnly
             value={profile?.email ?? ''}
-            style={{ width: '100%', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', fontSize: '0.92rem', marginBottom: '1.25rem', background: '#fafafa', color: 'var(--text-muted)', fontFamily: 'Albert Sans', boxSizing: 'border-box' }}
+            className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[10px] text-[0.92rem] mb-5 bg-[#fafafa] text-text-muted font-sans box-border"
           />
 
-          <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-mid)', display: 'block', marginBottom: 6 }}>
+          <label className="text-[0.85rem] font-semibold text-[#555] block mb-[6px]">
             Display Name
           </label>
           <input
             value={displayName}
             onChange={e => setDisplayName(e.target.value)}
             placeholder="How should we call you?"
-            style={{ width: '100%', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', fontSize: '0.92rem', marginBottom: '1.5rem', fontFamily: 'Albert Sans', outline: 'none', boxSizing: 'border-box' }}
+            className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[10px] text-[0.92rem] mb-6 font-sans outline-none box-border focus:border-pink"
           />
 
           {error && (
-            <div style={{ background: '#fff0f0', border: '1px solid #fcc', borderRadius: 6, padding: '0.75rem', marginBottom: '1rem', color: '#c00', fontSize: '0.85rem' }}>
+            <div className="bg-[#fff0f0] border border-[#fcc] rounded-[6px] p-3 mb-4 text-[#c00] text-[0.85rem]">
               {error}
             </div>
           )}
           {success && (
-            <div style={{ background: '#e6f9ee', border: '1px solid #b7ebc8', borderRadius: 6, padding: '0.75rem', marginBottom: '1rem', color: '#1a7a3c', fontSize: '0.85rem' }}>
+            <div className="bg-[#e6f9ee] border border-[#b7ebc8] rounded-[6px] p-3 mb-4 text-[#1a7a3c] text-[0.85rem]">
               Profile saved!
             </div>
           )}
@@ -77,7 +77,7 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            style={{ background: 'var(--pink)', color: 'white', border: 'none', borderRadius: 100, padding: '12px 32px', fontFamily: 'Albert Sans', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+            className="bg-pink text-white border-none rounded-full px-8 py-3 font-sans text-[0.95rem] font-semibold cursor-pointer transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

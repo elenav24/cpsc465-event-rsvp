@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { CognitoUser } from 'amazon-cognito-identity-js'
+import userPool from '../auth/cognitoConfig'
 import { useAuth } from '../auth/AuthContext'
 import { redirectToGoogle } from '../auth/googleLogin'
 
@@ -14,18 +16,30 @@ function GoogleIcon() {
   )
 }
 
+type Step = 'login' | 'forgot-request' | 'forgot-confirm'
+
+const inputClass = 'w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[11px] font-sans text-[0.95rem] outline-none transition-[border-color] duration-200 mb-4 bg-white text-text-dark focus:border-pink'
+const btnPrimary = 'w-full bg-pink text-white border-none rounded-full py-[14px] font-sans text-[1rem] font-semibold cursor-pointer transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed hover:enabled:bg-accent-dark'
+
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
+  const [step, setStep] = useState<Step>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [resetCode, setResetCode] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const reset = () => { setError(null); setInfo(null) }
+
+  // ── Step 1: Sign in ──────────────────────────────────────────
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    reset()
     setLoading(true)
     try {
       await login(email, password)
@@ -37,220 +51,219 @@ export default function LoginPage() {
     }
   }
 
+  // ── Step 2: Request reset code ───────────────────────────────
+  const handleForgotRequest = async (e: React.FormEvent) => {
+    e.preventDefault()
+    reset()
+    setLoading(true)
+    try {
+      const cognitoUser = new CognitoUser({ Username: email, Pool: userPool })
+      await new Promise<void>((resolve, reject) => {
+        cognitoUser.forgotPassword({
+          onSuccess: () => resolve(),
+          onFailure: reject,
+        })
+      })
+      setInfo(`A reset code was sent to ${email}`)
+      setStep('forgot-confirm')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not send reset code. Check your email and try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ── Step 3: Confirm new password ─────────────────────────────
+  const handleForgotConfirm = async (e: React.FormEvent) => {
+    e.preventDefault()
+    reset()
+    setLoading(true)
+    try {
+      const cognitoUser = new CognitoUser({ Username: email, Pool: userPool })
+      await new Promise<void>((resolve, reject) => {
+        cognitoUser.confirmPassword(resetCode, newPassword, {
+          onSuccess: () => resolve(),
+          onFailure: reject,
+        })
+      })
+      // Auto sign-in with new password
+      await login(email, newPassword)
+      navigate('/events')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not reset password. Check the code and try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <div className="auth-page">
-      <div className="auth-body">
-        <div className="auth-card">
-          <h1 className="auth-title">Sign in</h1>
+    <div className="flex-1 flex flex-col pt-[var(--nav-height)] w-full">
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="bg-white rounded-[var(--radius-xl)] border border-border w-full max-w-[480px] px-10 py-12 shadow-[var(--shadow)] max-[480px]:px-5 max-[480px]:py-8">
 
-          <button type="button" className="btn-google" onClick={redirectToGoogle}>
-            <GoogleIcon /> Continue with Google
-          </button>
+          {/* ── Login ── */}
+          {step === 'login' && (
+            <>
+              <h1 className="font-heading text-[1.9rem] text-center mb-8 text-text-dark">Sign in</h1>
 
-          <div className="auth-or">OR</div>
+              <button
+                type="button"
+                className="w-full flex items-center justify-center gap-[10px] bg-white border-[1.5px] border-border rounded-full py-3 font-sans text-[0.95rem] font-medium cursor-pointer transition-all duration-200 hover:border-[#aaa] hover:shadow-[var(--shadow-sm)]"
+                onClick={redirectToGoogle}
+              >
+                <GoogleIcon /> Continue with Google
+              </button>
 
-          <form onSubmit={handleSubmit}>
-            <label className="auth-label">Email address</label>
-            <input
-              className="auth-input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              autoComplete="email"
-              autoFocus
-            />
+              <div className="flex items-center gap-4 my-6 text-text-muted text-[0.85rem] before:content-[''] before:flex-1 before:h-px before:bg-border after:content-[''] after:flex-1 after:h-px after:bg-border">
+                OR
+              </div>
 
-            <label className="auth-label">
-              Your password
-            </label>
-            <input
-              className="auth-input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              autoComplete="current-password"
-            />
+              <form onSubmit={handleLogin}>
+                <label className="text-[0.88rem] text-[#555] mb-[6px] block">Email address</label>
+                <input
+                  className={inputClass}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  autoComplete="email"
+                  autoFocus
+                />
 
-            {error && (
-              <p className="auth-error" role="alert">⚠ {error}</p>
-            )}
+                <div className="flex justify-between items-center mb-[6px]">
+                  <label className="text-[0.88rem] text-[#555]">Your password</label>
+                  <button
+                    type="button"
+                    className="text-[0.82rem] text-text-muted underline cursor-pointer bg-none border-none p-0 hover:text-pink transition-colors"
+                    onClick={() => { reset(); setStep('forgot-request') }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <input
+                  className={inputClass}
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                />
 
-            <button type="submit" className="btn-submit" disabled={loading}>
-              {loading ? 'Signing in…' : 'Log in'}
-            </button>
-          </form>
+                {error && <p className="text-danger text-[0.85rem] mb-4" role="alert">⚠ {error}</p>}
 
-          <div style={{ marginTop: '0.75rem' }}>
-            <span className="forgot-link">Forgot your password?</span>
-          </div>
+                <button type="submit" className={btnPrimary} disabled={loading}>
+                  {loading ? 'Signing in…' : 'Log in'}
+                </button>
+              </form>
 
-          <div className="auth-switch">
-            <div className="auth-switch-bar">New to Cohosted?</div>
-            <Link to="/signup" className="btn-switch">Create an account</Link>
-          </div>
+              <div className="text-center mt-8">
+                <div className="flex items-center gap-4 mb-4 text-text-muted text-[0.85rem] before:content-[''] before:flex-1 before:h-px before:bg-border after:content-[''] after:flex-1 after:h-px after:bg-border">
+                  New to Cohosted?
+                </div>
+                <Link
+                  to="/signup"
+                  className="block w-full bg-transparent border-[1.5px] border-border rounded-full py-3 font-sans text-[0.95rem] font-semibold text-pink cursor-pointer transition-all duration-200 text-center no-underline hover:border-pink hover:bg-pink-bg hover:no-underline hover:text-pink"
+                >
+                  Create an account
+                </Link>
+              </div>
+            </>
+          )}
+
+          {/* ── Forgot — enter email ── */}
+          {step === 'forgot-request' && (
+            <>
+              <h1 className="font-heading text-[1.9rem] text-center mb-3 text-text-dark">Reset password</h1>
+              <p className="text-center text-text-muted text-[0.9rem] mb-8">
+                Enter your email and we'll send you a reset code.
+              </p>
+
+              <form onSubmit={handleForgotRequest}>
+                <label className="text-[0.88rem] text-[#555] mb-[6px] block">Email address</label>
+                <input
+                  className={inputClass}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  autoComplete="email"
+                  autoFocus
+                />
+
+                {error && <p className="text-danger text-[0.85rem] mb-4" role="alert">⚠ {error}</p>}
+
+                <button type="submit" className={btnPrimary} disabled={loading}>
+                  {loading ? 'Sending…' : 'Send reset code'}
+                </button>
+              </form>
+
+              <button
+                className="mt-4 w-full text-[0.88rem] text-text-muted bg-none border-none cursor-pointer underline hover:text-pink transition-colors"
+                onClick={() => { reset(); setStep('login') }}
+              >
+                ← Back to sign in
+              </button>
+            </>
+          )}
+
+          {/* ── Forgot — enter code + new password ── */}
+          {step === 'forgot-confirm' && (
+            <>
+              <h1 className="font-heading text-[1.9rem] text-center mb-3 text-text-dark">New password</h1>
+              {info && (
+                <p className="text-center text-[0.88rem] text-success mb-6 bg-[#e6f9ee] border border-[#b7ebc8] rounded-lg px-4 py-3">
+                  {info}
+                </p>
+              )}
+
+              <form onSubmit={handleForgotConfirm}>
+                <label className="text-[0.88rem] text-[#555] mb-[6px] block">Reset code</label>
+                <input
+                  className={inputClass}
+                  type="text"
+                  value={resetCode}
+                  onChange={(e) => setResetCode(e.target.value)}
+                  placeholder="123456"
+                  required
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
+                  autoFocus
+                  style={{ letterSpacing: '4px', fontSize: '1.2rem' }}
+                />
+
+                <label className="text-[0.88rem] text-[#555] mb-[6px] block">New password</label>
+                <input
+                  className={inputClass}
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+
+                {error && <p className="text-danger text-[0.85rem] mb-4" role="alert">⚠ {error}</p>}
+
+                <button type="submit" className={btnPrimary} disabled={loading}>
+                  {loading ? 'Resetting…' : 'Reset & sign in'}
+                </button>
+              </form>
+
+              <button
+                className="mt-4 w-full text-[0.88rem] text-text-muted bg-none border-none cursor-pointer underline hover:text-pink transition-colors"
+                onClick={() => { reset(); setStep('forgot-request') }}
+              >
+                ← Resend code
+              </button>
+            </>
+          )}
+
         </div>
       </div>
-
-      <style>{`
-        .auth-page {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          padding-top: var(--nav-height);
-          width: 100%;
-        }
-        .auth-body {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 3rem 1rem;
-        }
-        .auth-card {
-          background: white;
-          border-radius: var(--radius-xl);
-          border: 1px solid var(--border);
-          padding: 3rem 2.5rem;
-          width: 100%;
-          max-width: 480px;
-          box-shadow: var(--shadow);
-        }
-        .auth-title {
-          font-family: 'Cantora One', cursive;
-          font-size: 1.9rem;
-          text-align: center;
-          margin-bottom: 2rem;
-          color: var(--text-dark);
-        }
-        .btn-google {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          background: white;
-          border: 1.5px solid var(--border);
-          border-radius: 100px;
-          padding: 12px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 0.95rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-google:hover {
-          border-color: #aaa;
-          box-shadow: var(--shadow-sm);
-        }
-        .auth-or {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin: 1.5rem 0;
-          color: var(--text-muted);
-          font-size: 0.85rem;
-        }
-        .auth-or::before, .auth-or::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: var(--border);
-        }
-        .auth-label {
-          font-size: 0.88rem;
-          color: var(--text-mid);
-          margin-bottom: 6px;
-          display: flex;
-          justify-content: space-between;
-        }
-        .auth-input {
-          width: 100%;
-          border: 1.5px solid var(--border);
-          border-radius: var(--radius-sm);
-          padding: 11px 14px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 0.95rem;
-          outline: none;
-          transition: border-color 0.2s;
-          margin-bottom: 1rem;
-          background: white;
-          color: var(--text-dark);
-        }
-        .auth-input:focus { border-color: var(--pink); }
-        .auth-error {
-          color: var(--danger);
-          font-size: 0.85rem;
-          margin-bottom: 1rem;
-        }
-        .btn-submit {
-          width: 100%;
-          background: var(--pink);
-          color: white;
-          border: none;
-          border-radius: 100px;
-          padding: 14px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 1rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-submit:hover:not(:disabled) { background: #b04068; }
-        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-        .forgot-link {
-          font-size: 0.82rem;
-          color: var(--text-muted);
-          text-decoration: underline;
-          cursor: pointer;
-        }
-        .auth-switch {
-          text-align: center;
-          margin-top: 2rem;
-        }
-        .auth-switch-bar {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin-bottom: 1rem;
-          color: var(--text-muted);
-          font-size: 0.85rem;
-        }
-        .auth-switch-bar::before, .auth-switch-bar::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: var(--border);
-        }
-        .btn-switch {
-          display: block;
-          width: 100%;
-          background: none;
-          border: 1.5px solid var(--border);
-          border-radius: 100px;
-          padding: 12px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: var(--pink);
-          cursor: pointer;
-          transition: all 0.2s;
-          text-align: center;
-          text-decoration: none;
-        }
-        .btn-switch:hover {
-          border-color: var(--pink);
-          background: var(--pink-bg);
-          text-decoration: none;
-          color: var(--pink);
-        }
-        @media (max-width: 480px) {
-          .auth-card { padding: 2rem 1.25rem; }
-        }
-      `}</style>
     </div>
   )
 }

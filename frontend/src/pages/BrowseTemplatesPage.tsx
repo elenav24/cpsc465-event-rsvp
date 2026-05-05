@@ -30,7 +30,7 @@ const TEMPLATES: Template[] = [
     id: 'backyard-bbq',
     title: 'Backyard BBQ',
     description: 'Sizzling grills and sunset chills. The ultimate blueprint for a relaxed outdoor gathering with friends.',
-    gradient: 'from-orange-100 to-pink-100',
+    gradient: 'from-pink-pale to-pink-100',
     accentColor: '#e07b54',
     emoji: '🔥',
     bestFor: '10–25 guests',
@@ -50,7 +50,7 @@ const TEMPLATES: Template[] = [
     id: 'movie-night',
     title: 'Movie Night',
     description: 'Popcorn, cozy blankets, and the silver screen. Perfect for low-key evenings and cinematic marathons.',
-    gradient: 'from-indigo-100 to-purple-100',
+    gradient: 'from-pink-pale to-purple-100',
     accentColor: '#7c6fcd',
     emoji: '🎬',
     bestFor: '4–12 guests',
@@ -70,7 +70,7 @@ const TEMPLATES: Template[] = [
     id: 'potluck-dinner',
     title: 'Potluck Dinner',
     description: "Sharing is caring. Manage who's bringing what without the awkward group chat spreadsheets.",
-    gradient: 'from-green-100 to-teal-100',
+    gradient: 'from-pink-pale to-teal-100',
     accentColor: '#4caf8a',
     emoji: '🍲',
     bestFor: '8–20 guests',
@@ -90,7 +90,7 @@ const TEMPLATES: Template[] = [
     id: 'birthday-bash',
     title: 'Birthday Bash',
     description: "The ultimate party starter. From digital RSVPs to collaborative playlists, we thought of everything so you can actually enjoy the cake.",
-    gradient: 'from-pink-100 to-yellow-100',
+    gradient: 'from-pink-pale to-yellow-100',
     accentColor: '#e05c8a',
     emoji: '🎂',
     bestFor: 'Any size',
@@ -111,7 +111,7 @@ const TEMPLATES: Template[] = [
     id: 'study-session',
     title: 'Study Session',
     description: 'Turn a grind into a group win. Organize focused sprints and collaborative breaks with ease.',
-    gradient: 'from-blue-100 to-purple-100',
+    gradient: 'from-pink-pale to-purple-100',
     accentColor: '#5b8dee',
     emoji: '📚',
     bestFor: '2–8 people',
@@ -131,7 +131,7 @@ const TEMPLATES: Template[] = [
     id: 'game-night',
     title: 'Game Night',
     description: 'Board games, card games, or video games — let the group vote and let the chaos begin.',
-    gradient: 'from-yellow-100 to-orange-100',
+    gradient: 'from-pink-pale to-orange-100',
     accentColor: '#f0a030',
     emoji: '🎲',
     bestFor: '4–16 guests',
@@ -151,31 +151,38 @@ const TEMPLATES: Template[] = [
 
 function TemplateCard({ template, onUse }: { template: Template; onUse: (t: Template) => void }) {
   return (
-    <div className="tpl-card" onClick={() => onUse(template)}>
+    <div
+      className="bg-white rounded-[var(--radius-lg)] border border-border overflow-hidden cursor-pointer transition-[transform,box-shadow] duration-200 shadow-[var(--shadow-sm)] flex flex-col hover:-translate-y-1 hover:shadow-[var(--shadow)] hover:border-pink-light"
+      onClick={() => onUse(template)}
+    >
       {/* Image area */}
-      <div className={`tpl-img bg-gradient-to-br ${template.gradient}`}>
+      <div className={`h-[160px] bg-gradient-to-br ${template.gradient} flex items-center justify-center relative`}>
         {template.featured && (
-          <span className="tpl-badge">Most Popular</span>
+          <span className="absolute top-3 left-3 bg-pink text-white text-[0.7rem] font-bold px-3 py-1 rounded-full uppercase tracking-[0.06em]">
+            Most Popular
+          </span>
         )}
-        <span className="tpl-emoji">{template.emoji}</span>
+        <span className="text-[3.5rem] leading-none" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.1))' }}>
+          {template.emoji}
+        </span>
       </div>
 
       {/* Body */}
-      <div className="tpl-body">
-        <h3 className="tpl-title">{template.title}</h3>
-        <p className="tpl-desc">{template.description}</p>
+      <div className="p-5 flex flex-col flex-1">
+        <h3 className="font-heading text-[1.3rem] text-text-dark mb-2">{template.title}</h3>
+        <p className="text-[0.88rem] text-text-muted leading-[1.6] mb-4 flex-1">{template.description}</p>
 
-        <div className="tpl-features">
+        <div className="flex flex-wrap gap-[0.4rem] mb-4">
           {template.features.map((f) => (
-            <span key={f.label} className="tpl-feature">
+            <span key={f.label} className="text-[0.75rem] bg-pink-bg text-[#555] rounded-full px-[10px] py-[3px] whitespace-nowrap">
               {f.icon} {f.label}
             </span>
           ))}
         </div>
 
-        <div className="tpl-footer">
-          <span className="tpl-best-for">👥 Best for {template.bestFor}</span>
-          <span className="tpl-use-btn">Use Template →</span>
+        <div className="flex items-center justify-between border-t border-border-light pt-3 mt-auto">
+          <span className="text-[0.78rem] text-text-muted">👥 Best for {template.bestFor}</span>
+          <span className="text-[0.82rem] font-bold text-pink">Use Template →</span>
         </div>
       </div>
     </div>
@@ -190,226 +197,54 @@ export default function BrowseTemplatesPage() {
   }
 
   return (
-    <div className="tpl-page">
+    <div className="flex-1 pt-[var(--nav-height)] w-full">
       {/* Hero */}
-      <div className="tpl-hero">
-        <img src={starSvg} alt="" aria-hidden className="tpl-star tpl-star-left" style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(30%) saturate(400%) hue-rotate(300deg)' }} />
-        <img src={starSvg} alt="" aria-hidden className="tpl-star tpl-star-right" style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(30%) saturate(400%) hue-rotate(300deg)' }} />
-        <h1 className="tpl-hero-title">Start with <em>Joy.</em></h1>
-        <p className="tpl-hero-sub">
+      <div className="text-center px-8 pt-16 pb-12 relative overflow-hidden">
+        <img
+          src={starSvg}
+          alt=""
+          aria-hidden
+          className="absolute opacity-[0.18] pointer-events-none w-[80px] top-8 left-[6%]"
+          style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(30%) saturate(400%) hue-rotate(300deg)' }}
+        />
+        <img
+          src={starSvg}
+          alt=""
+          aria-hidden
+          className="absolute opacity-[0.18] pointer-events-none w-[56px] bottom-4 right-[8%]"
+          style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(30%) saturate(400%) hue-rotate(300deg)' }}
+        />
+        <h1 className="font-heading text-text-dark mb-4 leading-[1.1]" style={{ fontSize: 'clamp(2.4rem, 5vw, 3.8rem)' }}>
+          Start with <em className="italic text-pink">Joy.</em>
+        </h1>
+        <p className="text-[1rem] text-text-muted leading-[1.7] max-w-[520px] mx-auto">
           Skip the blank page. Pick a template designed to foster connection,<br />
           and customize it to make it your own in minutes.
         </p>
       </div>
 
       {/* Grid */}
-      <div className="tpl-grid">
+      <div className="grid gap-6 max-w-[1400px] mx-auto px-8 pb-16 max-[900px]:grid-cols-2 max-[580px]:grid-cols-1 max-[580px]:px-4" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         {TEMPLATES.map((t) => (
           <TemplateCard key={t.id} template={t} onUse={handleUse} />
         ))}
       </div>
 
       {/* CTA bottom */}
-      <div className="tpl-cta">
-        <h2 className="tpl-cta-title">Don't see your vibe?</h2>
-        <p className="tpl-cta-sub">
+      <div className="bg-pink-pale text-center px-8 py-16 rounded-[32px] max-w-[1400px] mx-auto mb-16 max-[580px]:mx-4 max-[580px]:mb-12">
+        <h2 className="font-heading text-text-dark mb-3" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.4rem)' }}>
+          Don't see your vibe?
+        </h2>
+        <p className="text-[0.95rem] text-text-muted mb-7">
           Create a custom event from scratch and make it entirely your own.
         </p>
-        <button className="tpl-cta-btn" onClick={() => navigate('/events/new')}>
+        <button
+          className="bg-pink-dark text-white border-none rounded-full px-9 py-[14px] font-sans text-[1rem] font-bold cursor-pointer transition-all duration-200 hover:bg-accent-dark hover:-translate-y-0.5 hover:shadow-[var(--shadow-accent)]"
+          onClick={() => navigate('/events/new')}
+        >
           Create from Scratch
         </button>
       </div>
-
-      <style>{`
-        .tpl-page {
-          flex: 1;
-          padding-top: var(--nav-height);
-          width: 100%;
-        }
-
-        /* Hero */
-        .tpl-hero {
-          text-align: center;
-          padding: 4rem 2rem 3rem;
-          position: relative;
-          overflow: hidden;
-        }
-        .tpl-star {
-          position: absolute;
-          opacity: 0.18;
-          pointer-events: none;
-        }
-        .tpl-star-left  { width: 80px; top: 2rem; left: 6%; }
-        .tpl-star-right { width: 56px; bottom: 1rem; right: 8%; }
-        .tpl-hero-title {
-          font-family: 'Cantora One', cursive;
-          font-size: clamp(2.4rem, 5vw, 3.8rem);
-          color: var(--text-dark);
-          margin-bottom: 1rem;
-          line-height: 1.1;
-        }
-        .tpl-hero-title em {
-          font-style: italic;
-          color: var(--pink);
-        }
-        .tpl-hero-sub {
-          font-size: 1rem;
-          color: var(--text-muted);
-          line-height: 1.7;
-          max-width: 520px;
-          margin: 0 auto;
-        }
-
-        /* Grid */
-        .tpl-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 1.5rem;
-          max-width: 1100px;
-          margin: 0 auto;
-          padding: 0 2rem 4rem;
-        }
-
-        /* Card */
-        .tpl-card {
-          background: white;
-          border-radius: var(--radius-lg);
-          border: 1px solid var(--border);
-          overflow: hidden;
-          cursor: pointer;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          box-shadow: var(--shadow-sm);
-          display: flex;
-          flex-direction: column;
-        }
-        .tpl-card:hover {
-          transform: translateY(-4px);
-          box-shadow: var(--shadow);
-          border-color: var(--pink-light);
-        }
-        .tpl-img {
-          height: 160px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        }
-        .tpl-emoji {
-          font-size: 3.5rem;
-          line-height: 1;
-          filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
-        }
-        .tpl-badge {
-          position: absolute;
-          top: 12px;
-          left: 12px;
-          background: var(--pink);
-          color: white;
-          font-size: 0.7rem;
-          font-weight: 700;
-          padding: 4px 12px;
-          border-radius: 100px;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-        }
-        .tpl-body {
-          padding: 1.25rem;
-          display: flex;
-          flex-direction: column;
-          flex: 1;
-        }
-        .tpl-title {
-          font-family: 'Cantora One', cursive;
-          font-size: 1.3rem;
-          color: var(--text-dark);
-          margin-bottom: 0.5rem;
-        }
-        .tpl-desc {
-          font-size: 0.88rem;
-          color: var(--text-muted);
-          line-height: 1.6;
-          margin-bottom: 1rem;
-          flex: 1;
-        }
-        .tpl-features {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.4rem;
-          margin-bottom: 1rem;
-        }
-        .tpl-feature {
-          font-size: 0.75rem;
-          background: var(--pink-bg);
-          color: var(--text-mid);
-          border-radius: 100px;
-          padding: 3px 10px;
-          white-space: nowrap;
-        }
-        .tpl-footer {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-top: 1px solid var(--border-light);
-          padding-top: 0.75rem;
-          margin-top: auto;
-        }
-        .tpl-best-for {
-          font-size: 0.78rem;
-          color: var(--text-muted);
-        }
-        .tpl-use-btn {
-          font-size: 0.82rem;
-          font-weight: 700;
-          color: var(--pink);
-        }
-
-        /* Bottom CTA */
-        .tpl-cta {
-          background: var(--pink-pale);
-          text-align: center;
-          padding: 4rem 2rem;
-          border-radius: 32px;
-          max-width: 1100px;
-          margin: 0 auto 4rem;
-        }
-        .tpl-cta-title {
-          font-family: 'Cantora One', cursive;
-          font-size: clamp(1.8rem, 3vw, 2.4rem);
-          color: var(--text-dark);
-          margin-bottom: 0.75rem;
-        }
-        .tpl-cta-sub {
-          font-size: 0.95rem;
-          color: var(--text-muted);
-          margin-bottom: 1.75rem;
-        }
-        .tpl-cta-btn {
-          background: var(--pink-dark, #973B69);
-          color: white;
-          border: none;
-          border-radius: 100px;
-          padding: 14px 36px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 1rem;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .tpl-cta-btn:hover {
-          background: var(--accent-dark);
-          transform: translateY(-2px);
-          box-shadow: var(--shadow-accent);
-        }
-
-        @media (max-width: 900px) {
-          .tpl-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 580px) {
-          .tpl-grid { grid-template-columns: 1fr; padding: 0 1rem 3rem; }
-          .tpl-hero { padding: 3rem 1rem 2rem; }
-          .tpl-cta { margin: 0 1rem 3rem; }
-        }
-      `}</style>
     </div>
   )
 }
