@@ -169,7 +169,6 @@ resource "aws_lambda_function" "ai" {
   environment {
     variables = merge(local.lambda_common_env, {
       MESSAGES_TABLE = aws_dynamodb_table.chat_messages.name
-      AWS_REGION     = var.aws_region
     })
   }
 
