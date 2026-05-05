@@ -12,6 +12,26 @@ import ProfilePage from './pages/ProfilePage'
 import { joinViaInvite } from './api/events'
 import HowItWorks from './pages/HowItWorks'
 
+// Block all rendering until auth state is resolved — covers OAuth callbacks,
+// returning users with an existing session token, and fresh page loads.
+// Also stays blank while a ?code= OAuth exchange is in flight (loading=true).
+const hasOAuthCode = new URLSearchParams(window.location.search).has('code')
+
+function OAuthGate({ children }: { children: React.ReactNode }) {
+  const { loading } = useAuth()
+  // Always block on loading — this covers session restore AND OAuth exchange.
+  // hasOAuthCode ensures we never flash content while the code is being exchanged.
+  if (loading || hasOAuthCode) return null
+  return <>{children}</>
+}
+
+function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>Loading…</div>
+  if (user) return <Navigate to="/events" replace />
+  return <>{children}</>
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>Loading…</div>
@@ -58,7 +78,7 @@ function PendingInviteResolver() {
     sessionStorage.removeItem('pendingInviteToken')
     joinViaInvite(token)
       .then((member) => navigate(`/events/${member.event_id}`, { replace: true }))
-      .catch(() => {})
+      .catch(() => { })
   }, [user, navigate])
 
   return null
@@ -67,48 +87,50 @@ function PendingInviteResolver() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Nav />
-      <PendingInviteResolver />
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/join/:token" element={<JoinPage />} />
-        <Route
-          path="/events"
-          element={
-            <ProtectedRoute>
-              <EventsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/events/new"
-          element={
-            <ProtectedRoute>
-              <CreateEventPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/events/:id"
-          element={
-            <ProtectedRoute>
-              <EventPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <OAuthGate>
+        <Nav />
+        <PendingInviteResolver />
+        <Routes>
+          <Route path="/" element={<PublicOnlyRoute><LandingPage /></PublicOnlyRoute>} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/join/:token" element={<JoinPage />} />
+          <Route
+            path="/events"
+            element={
+              <ProtectedRoute>
+                <EventsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/new"
+            element={
+              <ProtectedRoute>
+                <CreateEventPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/:id"
+            element={
+              <ProtectedRoute>
+                <EventPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </OAuthGate>
     </BrowserRouter>
   )
 }
