@@ -1,20 +1,32 @@
 import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { createEvent } from '../api/events'
 import { useAuth } from '../auth/AuthContext'
 
+interface TemplatePrefill {
+  title: string
+  description: string
+  hasPotluck: boolean
+  polls: string[]
+  tasks: string[]
+}
+
 export default function CreateEventPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { profile } = useAuth()
 
-  // Form state
-  const [title, setTitle] = useState('')
+  // Read template prefill from router state if coming from Browse Templates
+  const tpl = (location.state as { template?: TemplatePrefill } | null)?.template
+
+  // Form state — seeded from template if present
+  const [title, setTitle] = useState(tpl?.title ?? '')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [endDate, setEndDate] = useState('')
   const [endTime, setEndTime] = useState('')
-  const [location, setLocation] = useState('')
-  const [description, setDescription] = useState('')
+  const [location_, setLocation] = useState('')
+  const [description, setDescription] = useState(tpl?.description ?? '')
   const [recurrenceRule, setRecurrenceRule] = useState('')
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('')
   const [flyerFile, setFlyerFile] = useState<File | null>(null)
@@ -45,7 +57,7 @@ export default function CreateEventPage() {
       const formData = new FormData()
       formData.append('title', title.trim())
       if (description) formData.append('description', description)
-      if (location) formData.append('location', location)
+      if (location_) formData.append('location', location_)
 
       // Combine date + time into ISO string
       if (date) {
@@ -81,88 +93,99 @@ export default function CreateEventPage() {
     }
   }
 
+  // Shared input class
+  const fieldInput = 'w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[10px] font-sans text-[0.92rem] outline-none transition-[border-color] duration-200 mb-4 bg-white text-text-dark box-border focus:border-pink'
+
   return (
-    <div className="create-page">
-      <h1 className="create-title">Let's get this party started.</h1>
-      <p className="create-sub">
+    <div className="pt-[calc(var(--nav-height)+2rem)] px-8 pb-12 max-w-[960px] mx-auto flex-1 w-full">
+      <h1 className="font-heading text-[2.5rem] text-center text-text-dark mb-3">Let's get this party started.</h1>
+      <p className="text-center text-text-muted text-[0.95rem] mb-10">
         Fill in the details below to create your event space. Don't stress, you can always change things later.
       </p>
 
+      {tpl && (
+        <div className="bg-pink-bg border border-pink-pale rounded-xl px-5 py-3 max-w-[960px] mx-auto mb-6 flex items-center gap-[10px] text-[0.9rem] text-[#555]">
+          <span>✨</span>
+          <span>Using the <strong className="text-pink">{tpl.title}</strong> template — title and description are pre-filled. Customize anything you like.</span>
+        </div>
+      )}
+
       {error && (
-        <div style={{ background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: '0.75rem 1rem', marginBottom: '1.5rem', color: '#c00', maxWidth: 960, margin: '0 auto 1.5rem' }}>
+        <div className="bg-[#fff0f0] border border-[#fcc] rounded-lg px-4 py-3 mb-6 text-[#c00] max-w-[960px] mx-auto">
           ⚠ {error}
         </div>
       )}
 
       <form onSubmit={handleCreate}>
-        <div className="create-grid">
+        <div className="grid grid-cols-2 gap-6 mb-6 max-[700px]:grid-cols-1">
           {/* Section 1: Basics */}
-          <div className="create-section">
-            <div className="section-title">
-              <span className="section-num">1</span> The Basics
+          <div className="bg-white rounded-[var(--radius-lg)] border border-border p-7">
+            <div className="font-heading text-[1.25rem] text-text-dark flex items-center mb-5">
+              <span className="inline-flex items-center justify-center w-7 h-7 bg-pink text-white rounded-full text-[0.8rem] font-bold mr-[10px]">1</span>
+              The Basics
             </div>
-            <label className="field-label">Event Title *</label>
+
+            <label className="text-[0.85rem] font-semibold text-[#555] mb-[6px] block">Event Title *</label>
             <input
-              className="field-input"
+              className={fieldInput}
               placeholder="e.g., Sarah's Birthday Bash"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
             />
-            <div className="date-time-row">
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="field-label">Start Date</label>
+                <label className="text-[0.85rem] font-semibold text-[#555] mb-[6px] block">Start Date</label>
                 <input
-                  className="field-input"
+                  className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[10px] font-sans text-[0.92rem] outline-none transition-[border-color] duration-200 bg-white text-text-dark box-border focus:border-pink"
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  style={{ marginBottom: 0 }}
                 />
               </div>
               <div>
-                <label className="field-label">Start Time</label>
+                <label className="text-[0.85rem] font-semibold text-[#555] mb-[6px] block">Start Time</label>
                 <input
-                  className="field-input"
+                  className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[10px] font-sans text-[0.92rem] outline-none transition-[border-color] duration-200 bg-white text-text-dark box-border focus:border-pink"
                   type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  style={{ marginBottom: 0 }}
                 />
               </div>
             </div>
-            <div style={{ height: '1rem' }} />
-            <div className="date-time-row">
+
+            <div className="h-4" />
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="field-label">End Date</label>
+                <label className="text-[0.85rem] font-semibold text-[#555] mb-[6px] block">End Date</label>
                 <input
-                  className="field-input"
+                  className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[10px] font-sans text-[0.92rem] outline-none transition-[border-color] duration-200 bg-white text-text-dark box-border focus:border-pink"
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  style={{ marginBottom: 0 }}
                 />
               </div>
               <div>
-                <label className="field-label">End Time</label>
+                <label className="text-[0.85rem] font-semibold text-[#555] mb-[6px] block">End Time</label>
                 <input
-                  className="field-input"
+                  className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[10px] font-sans text-[0.92rem] outline-none transition-[border-color] duration-200 bg-white text-text-dark box-border focus:border-pink"
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  style={{ marginBottom: 0 }}
                 />
               </div>
             </div>
-            <div style={{ height: '1rem' }} />
+
+            <div className="h-4" />
 
             {/* Recurrence */}
-            <label className="field-label">Repeat</label>
+            <label className="text-[0.85rem] font-semibold text-[#555] mb-[6px] block">Repeat</label>
             <select
-              className="field-input"
+              className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[10px] font-sans text-[0.92rem] outline-none transition-[border-color] duration-200 mb-2 bg-white text-text-dark box-border focus:border-pink"
               value={recurrenceRule}
               onChange={(e) => setRecurrenceRule(e.target.value)}
-              style={{ marginBottom: '0.5rem' }}
             >
               <option value="">Does not repeat</option>
               <option value="DAILY">Daily</option>
@@ -171,28 +194,27 @@ export default function CreateEventPage() {
             </select>
             {recurrenceRule && (
               <>
-                <label className="field-label">Repeat until</label>
+                <label className="text-[0.85rem] font-semibold text-[#555] mb-[6px] block">Repeat until</label>
                 <input
-                  className="field-input"
+                  className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[10px] font-sans text-[0.92rem] outline-none transition-[border-color] duration-200 mb-2 bg-white text-text-dark box-border focus:border-pink"
                   type="date"
                   value={recurrenceEndDate}
                   onChange={(e) => setRecurrenceEndDate(e.target.value)}
-                  style={{ marginBottom: '0.5rem' }}
                 />
               </>
             )}
 
-            <div style={{ height: '0.5rem' }} />
-            <label className="field-label">Location</label>
+            <div className="h-2" />
+            <label className="text-[0.85rem] font-semibold text-[#555] mb-[6px] block">Location</label>
             <input
-              className="field-input"
+              className={fieldInput}
               placeholder="🔍 Search address or venue..."
-              value={location}
+              value={location_}
               onChange={(e) => setLocation(e.target.value)}
             />
-            <label className="field-label">Description</label>
+            <label className="text-[0.85rem] font-semibold text-[#555] mb-[6px] block">Description</label>
             <textarea
-              className="field-input"
+              className="w-full border-[1.5px] border-border rounded-[var(--radius-sm)] px-[14px] py-[10px] font-sans text-[0.92rem] outline-none transition-[border-color] duration-200 mb-4 bg-white text-text-dark box-border resize-y min-h-[100px] focus:border-pink"
               placeholder="Tell your guests what to expect..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -200,27 +222,27 @@ export default function CreateEventPage() {
           </div>
 
           {/* Section 2: Flyer */}
-          <div className="create-section">
-            <div className="section-title">
-              <span className="section-num">2</span> Event Flyer
+          <div className="bg-white rounded-[var(--radius-lg)] border border-border p-7">
+            <div className="font-heading text-[1.25rem] text-text-dark flex items-center mb-5">
+              <span className="inline-flex items-center justify-center w-7 h-7 bg-pink text-white rounded-full text-[0.8rem] font-bold mr-[10px]">2</span>
+              Event Flyer
             </div>
-            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+            <p className="text-[0.88rem] text-text-muted mb-4">
               Upload a flyer or cover image for your event (optional).
             </p>
 
             {/* Flyer upload */}
             <div
-              className="flyer-drop"
+              className={`border-2 border-dashed border-border rounded-[var(--radius-sm)] text-center cursor-pointer transition-[border-color] duration-200 overflow-hidden hover:border-pink ${flyerPreview ? 'p-0 border-none' : 'p-8'}`}
               onClick={() => fileInputRef.current?.click()}
-              style={flyerPreview ? { padding: 0, border: 'none' } : {}}
             >
               {flyerPreview ? (
-                <img src={flyerPreview} alt="Flyer preview" style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 8 }} />
+                <img src={flyerPreview} alt="Flyer preview" className="w-full object-cover rounded-lg" style={{ height: 180 }} />
               ) : (
                 <>
-                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🖼️</div>
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Upload a flyer</div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>PNG, JPG, GIF up to 5 MB</div>
+                  <div className="text-[2rem] mb-2">🖼️</div>
+                  <div className="font-semibold text-[0.9rem]">Upload a flyer</div>
+                  <div className="text-[0.78rem] text-text-muted mt-1">PNG, JPG, GIF up to 5 MB</div>
                 </>
               )}
             </div>
@@ -228,13 +250,13 @@ export default function CreateEventPage() {
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              style={{ display: 'none' }}
+              className="hidden"
               onChange={handleFlyerChange}
             />
             {flyerPreview && (
               <button
                 type="button"
-                style={{ marginTop: 8, fontSize: '0.8rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                className="mt-2 text-[0.8rem] text-text-muted bg-transparent border-none cursor-pointer underline"
                 onClick={() => { setFlyerFile(null); setFlyerPreview(null) }}
               >
                 Remove flyer
@@ -243,147 +265,23 @@ export default function CreateEventPage() {
           </div>
         </div>
 
-        <div className="create-actions">
-          <button type="button" className="btn-cancel" onClick={() => navigate('/events')}>Cancel</button>
-          <button type="submit" className="btn-create-event" disabled={loading}>
+        <div className="flex justify-center gap-4 mt-8">
+          <button
+            type="button"
+            className="bg-transparent border-[1.5px] border-border rounded-full px-8 py-3 font-sans text-[0.92rem] font-medium text-[#555] cursor-pointer transition-all duration-200 hover:border-[#aaa]"
+            onClick={() => navigate('/events')}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="bg-text-dark text-white border-none rounded-full px-9 py-3 font-sans text-[0.92rem] font-bold cursor-pointer transition-all duration-200 shadow-[3px_3px_0_var(--pink)] disabled:opacity-60 disabled:cursor-not-allowed hover:enabled:-translate-x-px hover:enabled:-translate-y-px hover:enabled:shadow-[5px_5px_0_var(--pink)]"
+            disabled={loading}
+          >
             {loading ? 'Creating…' : 'Create Event'}
           </button>
         </div>
       </form>
-
-      <style>{`
-        .create-page {
-          padding: calc(var(--nav-height) + 2rem) 2rem 3rem;
-          max-width: 960px;
-          margin: 0 auto;
-          flex: 1;
-          width: 100%;
-        }
-        .create-title {
-          font-family: 'Cantora One', cursive;
-          font-size: 2.5rem;
-          text-align: center;
-          color: var(--text-dark);
-          margin-bottom: 0.75rem;
-        }
-        .create-sub {
-          text-align: center;
-          color: var(--text-muted);
-          font-size: 0.95rem;
-          margin-bottom: 2.5rem;
-        }
-        .create-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-        .create-section {
-          background: white;
-          border-radius: var(--radius-lg);
-          border: 1px solid var(--border);
-          padding: 1.75rem;
-        }
-        .section-num {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 28px;
-          height: 28px;
-          background: var(--pink);
-          color: white;
-          border-radius: 50%;
-          font-size: 0.8rem;
-          font-weight: 700;
-          margin-right: 10px;
-        }
-        .section-title {
-          font-family: 'Cantora One', cursive;
-          font-size: 1.25rem;
-          color: var(--text-dark);
-          display: flex;
-          align-items: center;
-          margin-bottom: 1.25rem;
-        }
-        .field-label {
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: var(--text-mid);
-          margin-bottom: 6px;
-          display: block;
-        }
-        .field-input {
-          width: 100%;
-          border: 1.5px solid var(--border);
-          border-radius: var(--radius-sm);
-          padding: 10px 14px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 0.92rem;
-          outline: none;
-          transition: border-color 0.2s;
-          margin-bottom: 1rem;
-          background: white;
-          color: var(--text-dark);
-          box-sizing: border-box;
-        }
-        .field-input:focus { border-color: var(--pink); }
-        textarea.field-input { resize: vertical; min-height: 100px; }
-        .date-time-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 0.75rem;
-        }
-        .flyer-drop {
-          border: 2px dashed var(--border);
-          border-radius: var(--radius-sm);
-          padding: 2rem;
-          text-align: center;
-          cursor: pointer;
-          transition: border-color 0.2s;
-          overflow: hidden;
-        }
-        .flyer-drop:hover { border-color: var(--pink); }
-        .create-actions {
-          display: flex;
-          justify-content: center;
-          gap: 1rem;
-          margin-top: 2rem;
-        }
-        .btn-cancel {
-          background: none;
-          border: 1.5px solid var(--border);
-          border-radius: 100px;
-          padding: 12px 32px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 0.92rem;
-          font-weight: 500;
-          color: var(--text-mid);
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-cancel:hover { border-color: #aaa; }
-        .btn-create-event {
-          background: var(--text-dark);
-          color: white;
-          border: none;
-          border-radius: 100px;
-          padding: 12px 36px;
-          font-family: 'Albert Sans', sans-serif;
-          font-size: 0.92rem;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
-          box-shadow: 3px 3px 0 var(--pink);
-        }
-        .btn-create-event:hover:not(:disabled) {
-          transform: translate(-1px, -1px);
-          box-shadow: 5px 5px 0 var(--pink);
-        }
-        .btn-create-event:disabled { opacity: 0.6; cursor: not-allowed; }
-        @media (max-width: 700px) {
-          .create-grid { grid-template-columns: 1fr; }
-        }
-      `}</style>
     </div>
   )
 }

@@ -36,7 +36,7 @@ function TemplateCardVisual() {
 
 function InviteCardVisual() {
     return (
-        <div className="w-full aspect-video bg-gradient-to-br from-pink-light/60 to-pink-pale rounded-xl flex items-center justify-center overflow-hidden">
+        <div className="w-full aspect-video bg-gradient-to-br from-pink-pale to-pink-pale rounded-xl flex items-center justify-center overflow-hidden">
             <span className="material-symbols-outlined text-pink opacity-30 text-[clamp(24px,6vw,64px)]">
                 send
             </span>
@@ -46,7 +46,7 @@ function InviteCardVisual() {
 
 function PollCardVisual() {
     return (
-        <div className="w-full aspect-video bg-gradient-to-br from-pink-bg to-pink-pale rounded-xl flex items-center justify-center overflow-hidden">
+        <div className="w-full aspect-video bg-gradient-to-br from-pink-pale to-pink-pale rounded-xl flex items-center justify-center overflow-hidden">
             <span className="material-symbols-outlined text-pink opacity-30 text-[clamp(24px,6vw,64px)]">
                 poll
             </span>
@@ -56,7 +56,7 @@ function PollCardVisual() {
 
 function LoungeCardVisual() {
     return (
-        <div className="w-full aspect-video bg-gradient-to-br from-purple-pale to-purple-light rounded-xl flex items-center justify-center overflow-hidden">
+        <div className="w-full aspect-video bg-gradient-to-br from-pink-pale to-purple-light rounded-xl flex items-center justify-center overflow-hidden">
             <span className="material-symbols-outlined text-purple-btn opacity-30 text-[clamp(24px,6vw,64px)]">
                 nightlife
             </span>

@@ -11,13 +11,19 @@ import EventPage from './pages/EventPage'
 import ProfilePage from './pages/ProfilePage'
 import { joinViaInvite } from './api/events'
 import HowItWorks from './pages/HowItWorks'
+import BrowseTemplatesPage from './pages/BrowseTemplatesPage'
 import Footer from './components/Footer.tsx'
+
+// Stays true for the lifetime of this page load if it started with ?code=
+// This prevents any content from rendering during the OAuth token exchange.
+const isOAuthCallback = new URLSearchParams(window.location.search).has('code')
 
 // Block all rendering until auth state is resolved — covers OAuth callbacks,
 // returning users with an existing session token, and fresh page loads.
 function OAuthGate({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth()
-  if (loading) return null
+  // During an OAuth callback, stay blank until window.location.replace fires.
+  if (loading || isOAuthCallback) return null
   return <>{children}</>
 }
 
@@ -99,6 +105,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<PublicOnlyRoute><LandingPage /></PublicOnlyRoute>} />
           <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/templates" element={<BrowseTemplatesPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/join/:token" element={<JoinPage />} />
