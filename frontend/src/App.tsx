@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useAuth } from './auth/AuthContext'
 import Nav from './components/Nav'
@@ -15,14 +15,9 @@ import Footer from './components/Footer.tsx'
 
 // Block all rendering until auth state is resolved — covers OAuth callbacks,
 // returning users with an existing session token, and fresh page loads.
-// Also stays blank while a ?code= OAuth exchange is in flight (loading=true).
-const hasOAuthCode = new URLSearchParams(window.location.search).has('code')
-
 function OAuthGate({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth()
-  // Always block on loading — this covers session restore AND OAuth exchange.
-  // hasOAuthCode ensures we never flash content while the code is being exchanged.
-  if (loading || hasOAuthCode) return null
+  if (loading) return null
   return <>{children}</>
 }
 
@@ -87,6 +82,14 @@ function PendingInviteResolver() {
   return null
 }
 
+function AppFooter() {
+  const { pathname } = useLocation()
+  // Hide footer entirely on the event detail page — it uses a fixed-height layout
+  // and the footer would push it out of the viewport and break internal scrolling.
+  if (/^\/events\/[^/]+$/.test(pathname)) return null
+  return <Footer />
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -133,7 +136,7 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <Footer />
+        <AppFooter />
       </OAuthGate>
     </BrowserRouter>
   )

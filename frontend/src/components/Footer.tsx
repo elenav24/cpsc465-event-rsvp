@@ -1,7 +1,12 @@
-export default function Footer() {
+interface FooterProps {
+  compact?: boolean
+}
+
+export default function Footer({ compact = false }: FooterProps) {
+  const py = compact ? 'py-3' : 'py-6'
   return (
     <footer className="w-full border-t border-zinc-200 bg-neutral-50">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 py-8 px-8">
+      <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 ${py} px-8`}>
         {/* Left — copyright */}
         <p className="text-zinc-500 text-sm">© 2026 Cohosted</p>
 

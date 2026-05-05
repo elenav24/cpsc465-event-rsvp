@@ -1012,6 +1012,8 @@ export default function EventPage() {
   const [inviteCopied, setInviteCopied] = useState(false)
   const [editing, setEditing] = useState(false)
   const [guestCount, setGuestCount] = useState(0)
+  const [flyerOpen, setFlyerOpen] = useState(false)
+  const [inviteLinkVisible, setInviteLinkVisible] = useState(false)
 
   const eventUuid = id ?? ''
   const myId = profile?.cognito_sub ?? ''
@@ -1209,10 +1211,21 @@ export default function EventPage() {
 
       {/* Sidebar — event info & RSVP */}
       <div className="event-sidebar">
-        {/* Flyer / hero */}
-        <div className="sidebar-hero">
+        {/* Flyer / hero — click to expand if there's a flyer */}
+        <div
+          className={`sidebar-hero${event.flyer_url ? ' sidebar-hero-clickable' : ''}`}
+          onClick={() => event.flyer_url && setFlyerOpen(true)}
+          title={event.flyer_url ? 'Click to expand' : undefined}
+        >
           {event.flyer_url ? (
-            <img src={event.flyer_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <>
+              <img src={event.flyer_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div className="sidebar-hero-expand-hint">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M1 1h4M1 1v4M13 1h-4M13 1v4M1 13h4M1 13v-4M13 13h-4M13 13v-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </div>
+            </>
           ) : (
             <div className="sidebar-hero-placeholder">
               <div className="sidebar-hero-date">
@@ -1221,6 +1234,19 @@ export default function EventPage() {
             </div>
           )}
         </div>
+
+        {/* Flyer lightbox */}
+        {flyerOpen && event.flyer_url && (
+          <div className="flyer-lightbox" onClick={() => setFlyerOpen(false)}>
+            <button className="flyer-lightbox-close" onClick={() => setFlyerOpen(false)} aria-label="Close">✕</button>
+            <img
+              src={event.flyer_url}
+              alt={event.title}
+              className="flyer-lightbox-img"
+              onClick={e => e.stopPropagation()}
+            />
+          </div>
+        )}
 
         <div className="sidebar-scroll">
           {/* RSVP */}
@@ -1336,17 +1362,38 @@ export default function EventPage() {
           {/* Invite link (host only) */}
           {isHost && (
             <div className="sidebar-section">
-              <div className="sidebar-section-title">Invite Link</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <div className="sidebar-section-title" style={{ marginBottom: 0 }}>Invite Link</div>
+              </div>
               {event.invite_token && event.invite_active ? (
                 <>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
                     <input
                       readOnly
+                      type={inviteLinkVisible ? 'text' : 'password'}
                       value={`${window.location.origin}/join/${event.invite_token}`}
                       style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 6, padding: '5px 8px', fontSize: '0.68rem', background: '#fafafa', color: 'var(--text-muted)', fontFamily: 'monospace', minWidth: 0 }}
                     />
+                    <button
+                      onClick={() => setInviteLinkVisible(v => !v)}
+                      title={inviteLinkVisible ? 'Hide link' : 'Show link'}
+                      style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 7px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--text-muted)', flexShrink: 0 }}
+                    >
+                      {inviteLinkVisible ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
+                          <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+                          <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
                     <button onClick={handleCopyInvite} style={{ background: inviteCopied ? '#1a7a3c' : 'var(--pink)', color: 'white', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      {inviteCopied ? '✓ Copied' : 'Copy'}
+                      {inviteCopied ? '✓' : 'Copy'}
                     </button>
                   </div>
                   <div style={{ display: 'flex', gap: 10 }}>
@@ -1372,7 +1419,7 @@ export default function EventPage() {
       </div>
 
       <style>{`
-        .event-page { display: flex; width: 100%; overflow: hidden; height: calc(100svh - var(--nav-height)); margin-top: var(--nav-height); }
+        .event-page { display: flex; flex-direction: row-reverse; width: 100%; overflow: hidden; height: calc(100svh - var(--nav-height)); margin-top: var(--nav-height); }
 
         /* ── Main (left) ── */
         .event-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; height: 100%; }
@@ -1395,11 +1442,18 @@ export default function EventPage() {
         .main-tab-content > div { flex: 1; overflow-y: auto; min-height: 0; }
 
         /* ── Sidebar (right) ── */
-        .event-sidebar { width: 300px; flex-shrink: 0; background: white; border-left: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-        .sidebar-hero { width: 100%; height: 150px; background: linear-gradient(135deg, var(--purple-pale) 0%, var(--pink-pale) 100%); flex-shrink: 0; overflow: hidden; }
+        .event-sidebar { width: 40%; flex-shrink: 0; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .sidebar-hero { width: 100%; height: 150px; background: linear-gradient(135deg, var(--purple-pale) 0%, var(--pink-pale) 100%); flex-shrink: 0; overflow: hidden; position: relative; }
         .sidebar-hero img { width: 100%; height: 100%; object-fit: cover; }
+        .sidebar-hero-clickable { cursor: zoom-in; }
+        .sidebar-hero-clickable:hover .sidebar-hero-expand-hint { opacity: 1; }
+        .sidebar-hero-expand-hint { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.45); border-radius: 6px; padding: 5px 6px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
         .sidebar-hero-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
         .sidebar-hero-date { background: white; border-radius: 100px; padding: 5px 14px; font-size: 0.78rem; font-weight: 500; color: var(--text-mid); box-shadow: var(--shadow-sm); }
+        .flyer-lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; padding: 2rem; cursor: zoom-out; }
+        .flyer-lightbox-img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); cursor: default; }
+        .flyer-lightbox-close { position: absolute; top: 1.25rem; right: 1.5rem; background: rgba(255,255,255,0.15); border: none; color: white; font-size: 1.25rem; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .flyer-lightbox-close:hover { background: rgba(255,255,255,0.3); }
         .sidebar-scroll { flex: 1; overflow-y: auto; min-height: 0; }
         .sidebar-section { padding: 0.875rem 1.125rem; border-bottom: 1px solid var(--border); }
         .sidebar-section-title { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
@@ -1473,7 +1527,7 @@ export default function EventPage() {
 
         @media (max-width: 900px) {
           .event-page { flex-direction: column; height: auto; overflow: visible; margin-top: var(--nav-height); }
-          .event-sidebar { width: 100%; height: auto; flex-shrink: 0; border-left: none; border-bottom: 1px solid var(--border); }
+          .event-sidebar { width: 100%; height: auto; flex-shrink: 0; border-right: none; border-bottom: 1px solid var(--border); }
           .sidebar-scroll { max-height: 60vh; }
           .event-main { height: calc(100svh - var(--nav-height)); flex-shrink: 0; }
         }
