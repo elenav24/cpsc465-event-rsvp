@@ -12,9 +12,9 @@ export default function Footer({ compact = false }: FooterProps) {
 
         {/* Right — links */}
         <div className="flex items-center gap-6">
-          <a href="https://github.com/elenav24/cohosted/issues/new" className="text-zinc-500 text-sm hover:text-zinc-800 transition-colors">Report a Bug</a>
-          <a href="mailto:support@cohosted.cloud" className="text-zinc-500 text-sm hover:text-zinc-800 transition-colors">Contact Us</a>
-          <a href="https://github.com/elenav24/cohosted" className="text-zinc-500 text-sm hover:text-zinc-800 transition-colors">Source Code</a>
+          <a href="https://github.com/elenav24/cohosted/issues/new" className="text-pink text-sm hover:underline transition-colors">Report a Bug</a>
+          <a href="mailto:support@cohosted.cloud" className="text-pink text-sm hover:underline transition-colors">Contact Us</a>
+          <a href="https://github.com/elenav24/cohosted" className="text-pink text-sm hover:underline transition-colors">Source Code</a>
         </div>
       </div>
     </footer>

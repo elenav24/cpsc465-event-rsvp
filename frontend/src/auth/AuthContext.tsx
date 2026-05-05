@@ -118,15 +118,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const code = params.get('code')
 
     if (code) {
-      window.history.replaceState({}, '', window.location.pathname)
+      // Don't strip the code yet — keep loading:true so OAuthGate renders nothing.
+      // Redirect before setting state so the landing page never flashes.
       exchangeCodeForTokens(code)
         .then(async (tokens) => {
           const { user, session } = buildSessionFromTokens(tokens)
           setTokenGetter(() => session.getIdToken().getJwtToken())
           const profile = await fetchProfile()
+          // Set state first so the session is available after the redirect
           setState({ user, session, profile, loading: false })
+          // Hard redirect — replaces history so back button doesn't return to ?code=
+          window.location.replace('/events')
         })
-        .catch(() => setState({ user: null, session: null, profile: null, loading: false }))
+        .catch(() => {
+          window.history.replaceState({}, '', window.location.pathname)
+          setState({ user: null, session: null, profile: null, loading: false })
+        })
     } else {
       restore()
     }
