@@ -41,6 +41,12 @@ resource "aws_cognito_identity_provider" "google" {
     email    = "email"
     username = "sub"
   }
+
+  # AWS returns extra read-only fields (attributes_url, authorize_url, etc.)
+  # that Terraform can't set — ignoring them prevents perpetual drift.
+  lifecycle {
+    ignore_changes = [provider_details]
+  }
 }
 
 resource "aws_cognito_user_pool_client" "web" {

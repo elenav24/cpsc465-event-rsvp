@@ -441,7 +441,6 @@ jobs:
               ENV=production,
               COGNITO_REGION=${{ env.AWS_REGION }},
               COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID }},
-              AWS_REGION=${{ env.AWS_REGION }},
               MESSAGES_TABLE=$MESSAGES_TABLE
             }"
 
