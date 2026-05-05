@@ -141,3 +141,13 @@ export interface UserOut {
   sms_opted_in: boolean
   created_at: string
 }
+
+// ── Reminders ─────────────────────────────────────────────────────────────────
+
+export interface ReminderOut {
+  id: number
+  event_id: number
+  user_id: string
+  offset_minutes: number
+  created_at: string
+}
