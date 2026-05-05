@@ -1,0 +1,12 @@
+boto3==1.42.69
+botocore==1.42.69
+fastapi==0.128.0
+mangum==0.21.0
+psycopg2-binary==2.9.11
+pydantic==2.12.5
+python-dotenv==1.2.1
+python-jose[cryptography]==3.3.0
+SQLAlchemy==2.0.45
+starlette==0.50.0
+uvicorn==0.40.0
+httpx==0.28.1

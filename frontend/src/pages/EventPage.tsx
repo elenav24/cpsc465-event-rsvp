@@ -11,7 +11,9 @@ import {
   regenerateInvite, updateEvent, revokeInvite,
   updateMemberRole, removeMember,
   getReminders, createReminder, deleteReminder,
+  askAi,
 } from '../api/events'
+import type { AiMessage } from '../api/events'
 import { EventChatSocket } from '../api/chat'
 import type {
   EventOut, MemberOut, RSVPOut, PollOut, PotluckItemOut,
@@ -696,6 +698,94 @@ function AnnouncementsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId
   )
 }
 
+// ── AI Assistant Tab ──────────────────────────────────────────────────────────
+function AiTab({ eventUuid }: { eventUuid: string }) {
+  const [messages, setMessages] = useState<AiMessage[]>([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, loading])
+
+  const send = async () => {
+    const text = input.trim()
+    if (!text || loading) return
+    setInput('')
+    setError(null)
+    const next: AiMessage[] = [...messages, { role: 'user', content: text }]
+    setMessages(next)
+    setLoading(true)
+    try {
+      const { reply } = await askAi(eventUuid, next)
+      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Something went wrong')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="chat-panel">
+      <div className="chat-messages">
+        {messages.length === 0 && !loading && (
+          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✨</div>
+            <div style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-dark)' }}>AI Event Assistant</div>
+            <div>Ask anything about this event — guests, polls, tasks, or the chat.</div>
+          </div>
+        )}
+        {messages.map((msg, i) => (
+          <div key={i} className={`chat-msg${msg.role === 'user' ? ' mine' : ''}`}>
+            <div className="chat-bubble-avatar">
+              {msg.role === 'user' ? 'You' : '✨'}
+            </div>
+            <div className="chat-bubble" style={msg.role === 'assistant' ? { background: 'var(--purple-pale)', color: 'var(--text-dark)', whiteSpace: 'pre-wrap' } : undefined}>
+              <div className="chat-bubble-name">{msg.role === 'user' ? 'You' : 'AI Assistant'}</div>
+              <div className="chat-bubble-text" style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="chat-msg">
+            <div className="chat-bubble-avatar">✨</div>
+            <div className="chat-bubble" style={{ background: 'var(--purple-pale)' }}>
+              <div className="chat-bubble-name">AI Assistant</div>
+              <div className="chat-bubble-text" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                <span className="ai-dot" /><span className="ai-dot" style={{ animationDelay: '0.2s' }} /><span className="ai-dot" style={{ animationDelay: '0.4s' }} />
+              </div>
+            </div>
+          </div>
+        )}
+        {error && (
+          <div style={{ margin: '0.5rem 1rem', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 6, padding: '0.5rem 0.75rem', color: '#c00', fontSize: '0.82rem' }}>
+            {error}
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+      <div className="chat-input-row">
+        <input
+          className="chat-input"
+          placeholder="Ask about this event..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
+          disabled={loading}
+        />
+        <button className="btn-send" onClick={send} disabled={loading} aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M14 8L2 2l3 6-3 6 12-6z" fill="white" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Reminders Tab ─────────────────────────────────────────────────────────────
 const REMINDER_OPTIONS = [
   { label: '1 hour before', minutes: 60 },
@@ -1089,6 +1179,7 @@ export default function EventPage() {
 
   const sidebarItems = [
     { key: 'chat', label: 'Event Chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" /></svg> },
+    { key: 'ai', label: 'AI Assistant', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2a2 2 0 012 2v1a7 7 0 010 14v1a2 2 0 01-4 0v-1a7 7 0 010-14V4a2 2 0 012-2z" strokeLinecap="round" /><circle cx="12" cy="12" r="3" /></svg> },
     { key: 'polls', label: 'Polls', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="10" width="4" height="11" rx="1" /><rect x="10" y="6" width="4" height="15" rx="1" /><rect x="17" y="2" width="4" height="19" rx="1" /></svg> },
     { key: 'potluck', label: 'Potluck', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" strokeLinecap="round" /><path d="M8 12h8M12 8v8" strokeLinecap="round" /></svg> },
     { key: 'tasks', label: 'Tasks', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 11l3 3L22 4" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeLinecap="round" strokeLinejoin="round" /></svg> },
@@ -1175,6 +1266,9 @@ export default function EventPage() {
         <div className="main-tab-content">
           {activeTab === 'chat' && (
             <ChatTab eventId={eventUuid} myId={myId} myName={myName} token={token} />
+          )}
+          {activeTab === 'ai' && (
+            <AiTab eventUuid={eventUuid} />
           )}
           {activeTab === 'polls' && (
             <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -1524,6 +1618,9 @@ export default function EventPage() {
         .chat-input:focus { border-color: var(--pink); }
         .btn-send { background: var(--pink); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
         .btn-send:hover { background: #b04068; }
+        .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+        @keyframes ai-bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-4px); opacity: 1; } }
+        .ai-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--pink); animation: ai-bounce 1.2s ease-in-out infinite; }
 
         @media (max-width: 900px) {
           .event-page { flex-direction: column; height: auto; overflow: visible; margin-top: var(--nav-height); }

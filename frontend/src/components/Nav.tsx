@@ -61,8 +61,7 @@ export default function Nav() {
                 pointerEvents: hideCenter ? 'none' : 'auto',
                 transition: 'opacity 0.3s ease',
             }}>
-                <Link to="/how-it-works" className="nav-link">How It Works</Link>
-                <a className="nav-link">Browse Templates</a>
+                {!loggedIn && <Link to="/how-it-works" className="nav-link">How It Works</Link>}
             </div>
 
             {/* Right actions */}
@@ -185,7 +184,7 @@ export default function Nav() {
         }
         .nav-link {
           font-family: 'Albert Sans', sans-serif;
-          font-size: 16px;
+          font-size: 18px;
           font-weight: 500;
           color: #444;
           text-decoration: none;

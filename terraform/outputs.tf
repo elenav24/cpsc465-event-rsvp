@@ -78,3 +78,8 @@ output "ecr_chat_url" {
   description = "ECR repository URL for the chat service"
   value       = aws_ecr_repository.services["chat"].repository_url
 }
+
+output "ecr_ai_url" {
+  description = "ECR repository URL for the AI service"
+  value       = aws_ecr_repository.services["ai"].repository_url
+}
