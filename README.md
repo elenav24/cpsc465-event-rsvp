@@ -2,7 +2,7 @@
 
 A cloud-based collaborative event planning platform built on AWS. Events are better when everyone pitches in — cohosted gives hosts, co-hosts, and attendees a shared workspace to plan together.
 
-**Live App:** http://event-rsvp-frontend.s3-website-us-east-1.amazonaws.com/
+**Live App:** https://cohosted.cloud
 
 ---
 
