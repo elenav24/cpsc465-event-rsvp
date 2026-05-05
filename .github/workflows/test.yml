@@ -166,3 +166,35 @@ jobs:
         env:
           ENV: test
         run: pytest tests/ -v --cov=app --cov-report=term-missing
+
+  # ── AI service ────────────────────────────────────────────────────────────
+  test-ai:
+    name: Test AI Service
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend/services/ai
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/services/ai/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_ai
+          ENV: test
+          COGNITO_REGION: us-east-1
+          COGNITO_USER_POOL_ID: test-pool
+          AWS_REGION: us-east-1
+          MESSAGES_TABLE: test-messages
+        run: pytest tests/ -v --cov=app --cov-report=term-missing
