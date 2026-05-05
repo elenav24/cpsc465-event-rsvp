@@ -71,7 +71,7 @@ export default function App() {
       <PendingInviteResolver />
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/howitworks" element={<HowItWorks />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/join/:token" element={<JoinPage />} />

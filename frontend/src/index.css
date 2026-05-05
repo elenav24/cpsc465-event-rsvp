@@ -11,6 +11,7 @@
   --color-purple-light: #C9C3F0;
   --color-purple-pale: #EEEDFE;
   --color-purple-btn: #b8a8d8;
+  --color-pink-dark: #973B69;
 
   /* Accent */
   --color-accent: #C9567A;
@@ -157,7 +158,7 @@ input, textarea, select {
   font-family: inherit;
 }
 
-h2, h3, h4, h5, h6 {
+h3, h4, h5, h6 {
   font-family: var(--font-heading);
   color: var(--text-heading);
 }
@@ -167,11 +168,17 @@ h1 {
   color: var(--text-heading);
 }
 
+h2 {
+  font-family: var(--font-display);
+  font-weight: bold;
+}
+
 /* ─── Utility Classes ───────────────────────────────────────── */
 .container {
   width: 100%;
   max-width: var(--max-width);
-  margin: 0 auto;
+  margin-left: auto;
+  margin-right: auto;
   padding: 0 24px;
 }
 
@@ -180,15 +187,15 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 20px;
-  border-radius: var(--radius-sm);
-  border: none;
-  font-size: 15px;
   font-weight: 500;
   line-height: 1;
   cursor: pointer;
   transition: all var(--transition);
   white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn:hover {
   text-decoration: none;
 }
 
@@ -212,7 +219,7 @@ h1 {
 .btn-danger:hover:not(:disabled) { background: #dc2626; }
 
 .btn-sm { padding: 6px 14px; font-size: 13px; }
-.btn-lg { padding: 14px 28px; font-size: 16px; border-radius: var(--radius); }
+.btn-lg { padding: 14px 28px; font-size: 16px; }
 
 .card {
   background: var(--bg-card);
