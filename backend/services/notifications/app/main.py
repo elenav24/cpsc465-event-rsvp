@@ -81,14 +81,18 @@ def _handle_announcement(sns_message: str) -> None:
     with engine.connect() as conn:
         rows = conn.execute(
             text(
-                "SELECT phone_number FROM event_members "
-                "WHERE event_id = :eid AND sms_opted_in = true AND phone_number IS NOT NULL"
+                "SELECT u.phone_number FROM event_members em "
+                "JOIN users u ON u.cognito_sub = em.user_id "
+                "WHERE em.event_id = :eid AND u.sms_opted_in = true AND u.phone_number IS NOT NULL"
             ),
             {"eid": event_id},
         ).fetchall()
 
     for row in rows:
         phone = row[0]
+        # Normalize to E.164 if missing country code
+        if phone and not phone.startswith("+"):
+            phone = "+1" + phone.lstrip("1")
         try:
             _send_sms(phone, message)
             logger.info("Sent announcement SMS to %s", phone)
