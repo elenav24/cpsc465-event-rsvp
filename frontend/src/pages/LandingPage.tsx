@@ -106,14 +106,14 @@ export default function LandingPage() {
             </div>
 
             {/* ── Hero content ── */}
-            <div className="relative z-10 flex-1 flex flex-col md:flex-row items-center justify-between -top-20 w-full pl-10 md:px-16 lg:px-24 xl:px-40">
+            <div className="relative z-10 flex-1 flex flex-col md:flex-row items-center md:justify-between w-full pt-24 pb-10 px-6 md:pt-0 md:pb-0 md:pl-16 lg:pl-24 xl:pl-40 md:pr-0">
 
                 {/* ── Left half: text ── */}
-                <div className="flex flex-col justify-center items-center md:items-start gap-8 w-full md:w-1/2 text-center md:text-left">
+                <div className="flex flex-col justify-center items-center md:items-start gap-6 w-full md:w-1/2 text-center md:text-left">
                     {/* Title */}
                     <div
                         className="text-black leading-[1.03]"
-                        style={{ fontFamily: "'Anton', sans-serif", fontSize: 'clamp(2.8rem, 5.56vw, 80px)' }}
+                        style={{ fontFamily: "'Anton', sans-serif", fontSize: 'clamp(2.4rem, 5.56vw, 80px)' }}
                     >
                         <span>Events are </span>
                         <span className="text-gradient-better">better </span>
@@ -122,8 +122,8 @@ export default function LandingPage() {
 
                     {/* Subtitle */}
                     <p
-                        className="text-black leading-relaxed max-w-[80%]"
-                        style={{ fontFamily: "'Albert Sans', sans-serif", fontSize: 'clamp(1rem, 1.39vw, 20px)' }}
+                        className="text-black leading-relaxed max-w-[90%] md:max-w-[80%]"
+                        style={{ fontFamily: "'Albert Sans', sans-serif", fontSize: 'clamp(0.95rem, 1.39vw, 20px)' }}
                     >
                         The RSVP tool built for potlucks, watch parties, and group hangs.{' '}
                         <strong className="font-bold">Start hosting <em className="italic">with</em> your friends,</strong>{' '}
@@ -137,11 +137,11 @@ export default function LandingPage() {
                         style={{
                             background: '#e1bede',
                             fontFamily: "'Cantora One', cursive",
-                            fontSize: 'clamp(1rem, 2.22vw, 32px)',
+                            fontSize: 'clamp(0.95rem, 2.22vw, 32px)',
                             boxShadow: '4px 4px 0px #462749',
                             textDecoration: 'none',
-                            width: 'clamp(220px, 30vw, 340px)',
-                            height: 'clamp(52px, 6vw, 71px)',
+                            width: 'clamp(200px, 30vw, 340px)',
+                            height: 'clamp(48px, 6vw, 71px)',
                             color: '#000',
                         }}
                         onMouseEnter={e => { e.currentTarget.style.boxShadow = '6px 6px 0px #462749' }}
@@ -152,10 +152,10 @@ export default function LandingPage() {
                 </div>
 
                 {/* ── Right half: photo card centered ── */}
-                <div className="w-full md:w-1/2 flex items-center justify-center py-8 md:py-0">
+                <div className="w-full md:w-1/2 flex items-center justify-center pt-8 pb-4 md:py-0">
 
                     {/* Mobile: no tilt */}
-                    <div className="relative md:hidden" style={{ width: 'min(260px, 70vw)', aspectRatio: '4 / 5' }}>
+                    <div className="relative md:hidden" style={{ width: 'min(220px, 60vw)', aspectRatio: '4 / 5' }}>
                         <div className="absolute inset-0 rounded-[18px]" style={{ boxShadow: '6px 8px 0px #c084b8' }} />
                         <img
                             src={partyImg}
