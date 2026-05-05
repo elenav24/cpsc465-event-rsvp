@@ -11,6 +11,7 @@ import EventPage from './pages/EventPage'
 import ProfilePage from './pages/ProfilePage'
 import { joinViaInvite } from './api/events'
 import HowItWorks from './pages/HowItWorks'
+import Footer from './components/Footer.tsx'
 
 // Block all rendering until auth state is resolved — covers OAuth callbacks,
 // returning users with an existing session token, and fresh page loads.
@@ -87,6 +88,48 @@ function PendingInviteResolver() {
 export default function App() {
   return (
     <BrowserRouter>
+      <Nav />
+      <PendingInviteResolver />
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/join/:token" element={<JoinPage />} />
+        <Route
+          path="/events"
+          element={
+            <ProtectedRoute>
+              <EventsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events/new"
+          element={
+            <ProtectedRoute>
+              <CreateEventPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events/:id"
+          element={
+            <ProtectedRoute>
+              <EventPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
       <OAuthGate>
         <Nav />
         <PendingInviteResolver />
@@ -130,6 +173,7 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <Footer/>
       </OAuthGate>
     </BrowserRouter>
   )

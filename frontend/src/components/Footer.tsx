@@ -1,53 +1,17 @@
 export default function Footer() {
   return (
-    <footer className="footer">
-      <span className="footer-logo">Cohosted</span>
-      <div className="footer-links">
-        <a>About</a>
-        <a>Privacy</a>
-        <a>Terms</a>
-        <a>Support</a>
-        <a>Contact</a>
-      </div>
-      <span className="footer-copy">© {new Date().getFullYear()} Cohosted. Party on.</span>
+    <footer className="w-full border-t border-zinc-200 bg-neutral-50">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 py-8 px-8">
+        {/* Left — copyright */}
+        <p className="text-zinc-500 text-sm">© 2026 Cohosted</p>
 
-      <style>{`
-        .footer {
-          background: transparent;
-          border-top: 1px solid rgba(200,160,180,0.2);
-          padding: 2rem 3rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 1rem;
-        }
-        .footer-logo {
-          font-family: 'Cantora One', cursive;
-          font-size: 1.2rem;
-          color: var(--pink);
-        }
-        .footer-links {
-          display: flex;
-          gap: 1.5rem;
-          flex-wrap: wrap;
-        }
-        .footer-links a {
-          font-size: 0.85rem;
-          color: var(--text-muted);
-          text-decoration: none;
-          cursor: pointer;
-          transition: color 0.2s;
-        }
-        .footer-links a:hover { color: var(--pink); }
-        .footer-copy {
-          font-size: 0.8rem;
-          color: var(--text-muted);
-        }
-        @media (max-width: 640px) {
-          .footer { padding: 1.5rem 1rem; flex-direction: column; align-items: flex-start; }
-        }
-      `}</style>
+        {/* Right — links */}
+        <div className="flex items-center gap-6">
+          <a href="https://github.com/elenav24/cohosted/issues/new" className="text-zinc-500 text-sm hover:text-zinc-800 transition-colors">Report a Bug</a>
+          <a href="mailto:support@cohosted.cloud" className="text-zinc-500 text-sm hover:text-zinc-800 transition-colors">Contact Us</a>
+          <a href="https://github.com/elenav24/cohosted" className="text-zinc-500 text-sm hover:text-zinc-800 transition-colors">Source Code</a>
+        </div>
+      </div>
     </footer>
   )
 }

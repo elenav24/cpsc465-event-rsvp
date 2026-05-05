@@ -277,7 +277,7 @@ export default function CreateEventPage() {
           padding: calc(var(--nav-height) + 2rem) 2rem 3rem;
           max-width: 960px;
           margin: 0 auto;
-          min-height: 100vh;
+          flex: 1;
           width: 100%;
         }
         .create-title {
