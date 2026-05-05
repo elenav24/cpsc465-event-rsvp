@@ -6,183 +6,181 @@ const P_STAR_PINK = "M12.8775 6.20651C15.1577 2.06884 16.298 0 18.0026 0C19.7072
 
 // 4-pointed twinkle star — animation uses custom keyframe from global.css
 function TwinkleStar({ size = 28, color = '#FCCEE8', delay = '0s', duration = '2.8s' }: {
-  size?: number; color?: string; delay?: string; duration?: string
+    size?: number; color?: string; delay?: string; duration?: string
 }) {
-  const h = size / 2
-  const arm = size * 0.48
-  const nub = size * 0.14
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      fill="none"
-      style={{ animation: `star-twinkle-real ${duration} ease-in-out infinite ${delay}` }}
-    >
-      <line x1={h} y1={h - arm} x2={h} y2={h + arm} stroke={color} strokeWidth="2.5" strokeLinecap="round" />
-      <line x1={h - arm} y1={h} x2={h + arm} y2={h} stroke={color} strokeWidth="2.5" strokeLinecap="round" />
-      <line x1={h - nub} y1={h - nub} x2={h + nub} y2={h + nub} stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-      <line x1={h + nub} y1={h - nub} x2={h - nub} y2={h + nub} stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  )
+    const h = size / 2
+    const arm = size * 0.48
+    const nub = size * 0.14
+    return (
+        <svg
+            width={size}
+            height={size}
+            viewBox={`0 0 ${size} ${size}`}
+            fill="none"
+            style={{ animation: `star-twinkle-real ${duration} ease-in-out infinite ${delay}` }}
+        >
+            <line x1={h} y1={h - arm} x2={h} y2={h + arm} stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+            <line x1={h - arm} y1={h} x2={h + arm} y2={h} stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+            <line x1={h - nub} y1={h - nub} x2={h + nub} y2={h + nub} stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1={h + nub} y1={h - nub} x2={h - nub} y2={h + nub} stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+    )
 }
 
 function StarPink() {
-  return (
-    <svg width="36" height="37" viewBox="0 0 36.005 36.4192" fill="none">
-      <path d={P_STAR_PINK} fill="#FCCEE8" />
-    </svg>
-  )
+    return (
+        <svg width="36" height="37" viewBox="0 0 36.005 36.4192" fill="none">
+            <path d={P_STAR_PINK} fill="#FCCEE8" />
+        </svg>
+    )
 }
 
 export default function LandingPage() {
-  return (
-    <div
-      className="relative w-full min-h-screen flex flex-col overflow-hidden"
-      style={{ background: 'linear-gradient(134.032deg, #FFECE0 6.214%, #FFFFFF 49.723%, #EFECFF 93.233%)' }}
-    >
-      {/* ── Background blobs ── */}
-      <div
-        className="absolute rounded-full pointer-events-none w-[525px] h-[525px] left-[89px] top-[62px] blur-[67px] animate-pulse-glow animate-drift"
-        style={{ background: 'linear-gradient(135deg, rgba(252,206,232,0.4) 0%, rgba(233,212,255,0.4) 100%)' }}
-      />
-      <div
-        className="absolute rounded-full pointer-events-none w-[400px] h-[400px] -right-[50px] bottom-[200px] blur-[64px] animate-pulse-glow-2"
-        style={{ background: 'linear-gradient(135deg, rgba(233,212,255,0.3) 0%, rgba(252,206,232,0.3) 100%)' }}
-      />
-      <div
-        className="absolute rounded-full pointer-events-none w-[300px] h-[300px] left-[583px] top-[397px] blur-[40px] animate-drift-2"
-        style={{ background: 'linear-gradient(135deg, rgba(253,165,213,0.2) 0%, rgba(218,178,255,0.2) 100%)' }}
-      />
-      <div
-        className="absolute rounded-full pointer-events-none w-[204px] h-[204px] left-[943px] top-[206px] blur-[41px] opacity-[0.34] animate-pulse-glow-3 animate-drift-3"
-        style={{ background: 'linear-gradient(135deg, rgba(255,240,133,0.2) 0%, rgba(252,206,232,0.2) 100%)' }}
-      />
-
-      {/* ── Filled pink spinning star ── */}
-      <div
-        className="absolute pointer-events-none animate-star-twinkle left-[180px] top-[140px] opacity-[0.34]"
-        style={{ transform: 'rotate(-150.86deg) scaleY(-1)' }}
-      >
-        <StarPink />
-      </div>
-
-      {/* ── Twinkle stars ── */}
-      <div className="absolute pointer-events-none left-[13%] top-[11%]">
-        <TwinkleStar size={22} color="#FCCEE8" delay="0s" duration="2.6s" />
-      </div>
-      <div className="absolute pointer-events-none left-[62%] top-[58%]">
-        <TwinkleStar size={32} color="#FCCEE8" delay="0.7s" duration="3.1s" />
-      </div>
-      <div className="absolute pointer-events-none left-[8%] top-[68%]">
-        <TwinkleStar size={16} color="#FCCEE8" delay="1.4s" duration="2.4s" />
-      </div>
-      <div className="absolute pointer-events-none left-[78%] top-[14%]">
-        <TwinkleStar size={36} color="#EAD4FF" delay="0.4s" duration="3.4s" />
-      </div>
-      <div className="absolute pointer-events-none left-[88%] top-[52%]">
-        <TwinkleStar size={20} color="#EAD4FF" delay="1.8s" duration="2.9s" />
-      </div>
-      <div className="absolute pointer-events-none left-[52%] top-[22%]">
-        <TwinkleStar size={14} color="#EAD4FF" delay="2.2s" duration="2.2s" />
-      </div>
-
-      {/* ── Hero content ── */}
-      <div className="relative z-10 flex-1 flex flex-col md:flex-row items-center -top-20 mx-auto">
-
-        {/* ── Left half: text ── */}
+    return (
         <div
-          className="flex flex-col justify-center items-center md:items-start gap-8 w-full md:w-1/2 text-center md:text-left pl-6 pr-6 md:pl-20 md:pr-8 lg:pl-32 xl:pl-44"
+            className="relative w-full min-h-screen flex flex-col overflow-hidden"
+            style={{ background: 'linear-gradient(134.032deg, #FFECE0 6.214%, #FFFFFF 49.723%, #EFECFF 93.233%)' }}
         >
-          {/* Title */}
-          <div
-            className="text-black leading-[1.03]"
-            style={{ fontFamily: "'Anton', sans-serif", fontSize: 'clamp(2.8rem, 5.56vw, 80px)' }}
-          >
-            <span>Events are </span>
-            <span className="text-gradient-better">better </span>
-            <span>when everyone plays a part</span>
-          </div>
-
-          {/* Subtitle */}
-          <p
-            className="text-black leading-relaxed max-w-[80%]"
-            style={{ fontFamily: "'Albert Sans', sans-serif", fontSize: 'clamp(1rem, 1.39vw, 20px)' }}
-          >
-            The RSVP tool built for potlucks, watch parties, and group hangs.{' '}
-            <strong className="font-bold">Start hosting <em className="italic">with</em> your friends,</strong>{' '}
-            not just <em className="italic">for</em> them.
-          </p>
-
-          {/* CTA Button */}
-          <Link
-            to="/signup"
-            className="inline-flex items-center justify-center rounded-[10px] no-underline cursor-pointer transition-all duration-200 hover:-translate-x-px hover:-translate-y-px whitespace-nowrap"
-            style={{
-              background: '#e1bede',
-              fontFamily: "'Cantora One', cursive",
-              fontSize: 'clamp(1rem, 2.22vw, 32px)',
-              boxShadow: '4px 4px 0px #462749',
-              textDecoration: 'none',
-              width: 'clamp(220px, 30vw, 340px)',
-              height: 'clamp(52px, 6vw, 71px)',
-              color: '#000',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.boxShadow = '6px 6px 0px #462749' }}
-            onMouseLeave={e => { e.currentTarget.style.boxShadow = '4px 4px 0px #462749' }}
-          >
-            Create Your First Event
-          </Link>
-        </div>
-
-        {/* ── Right half: photo card centered ── */}
-        <div className="w-full md:w-1/2 flex items-center justify-center py-8 md:py-0">
-
-          {/* Mobile: no tilt */}
-          <div className="relative md:hidden" style={{ width: 'min(260px, 70vw)', aspectRatio: '4 / 5' }}>
-            <div className="absolute inset-0 rounded-[18px]" style={{ boxShadow: '6px 8px 0px #c084b8' }} />
-            <img
-              src={partyImg}
-              alt="Party"
-              className="relative z-10 w-full h-full object-cover rounded-[14px] block border-[5px] border-[#f0a8d8]"
-              style={{ outline: '2px dashed rgba(255,255,255,0.6)', outlineOffset: '-10px' }}
-            />
-          </div>
-
-          {/* Desktop: tilted with hover */}
-          <div
-            className="relative hidden md:block cursor-default"
-            style={{
-              width: 'clamp(200px, 20vw, 300px)',
-              aspectRatio: '4 / 5',
-              transform: 'rotate(2.5deg)',
-              transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLDivElement).style.transform = 'rotate(0deg) scale(1.04) translateY(-6px)'
-              const shadow = e.currentTarget.querySelector('.card-shadow') as HTMLDivElement
-              if (shadow) shadow.style.boxShadow = '12px 16px 0px #c084b8'
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLDivElement).style.transform = 'rotate(2.5deg)'
-              const shadow = e.currentTarget.querySelector('.card-shadow') as HTMLDivElement
-              if (shadow) shadow.style.boxShadow = '8px 10px 0px #c084b8'
-            }}
-          >
+            {/* ── Background blobs ── */}
             <div
-              className="card-shadow absolute inset-0 rounded-[18px] z-0"
-              style={{ boxShadow: '8px 10px 0px #c084b8', transition: 'box-shadow 0.3s ease' }}
+                className="absolute rounded-full pointer-events-none w-[525px] h-[525px] left-[89px] top-[62px] blur-[67px] animate-pulse-glow animate-drift"
+                style={{ background: 'linear-gradient(135deg, rgba(252,206,232,0.4) 0%, rgba(233,212,255,0.4) 100%)' }}
             />
-            <img
-              src={partyImg}
-              alt="Party"
-              className="relative z-10 w-full h-full object-cover rounded-[14px] block border-[5px] border-[#f0a8d8]"
-              style={{ outline: '2px dashed rgba(255,255,255,0.6)', outlineOffset: '-10px' }}
+            <div
+                className="absolute rounded-full pointer-events-none w-[400px] h-[400px] -right-[50px] bottom-[200px] blur-[64px] animate-pulse-glow-2"
+                style={{ background: 'linear-gradient(135deg, rgba(233,212,255,0.3) 0%, rgba(252,206,232,0.3) 100%)' }}
             />
-          </div>
-        </div>
+            <div
+                className="absolute rounded-full pointer-events-none w-[300px] h-[300px] left-[583px] top-[397px] blur-[40px] animate-drift-2"
+                style={{ background: 'linear-gradient(135deg, rgba(253,165,213,0.2) 0%, rgba(218,178,255,0.2) 100%)' }}
+            />
+            <div
+                className="absolute rounded-full pointer-events-none w-[204px] h-[204px] left-[943px] top-[206px] blur-[41px] opacity-[0.34] animate-pulse-glow-3 animate-drift-3"
+                style={{ background: 'linear-gradient(135deg, rgba(255,240,133,0.2) 0%, rgba(252,206,232,0.2) 100%)' }}
+            />
 
-      </div>
-    </div>
-  )
+            {/* ── Filled pink spinning star ── */}
+            <div
+                className="absolute pointer-events-none animate-star-twinkle left-[180px] top-[140px] opacity-[0.34]"
+                style={{ transform: 'rotate(-150.86deg) scaleY(-1)' }}
+            >
+                <StarPink />
+            </div>
+
+            {/* ── Twinkle stars ── */}
+            <div className="absolute pointer-events-none left-[13%] top-[11%]">
+                <TwinkleStar size={22} color="#FCCEE8" delay="0s" duration="2.6s" />
+            </div>
+            <div className="absolute pointer-events-none left-[62%] top-[58%]">
+                <TwinkleStar size={32} color="#FCCEE8" delay="0.7s" duration="3.1s" />
+            </div>
+            <div className="absolute pointer-events-none left-[8%] top-[68%]">
+                <TwinkleStar size={16} color="#FCCEE8" delay="1.4s" duration="2.4s" />
+            </div>
+            <div className="absolute pointer-events-none left-[78%] top-[14%]">
+                <TwinkleStar size={36} color="#EAD4FF" delay="0.4s" duration="3.4s" />
+            </div>
+            <div className="absolute pointer-events-none left-[88%] top-[52%]">
+                <TwinkleStar size={20} color="#EAD4FF" delay="1.8s" duration="2.9s" />
+            </div>
+            <div className="absolute pointer-events-none left-[52%] top-[22%]">
+                <TwinkleStar size={14} color="#EAD4FF" delay="2.2s" duration="2.2s" />
+            </div>
+
+            {/* ── Hero content ── */}
+            <div className="relative z-10 flex-1 flex flex-col md:flex-row items-center -top-20 w-full pl-10 md:pl-16 lg:pl-24 xl:pl-40 pr-10">
+
+                {/* ── Left half: text ── */}
+                <div className="flex flex-col justify-center items-center md:items-start gap-8 w-full md:w-1/2 text-center md:text-left">
+                    {/* Title */}
+                    <div
+                        className="text-black leading-[1.03]"
+                        style={{ fontFamily: "'Anton', sans-serif", fontSize: 'clamp(2.8rem, 5.56vw, 80px)' }}
+                    >
+                        <span>Events are </span>
+                        <span className="text-gradient-better">better </span>
+                        <span>when everyone plays a part</span>
+                    </div>
+
+                    {/* Subtitle */}
+                    <p
+                        className="text-black leading-relaxed max-w-[80%]"
+                        style={{ fontFamily: "'Albert Sans', sans-serif", fontSize: 'clamp(1rem, 1.39vw, 20px)' }}
+                    >
+                        The RSVP tool built for potlucks, watch parties, and group hangs.{' '}
+                        <strong className="font-bold">Start hosting <em className="italic">with</em> your friends,</strong>{' '}
+                        not just <em className="italic">for</em> them.
+                    </p>
+
+                    {/* CTA Button */}
+                    <Link
+                        to="/signup"
+                        className="inline-flex items-center justify-center rounded-[10px] no-underline cursor-pointer transition-all duration-200 hover:-translate-x-px hover:-translate-y-px whitespace-nowrap"
+                        style={{
+                            background: '#e1bede',
+                            fontFamily: "'Cantora One', cursive",
+                            fontSize: 'clamp(1rem, 2.22vw, 32px)',
+                            boxShadow: '4px 4px 0px #462749',
+                            textDecoration: 'none',
+                            width: 'clamp(220px, 30vw, 340px)',
+                            height: 'clamp(52px, 6vw, 71px)',
+                            color: '#000',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.boxShadow = '6px 6px 0px #462749' }}
+                        onMouseLeave={e => { e.currentTarget.style.boxShadow = '4px 4px 0px #462749' }}
+                    >
+                        Create Your First Event
+                    </Link>
+                </div>
+
+                {/* ── Right half: photo card centered ── */}
+                <div className=" flex items-center justify-center py-8 md:py-0">
+
+                    {/* Mobile: no tilt */}
+                    <div className="relative md:hidden" style={{ width: 'min(260px, 70vw)', aspectRatio: '4 / 5' }}>
+                        <div className="absolute inset-0 rounded-[18px]" style={{ boxShadow: '6px 8px 0px #c084b8' }} />
+                        <img
+                            src={partyImg}
+                            alt="Party"
+                            className="relative z-10 w-full h-full object-cover rounded-[14px] block border-[5px] border-[#f0a8d8]"
+                            style={{ outline: '2px dashed rgba(255,255,255,0.6)', outlineOffset: '-10px' }}
+                        />
+                    </div>
+
+                    {/* Desktop: tilted with hover */}
+                    <div
+                        className="relative hidden md:block cursor-default"
+                        style={{
+                            width: 'clamp(200px, 20vw, 300px)',
+                            aspectRatio: '4 / 5',
+                            transform: 'rotate(2.5deg)',
+                            transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        }}
+                        onMouseEnter={e => {
+                            (e.currentTarget as HTMLDivElement).style.transform = 'rotate(0deg) scale(1.04) translateY(-6px)'
+                            const shadow = e.currentTarget.querySelector('.card-shadow') as HTMLDivElement
+                            if (shadow) shadow.style.boxShadow = '12px 16px 0px #c084b8'
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget as HTMLDivElement).style.transform = 'rotate(2.5deg)'
+                            const shadow = e.currentTarget.querySelector('.card-shadow') as HTMLDivElement
+                            if (shadow) shadow.style.boxShadow = '8px 10px 0px #c084b8'
+                        }}
+                    >
+                        <div
+                            className="card-shadow absolute inset-0 rounded-[18px] z-0"
+                            style={{ boxShadow: '8px 10px 0px #c084b8', transition: 'box-shadow 0.3s ease' }}
+                        />
+                        <img
+                            src={partyImg}
+                            alt="Party"
+                            className="relative z-10 w-full h-full object-cover rounded-[14px] block border-[5px] border-[#f0a8d8]"
+                            style={{ outline: '2px dashed rgba(255,255,255,0.6)', outlineOffset: '-10px' }}
+                        />
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    )
 }

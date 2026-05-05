@@ -10,7 +10,6 @@ import CreateEventPage from './pages/CreateEventPage'
 import EventPage from './pages/EventPage'
 import ProfilePage from './pages/ProfilePage'
 import { joinViaInvite } from './api/events'
-import './styles/global.css'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
