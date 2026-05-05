@@ -8,12 +8,14 @@ import {
   getPotluck, createPotluckItem, claimPotluckItem, unclaimPotluckItem, deletePotluckItem,
   getTasks, createTask, updateTask, deleteTask,
   getAnnouncements, createAnnouncement, deleteAnnouncement,
-  regenerateInvite,
+  regenerateInvite, updateEvent, revokeInvite,
+  updateMemberRole, removeMember,
+  getReminders, createReminder, deleteReminder,
 } from '../api/events'
 import { EventChatSocket } from '../api/chat'
 import type {
   EventOut, MemberOut, RSVPOut, PollOut, PotluckItemOut,
-  TaskOut, AnnouncementOut, RSVPStatus,
+  TaskOut, AnnouncementOut, RSVPStatus, ReminderOut,
 } from '../api/types'
 import type { WsMessage } from '../api/chat'
 
@@ -121,6 +123,8 @@ function PollsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string
   const [question, setQuestion] = useState('')
   const [options, setOptions] = useState(['', ''])
   const [multiSelect, setMultiSelect] = useState(false)
+  const [isAnonymous, setIsAnonymous] = useState(false)
+  const [closesAt, setClosesAt] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -157,11 +161,16 @@ function PollsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string
         question,
         options: validOptions.map((text, i) => ({ text, display_order: i })),
         allow_multi_select: multiSelect,
+        is_anonymous: isAnonymous,
+        closes_at: closesAt ? new Date(closesAt).toISOString() : null,
       })
       setPolls(prev => [...prev, poll])
       setShowCreate(false)
       setQuestion('')
       setOptions(['', ''])
+      setMultiSelect(false)
+      setIsAnonymous(false)
+      setClosesAt('')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to create poll')
     } finally {
@@ -224,10 +233,23 @@ function PollsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string
           <button type="button" onClick={() => setOptions(prev => [...prev, ''])} style={{ fontSize: '0.78rem', color: 'var(--pink)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '0.5rem' }}>
             + Add option
           </button>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', marginBottom: '0.75rem', cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', marginBottom: '0.5rem', cursor: 'pointer' }}>
             <input type="checkbox" checked={multiSelect} onChange={e => setMultiSelect(e.target.checked)} />
             Allow multiple selections
           </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', marginBottom: '0.5rem', cursor: 'pointer' }}>
+            <input type="checkbox" checked={isAnonymous} onChange={e => setIsAnonymous(e.target.checked)} />
+            Anonymous voting (hide who voted for what)
+          </label>
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Auto-close at (optional)</label>
+            <input
+              type="datetime-local"
+              value={closesAt}
+              onChange={e => setClosesAt(e.target.value)}
+              style={{ border: '1.5px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: '0.82rem', fontFamily: 'Albert Sans' }}
+            />
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="submit" disabled={saving} style={{ background: 'var(--pink)', color: 'white', border: 'none', borderRadius: 100, padding: '7px 16px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'Albert Sans' }}>
               {saving ? 'Creating...' : 'Create'}
@@ -253,7 +275,13 @@ function PollsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string
             <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--text-dark)' }}>
               {poll.question}
               {poll.is_closed && <span style={{ marginLeft: 8, fontSize: '0.72rem', background: '#eee', borderRadius: 100, padding: '2px 8px', color: '#666' }}>Closed</span>}
+              {poll.is_anonymous && <span style={{ marginLeft: 8, fontSize: '0.72rem', background: '#f0f0ff', borderRadius: 100, padding: '2px 8px', color: '#7F77DD' }}>Anonymous</span>}
             </div>
+            {poll.closes_at && !poll.is_closed && (
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                Closes: {new Date(poll.closes_at).toLocaleString()}
+              </div>
+            )}
             {poll.options.map(opt => {
               const pct = totalVotes > 0 ? Math.round((opt.vote_count / totalVotes) * 100) : 0
               const voted = myVotes.includes(opt.id)
@@ -414,11 +442,13 @@ function PotluckTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: stri
 }
 
 // ── Tasks Tab ─────────────────────────────────────────────────────────────────
-function TasksTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string; isHost: boolean }) {
+function TasksTab({ eventUuid, myId, isHost, members }: { eventUuid: string; myId: string; isHost: boolean; members: MemberOut[] }) {
   const [tasks, setTasks] = useState<TaskOut[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  const [newAssignee, setNewAssignee] = useState('')
+  const [newDueDate, setNewDueDate] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -451,10 +481,16 @@ function TasksTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string
     if (!newTitle.trim()) return
     setSaving(true)
     try {
-      const task = await createTask(eventUuid, { title: newTitle.trim() })
+      const task = await createTask(eventUuid, {
+        title: newTitle.trim(),
+        assigned_to: newAssignee || undefined,
+        due_date: newDueDate || undefined,
+      })
       setTasks(prev => [...prev, task])
       setShowCreate(false)
       setNewTitle('')
+      setNewAssignee('')
+      setNewDueDate('')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to create task')
     } finally {
@@ -486,12 +522,38 @@ function TasksTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string
       {showCreate && (
         <form onSubmit={handleCreate} style={{ background: 'var(--pink-bg)', border: '1px solid var(--pink-pale)', borderRadius: 8, padding: '1rem' }}>
           <input
-            style={{ width: '100%', border: '1.5px solid var(--border)', borderRadius: 6, padding: '8px 10px', fontSize: '0.85rem', marginBottom: '0.75rem', fontFamily: 'Albert Sans', boxSizing: 'border-box' }}
+            style={{ width: '100%', border: '1.5px solid var(--border)', borderRadius: 6, padding: '8px 10px', fontSize: '0.85rem', marginBottom: '0.5rem', fontFamily: 'Albert Sans', boxSizing: 'border-box' }}
             placeholder="Task title..."
             value={newTitle}
             onChange={e => setNewTitle(e.target.value)}
             required
           />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            <div>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>Assign to</label>
+              <select
+                value={newAssignee}
+                onChange={e => setNewAssignee(e.target.value)}
+                style={{ width: '100%', border: '1.5px solid var(--border)', borderRadius: 6, padding: '7px 10px', fontSize: '0.82rem', fontFamily: 'Albert Sans', background: 'white', boxSizing: 'border-box' }}
+              >
+                <option value="">Unassigned</option>
+                {members.map(m => (
+                  <option key={m.user_id} value={m.user_id}>
+                    {m.user_id === myId ? 'You' : (m.display_name || m.user_id.slice(0, 8))}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>Due date</label>
+              <input
+                type="date"
+                value={newDueDate}
+                onChange={e => setNewDueDate(e.target.value)}
+                style={{ width: '100%', border: '1.5px solid var(--border)', borderRadius: 6, padding: '7px 10px', fontSize: '0.82rem', fontFamily: 'Albert Sans', boxSizing: 'border-box' }}
+              />
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="submit" disabled={saving} style={{ background: 'var(--pink)', color: 'white', border: 'none', borderRadius: 100, padding: '7px 16px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'Albert Sans' }}>
               {saving ? 'Adding...' : 'Add'}
@@ -526,7 +588,12 @@ function TasksTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string
               </div>
               {task.assigned_to && (
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                  Assigned to: {isAssignedToMe ? 'You' : task.assigned_to.slice(0, 8) + '...'}
+                  Assigned to: {isAssignedToMe ? 'You' : (members.find(m => m.user_id === task.assigned_to)?.display_name || task.assigned_to.slice(0, 8) + '...')}
+                </div>
+              )}
+              {task.due_date && (
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                  Due: {new Date(task.due_date).toLocaleDateString()}
                 </div>
               )}
             </div>
@@ -629,50 +696,301 @@ function AnnouncementsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId
   )
 }
 
+// ── Reminders Tab ─────────────────────────────────────────────────────────────
+const REMINDER_OPTIONS = [
+  { label: '1 hour before', minutes: 60 },
+  { label: '6 hours before', minutes: 360 },
+  { label: '24 hours before', minutes: 1440 },
+  { label: '1 week before', minutes: 10080 },
+]
+
+function RemindersTab({ eventUuid, hasStartDt }: { eventUuid: string; hasStartDt: boolean }) {
+  const [reminders, setReminders] = useState<ReminderOut[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
+
+  useEffect(() => {
+    getReminders(eventUuid).then(setReminders).catch(() => {}).finally(() => setLoading(false))
+  }, [eventUuid])
+
+  const handleAdd = async (offsetMinutes: number) => {
+    setAdding(true)
+    setError(null)
+    try {
+      const reminder = await createReminder(eventUuid, offsetMinutes)
+      setReminders(prev => [...prev, reminder])
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to set reminder')
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteReminder(eventUuid, id)
+      setReminders(prev => prev.filter(r => r.id !== id))
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to remove reminder')
+    }
+  }
+
+  const activeOffsets = new Set(reminders.map(r => r.offset_minutes))
+
+  if (loading) return <div style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>Loading reminders...</div>
+
+  return (
+    <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 600, marginBottom: '0.25rem' }}>
+        🔔 SMS Reminders
+      </div>
+      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+        Get a text message before the event starts. Requires a phone number and SMS opt-in on your profile.
+      </div>
+
+      {error && <div style={{ color: '#c00', fontSize: '0.82rem', background: '#fff0f0', padding: '0.5rem', borderRadius: 6 }}>{error}</div>}
+
+      {!hasStartDt && (
+        <div style={{ fontSize: '0.82rem', color: '#856404', background: '#fffbe6', padding: '0.5rem 0.75rem', borderRadius: 6 }}>
+          This event has no start date set — reminders can't be scheduled yet.
+        </div>
+      )}
+
+      {hasStartDt && REMINDER_OPTIONS.map(opt => {
+        const isActive = activeOffsets.has(opt.minutes)
+        const reminder = reminders.find(r => r.offset_minutes === opt.minutes)
+        return (
+          <div key={opt.minutes} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: isActive ? '#e6f9ee' : 'white', border: `1px solid ${isActive ? '#b7ebc8' : 'var(--border)'}`, borderRadius: 8 }}>
+            <span style={{ fontSize: '0.85rem', color: isActive ? '#1a7a3c' : 'var(--text-mid)', fontWeight: isActive ? 600 : 400 }}>
+              {isActive && '✓ '}{opt.label}
+            </span>
+            {isActive ? (
+              <button onClick={() => handleDelete(reminder!.id)} style={{ fontSize: '0.72rem', color: '#c00', background: 'none', border: '1px solid #fcc', borderRadius: 100, padding: '2px 8px', cursor: 'pointer', fontFamily: 'Albert Sans' }}>
+                Remove
+              </button>
+            ) : (
+              <button onClick={() => handleAdd(opt.minutes)} disabled={adding} style={{ fontSize: '0.72rem', color: 'var(--pink)', background: 'var(--pink-bg)', border: '1px solid var(--pink-pale)', borderRadius: 100, padding: '2px 10px', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600 }}>
+                {adding ? '...' : 'Set'}
+              </button>
+            )}
+          </div>
+        )
+      })}
+
+      {reminders.length > 0 && (
+        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+          You have {reminders.length} reminder{reminders.length > 1 ? 's' : ''} set.
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Guests Tab ────────────────────────────────────────────────────────────────
-function GuestsTab({ eventUuid, myId, isHost: _isHost, rsvps }: { eventUuid: string; myId: string; isHost: boolean; rsvps: RSVPOut[] }) {
+function GuestsTab({ eventUuid, myId, isHost, hostId, rsvps }: { eventUuid: string; myId: string; isHost: boolean; hostId: string; rsvps: RSVPOut[] }) {
   const [members, setMembers] = useState<MemberOut[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     getMembers(eventUuid).then(setMembers).catch(() => {}).finally(() => setLoading(false))
   }, [eventUuid])
 
+  const handlePromote = async (userId: string) => {
+    try {
+      const updated = await updateMemberRole(eventUuid, userId, 'co_host')
+      setMembers(prev => prev.map(m => m.user_id === userId ? updated : m))
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to update role')
+    }
+  }
+
+  const handleDemote = async (userId: string) => {
+    try {
+      const updated = await updateMemberRole(eventUuid, userId, 'attendee')
+      setMembers(prev => prev.map(m => m.user_id === userId ? updated : m))
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to update role')
+    }
+  }
+
+  const handleRemove = async (userId: string) => {
+    try {
+      await removeMember(eventUuid, userId)
+      setMembers(prev => prev.filter(m => m.user_id !== userId))
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to remove member')
+    }
+  }
+
   if (loading) return <div style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>Loading guests...</div>
 
-  const rsvpMap = Object.fromEntries(rsvps.map(r => [r.user_id, r.status]))
+  const rsvpMap = Object.fromEntries(rsvps.map(r => [r.user_id, r]))
+  // Only the original host can manage roles
+  const isOriginalHost = myId === hostId
 
   return (
     <div style={{ padding: '1rem' }}>
+      {error && <div style={{ color: '#c00', fontSize: '0.82rem', background: '#fff0f0', padding: '0.5rem', borderRadius: 6, marginBottom: '0.75rem' }}>{error}</div>}
       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
         {members.length} member{members.length !== 1 ? 's' : ''}
       </div>
       {members.map(m => {
-        const rsvpStatus = rsvpMap[m.user_id]
+        const rsvp = rsvpMap[m.user_id]
+        const rsvpStatus = rsvp?.status
         const isMe = m.user_id === myId
         const name = isMe ? 'You' : (m.display_name || m.user_id.slice(0, 8) + '…')
         const initials = isMe
           ? (m.display_name || 'Y').slice(0, 2).toUpperCase()
           : (m.display_name ? m.display_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : m.user_id.slice(0, 2).toUpperCase())
+        const canManage = isOriginalHost && !isMe && m.role !== 'host'
         return (
           <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, var(--purple-pale), var(--pink-pale))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'var(--pink)', flexShrink: 0 }}>
               {initials}
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-dark)' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {name}
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{m.role.replace('_', ' ')}</div>
+              <div style={{ fontSize: '0.72rem', color: m.role === 'host' ? 'var(--pink)' : m.role === 'co_host' ? '#7F77DD' : 'var(--text-muted)', textTransform: 'capitalize', fontWeight: m.role !== 'attendee' ? 600 : 400 }}>{m.role.replace('_', ' ')}</div>
             </div>
             {rsvpStatus && (
-              <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: 100, background: rsvpStatus === 'yes' ? '#e6f9ee' : rsvpStatus === 'no' ? '#fff0f0' : '#fffbe6', color: rsvpStatus === 'yes' ? '#1a7a3c' : rsvpStatus === 'no' ? '#c00' : '#856404', fontWeight: 600 }}>
+              <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: 100, background: rsvpStatus === 'yes' ? '#e6f9ee' : rsvpStatus === 'no' ? '#fff0f0' : '#fffbe6', color: rsvpStatus === 'yes' ? '#1a7a3c' : rsvpStatus === 'no' ? '#c00' : '#856404', fontWeight: 600, flexShrink: 0 }}>
                 {rsvpStatus === 'yes' ? 'Going' : rsvpStatus === 'no' ? 'Not going' : 'Maybe'}
+                {rsvp?.guest_count > 0 && ` +${rsvp.guest_count}`}
               </span>
+            )}
+            {canManage && (
+              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                {m.role === 'attendee' ? (
+                  <button onClick={() => handlePromote(m.user_id)} title="Promote to co-host" style={{ fontSize: '0.68rem', color: '#7F77DD', background: '#EEEDFE', border: '1px solid #d8d5f7', borderRadius: 100, padding: '2px 8px', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600 }}>
+                    ↑ Co-host
+                  </button>
+                ) : (
+                  <button onClick={() => handleDemote(m.user_id)} title="Demote to attendee" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', background: '#f5f5f5', border: '1px solid var(--border)', borderRadius: 100, padding: '2px 8px', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 500 }}>
+                    ↓ Attendee
+                  </button>
+                )}
+                <button onClick={() => handleRemove(m.user_id)} title="Remove member" style={{ fontSize: '0.68rem', color: '#c00', background: 'none', border: '1px solid #fcc', borderRadius: 100, padding: '2px 6px', cursor: 'pointer', fontFamily: 'Albert Sans' }}>
+                  ✕
+                </button>
+              </div>
+            )}
+            {/* Non-host privileged users can remove themselves */}
+            {isMe && m.role !== 'host' && isHost && !isOriginalHost && (
+              <button onClick={() => handleRemove(m.user_id)} title="Leave event" style={{ fontSize: '0.68rem', color: '#c00', background: 'none', border: '1px solid #fcc', borderRadius: 100, padding: '2px 8px', cursor: 'pointer', fontFamily: 'Albert Sans' }}>
+                Leave
+              </button>
             )}
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// ── Edit Event Panel ──────────────────────────────────────────────────────────
+function EditEventPanel({ event, onSave, onCancel }: { event: EventOut; onSave: (updated: EventOut) => void; onCancel: () => void }) {
+  const [title, setTitle] = useState(event.title)
+  const [description, setDescription] = useState(event.description ?? '')
+  const [location, setLocation] = useState(event.location ?? '')
+  const [startDate, setStartDate] = useState(event.start_dt ? event.start_dt.slice(0, 10) : '')
+  const [startTime, setStartTime] = useState(event.start_dt ? event.start_dt.slice(11, 16) : '')
+  const [endDate, setEndDate] = useState(event.end_dt ? event.end_dt.slice(0, 10) : '')
+  const [endTime, setEndTime] = useState(event.end_dt ? event.end_dt.slice(11, 16) : '')
+  const [viewableByLink, setViewableByLink] = useState(event.viewable_by_link ?? false)
+  const [recurrenceRule, setRecurrenceRule] = useState(event.recurrence_rule ?? '')
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState(event.recurrence_end_dt ? event.recurrence_end_dt.slice(0, 10) : '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim()) { setError('Title is required'); return }
+    setSaving(true)
+    setError(null)
+    try {
+      const body: Partial<EventOut> & Record<string, unknown> = { title: title.trim() }
+      body.description = description || null
+      body.location = location || null
+      body.start_dt = startDate ? (startTime ? `${startDate}T${startTime}:00` : `${startDate}T00:00:00`) : null
+      body.end_dt = endDate ? (endTime ? `${endDate}T${endTime}:00` : `${endDate}T23:59:00`) : null
+      body.viewable_by_link = viewableByLink
+      body.recurrence_rule = recurrenceRule || null
+      body.recurrence_end_dt = recurrenceEndDate ? `${recurrenceEndDate}T23:59:00` : null
+      const updated = await updateEvent(event.uuid, body as Partial<EventOut>)
+      onSave(updated)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save changes')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="edit-panel">
+      <div className="edit-panel-header">
+        <h3 style={{ margin: 0, fontFamily: "'Cantora One', cursive", fontSize: '1.2rem', color: 'var(--text-dark)' }}>Edit Event</h3>
+        <button onClick={onCancel} className="edit-cancel-x" aria-label="Close edit panel">&times;</button>
+      </div>
+      {error && <div style={{ background: '#fff0f0', border: '1px solid #fcc', borderRadius: 6, padding: '0.5rem', marginBottom: '0.75rem', color: '#c00', fontSize: '0.82rem' }}>{error}</div>}
+      <form onSubmit={handleSubmit} className="edit-form">
+        <label className="edit-label">Title *</label>
+        <input className="edit-input" value={title} onChange={e => setTitle(e.target.value)} required />
+
+        <label className="edit-label">Description</label>
+        <textarea className="edit-input edit-textarea" value={description} onChange={e => setDescription(e.target.value)} placeholder="Tell your guests what to expect..." />
+
+        <label className="edit-label">Location</label>
+        <input className="edit-input" value={location} onChange={e => setLocation(e.target.value)} placeholder="Address or venue" />
+
+        <div className="edit-date-row">
+          <div>
+            <label className="edit-label">Start Date</label>
+            <input className="edit-input" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+          </div>
+          <div>
+            <label className="edit-label">Start Time</label>
+            <input className="edit-input" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+          </div>
+        </div>
+        <div className="edit-date-row">
+          <div>
+            <label className="edit-label">End Date</label>
+            <input className="edit-input" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+          </div>
+          <div>
+            <label className="edit-label">End Time</label>
+            <input className="edit-input" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+          </div>
+        </div>
+
+        <label className="edit-label" style={{ marginTop: '0.5rem' }}>Repeat</label>
+        <select className="edit-input" value={recurrenceRule} onChange={e => setRecurrenceRule(e.target.value)}>
+          <option value="">Does not repeat</option>
+          <option value="DAILY">Daily</option>
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY">Monthly</option>
+        </select>
+        {recurrenceRule && (
+          <>
+            <label className="edit-label">Repeat until</label>
+            <input className="edit-input" type="date" value={recurrenceEndDate} onChange={e => setRecurrenceEndDate(e.target.value)} />
+          </>
+        )}
+
+        <label className="edit-checkbox-label">
+          <input type="checkbox" checked={viewableByLink} onChange={e => setViewableByLink(e.target.checked)} />
+          <span>Viewable by anyone with the link</span>
+        </label>
+
+        <div className="edit-actions">
+          <button type="button" onClick={onCancel} className="edit-btn-cancel">Cancel</button>
+          <button type="submit" disabled={saving} className="edit-btn-save">{saving ? 'Saving...' : 'Save Changes'}</button>
+        </div>
+      </form>
     </div>
   )
 }
@@ -686,11 +1004,14 @@ export default function EventPage() {
   const [event, setEvent] = useState<EventOut | null>(null)
   const [myRsvp, setMyRsvp] = useState<RSVPOut | null>(null)
   const [rsvps, setRsvps] = useState<RSVPOut[]>([])
+  const [eventMembers, setEventMembers] = useState<MemberOut[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('chat')
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [guestCount, setGuestCount] = useState(0)
 
   const eventUuid = id ?? ''
   const myId = profile?.cognito_sub ?? ''
@@ -704,19 +1025,24 @@ export default function EventPage() {
       getEvent(eventUuid),
       getMyRsvp(eventUuid).catch(() => null),
       getRsvps(eventUuid).catch(() => []),
-    ]).then(([ev, rsvp, allRsvps]) => {
+      getMembers(eventUuid).catch(() => []),
+    ]).then(([ev, rsvp, allRsvps, allMembers]) => {
       setEvent(ev)
       setMyRsvp(rsvp)
       setRsvps(allRsvps as RSVPOut[])
+      setEventMembers(allMembers as MemberOut[])
+      if (rsvp) setGuestCount((rsvp as RSVPOut).guest_count)
     }).catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
   }, [eventUuid])
 
-  const handleRsvp = async (status: RSVPStatus) => {
+  const handleRsvp = async (status: RSVPStatus, guests?: number) => {
     setRsvpLoading(true)
     try {
-      const updated = await upsertRsvp(eventUuid, status)
+      const gc = guests ?? guestCount
+      const updated = await upsertRsvp(eventUuid, status, gc)
       setMyRsvp(updated)
+      setGuestCount(updated.guest_count)
       setRsvps(prev => {
         const exists = prev.find(r => r.user_id === myId)
         if (exists) return prev.map(r => r.user_id === myId ? updated : r)
@@ -747,6 +1073,16 @@ export default function EventPage() {
     }
   }
 
+  const handleRevokeInvite = async () => {
+    if (!event) return
+    try {
+      const updated = await revokeInvite(eventUuid)
+      setEvent(updated)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to revoke invite')
+    }
+  }
+
   const isHost = event?.host_id === myId || event?.host_id === myDbId
 
   const sidebarItems = [
@@ -755,6 +1091,7 @@ export default function EventPage() {
     { key: 'potluck', label: 'Potluck', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" strokeLinecap="round" /><path d="M8 12h8M12 8v8" strokeLinecap="round" /></svg> },
     { key: 'tasks', label: 'Tasks', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 11l3 3L22 4" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeLinecap="round" strokeLinejoin="round" /></svg> },
     { key: 'announcements', label: 'Announcements', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" /></svg> },
+    { key: 'reminders', label: 'Reminders', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" /><path d="M13.73 21a2 2 0 01-3.46 0" /></svg> },
     { key: 'guests', label: 'Guest List', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" /><path d="M16 3.13a4 4 0 010 7.75" /><path d="M21 21v-2a4 4 0 00-3-3.87" /></svg> },
   ]
 
@@ -801,7 +1138,26 @@ export default function EventPage() {
           )}
 
           <div className="event-cat-badge">🎉 Event</div>
-          <h1 className="event-title">{event.title}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+            <h1 className="event-title">{event.title}</h1>
+            {isHost && !editing && (
+              <button onClick={() => setEditing(true)} className="btn-edit-event" aria-label="Edit event">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M10.5 1.5l2 2-8 8H2.5v-2l8-8z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Edit
+              </button>
+            )}
+          </div>
+
+          {editing && (
+            <EditEventPanel
+              event={event}
+              onSave={(updated) => { setEvent(updated); setEditing(false) }}
+              onCancel={() => setEditing(false)}
+            />
+          )}
+
           {event.location && (
             <div className="event-location">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -854,6 +1210,29 @@ export default function EventPage() {
             )}
           </div>
 
+          {/* Guest count (+1s) — only show when RSVP is yes or maybe */}
+          {(myRsvp?.status === 'yes' || myRsvp?.status === 'maybe') && (
+            <div className="guest-count-row">
+              <span className="guest-count-label">Bringing extra guests?</span>
+              <div className="guest-count-controls">
+                <button
+                  type="button"
+                  className="guest-count-btn"
+                  onClick={() => { const n = Math.max(0, guestCount - 1); setGuestCount(n); handleRsvp(myRsvp!.status, n) }}
+                  disabled={guestCount === 0 || rsvpLoading}
+                >−</button>
+                <span className="guest-count-value">{guestCount}</span>
+                <button
+                  type="button"
+                  className="guest-count-btn"
+                  onClick={() => { const n = guestCount + 1; setGuestCount(n); handleRsvp(myRsvp!.status, n) }}
+                  disabled={rsvpLoading}
+                >+</button>
+              </div>
+              {guestCount > 0 && <span className="guest-count-note">+{guestCount} guest{guestCount > 1 ? 's' : ''}</span>}
+            </div>
+          )}
+
           <div className="event-info-grid">
             <div className="info-card">
               <div className="info-card-title">About the Event</div>
@@ -871,11 +1250,27 @@ export default function EventPage() {
                   </div>
                 </div>
               )}
+              {event.recurrence_rule && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <div className="detail-row">
+                    <span className="detail-icon">🔁</span>
+                    <div>
+                      <div className="detail-label">Repeats</div>
+                      <div className="detail-val">{event.recurrence_rule.charAt(0) + event.recurrence_rule.slice(1).toLowerCase()}{event.recurrence_end_dt ? ` until ${new Date(event.recurrence_end_dt).toLocaleDateString()}` : ''}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {event.viewable_by_link && (
+                <div style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: '#7F77DD', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  🔗 Viewable by anyone with the link
+                </div>
+              )}
             </div>
 
             <div className="info-card">
               <div className="info-card-title">RSVP Summary</div>
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
                 {[
                   { label: 'Going', status: 'yes', color: '#1a7a3c', bg: '#e6f9ee' },
                   { label: 'Maybe', status: 'maybe', color: '#856404', bg: '#fffbe6' },
@@ -887,6 +1282,15 @@ export default function EventPage() {
                   </div>
                 ))}
               </div>
+              {(() => {
+                const totalGuests = rsvps.filter(r => r.status === 'yes').reduce((sum, r) => sum + r.guest_count, 0)
+                const goingCount = rsvps.filter(r => r.status === 'yes').length
+                return totalGuests > 0 ? (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                    Total attending: {goingCount + totalGuests} ({goingCount} members + {totalGuests} guest{totalGuests > 1 ? 's' : ''})
+                  </div>
+                ) : null
+              })()}
 
               {/* Invite link (host only) */}
               {isHost && event.invite_token && event.invite_active && (
@@ -904,6 +1308,18 @@ export default function EventPage() {
                   </div>
                   <button onClick={handleRegenerateInvite} style={{ marginTop: 6, fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Albert Sans' }}>
                     Regenerate link
+                  </button>
+                  <button onClick={handleRevokeInvite} style={{ marginTop: 6, marginLeft: 12, fontSize: '0.75rem', color: '#c00', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Albert Sans' }}>
+                    Revoke link
+                  </button>
+                </div>
+              )}
+              {isHost && !event.invite_active && (
+                <div style={{ marginTop: '0.75rem' }}>
+                  <div className="info-card-title">Invite Link</div>
+                  <div style={{ fontSize: '0.82rem', color: '#c00', marginBottom: 6 }}>Invite link is currently disabled.</div>
+                  <button onClick={handleRegenerateInvite} style={{ fontSize: '0.78rem', color: 'var(--pink)', background: 'var(--pink-bg)', border: '1px solid var(--pink-pale)', borderRadius: 100, padding: '5px 14px', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600 }}>
+                    Generate New Link
                   </button>
                 </div>
               )}
@@ -957,7 +1373,7 @@ export default function EventPage() {
           )}
           {activeTab === 'tasks' && (
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              <TasksTab eventUuid={eventUuid} myId={myId} isHost={isHost} />
+              <TasksTab eventUuid={eventUuid} myId={myId} isHost={isHost} members={eventMembers} />
             </div>
           )}
           {activeTab === 'announcements' && (
@@ -965,9 +1381,14 @@ export default function EventPage() {
               <AnnouncementsTab eventUuid={eventUuid} myId={myId} isHost={isHost} />
             </div>
           )}
+          {activeTab === 'reminders' && (
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <RemindersTab eventUuid={eventUuid} hasStartDt={!!event.start_dt} />
+            </div>
+          )}
           {activeTab === 'guests' && (
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              <GuestsTab eventUuid={eventUuid} myId={myId} isHost={isHost} rsvps={rsvps} />
+              <GuestsTab eventUuid={eventUuid} myId={myId} isHost={isHost} hostId={String(event.host_id)} rsvps={rsvps} />
             </div>
           )}
         </div>
@@ -1043,6 +1464,33 @@ export default function EventPage() {
         .chat-input:focus { border-color: var(--pink); }
         .btn-send { background: var(--pink); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
         .btn-send:hover { background: #b04068; }
+        .btn-edit-event { display: flex; align-items: center; gap: 6px; background: none; border: 1.5px solid var(--border); border-radius: 100px; padding: 8px 16px; font-family: 'Albert Sans', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--text-mid); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+        .btn-edit-event:hover { border-color: var(--pink); color: var(--pink); }
+        .edit-panel { background: white; border: 1.5px solid var(--pink-pale); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+        .edit-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .edit-cancel-x { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1; padding: 0 4px; }
+        .edit-cancel-x:hover { color: var(--text-dark); }
+        .edit-form { display: flex; flex-direction: column; gap: 0.5rem; }
+        .edit-label { font-size: 0.82rem; font-weight: 600; color: var(--text-mid); margin-top: 0.25rem; }
+        .edit-input { width: 100%; border: 1.5px solid var(--border); border-radius: 6px; padding: 9px 12px; font-family: 'Albert Sans', sans-serif; font-size: 0.88rem; outline: none; transition: border-color 0.2s; box-sizing: border-box; background: white; color: var(--text-dark); }
+        .edit-input:focus { border-color: var(--pink); }
+        .edit-textarea { resize: vertical; min-height: 80px; }
+        .edit-date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .edit-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-mid); cursor: pointer; margin-top: 0.5rem; }
+        .edit-actions { display: flex; gap: 8px; margin-top: 1rem; }
+        .edit-btn-cancel { background: none; border: 1.5px solid var(--border); border-radius: 100px; padding: 9px 20px; font-family: 'Albert Sans', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--text-mid); cursor: pointer; }
+        .edit-btn-cancel:hover { border-color: #aaa; }
+        .edit-btn-save { background: var(--pink); color: white; border: none; border-radius: 100px; padding: 9px 24px; font-family: 'Albert Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .edit-btn-save:hover:not(:disabled) { background: #b04068; }
+        .edit-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+        .guest-count-row { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; padding: 10px 14px; background: var(--pink-bg); border: 1px solid var(--pink-pale); border-radius: 8px; flex-wrap: wrap; }
+        .guest-count-label { font-size: 0.85rem; color: var(--text-mid); font-weight: 500; }
+        .guest-count-controls { display: flex; align-items: center; gap: 0; border: 1.5px solid var(--border); border-radius: 100px; overflow: hidden; }
+        .guest-count-btn { width: 32px; height: 32px; border: none; background: white; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-dark); transition: background 0.15s; }
+        .guest-count-btn:hover:not(:disabled) { background: var(--pink-bg); }
+        .guest-count-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .guest-count-value { width: 28px; text-align: center; font-size: 0.9rem; font-weight: 600; color: var(--text-dark); }
+        .guest-count-note { font-size: 0.8rem; color: var(--pink); font-weight: 600; }
         @media (max-width: 768px) {
           .event-page { flex-direction: column; }
           .event-sidebar { width: 100%; height: auto; position: static; border-left: none; border-top: 1px solid var(--border); }

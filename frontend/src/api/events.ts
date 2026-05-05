@@ -233,3 +233,29 @@ export function deleteAnnouncement(eventUuid: string, announcementId: number): P
     method: 'DELETE',
   })
 }
+
+// ── Reminders ─────────────────────────────────────────────────────────────────
+
+export interface ReminderOut {
+  id: number
+  event_id: number
+  user_id: string
+  offset_minutes: number
+  created_at: string
+}
+
+export function getReminders(eventUuid: string): Promise<ReminderOut[]> {
+  return apiFetch('events', `/${eventUuid}/reminders`)
+}
+
+export function createReminder(eventUuid: string, offsetMinutes: number): Promise<ReminderOut> {
+  return apiFetch('events', `/${eventUuid}/reminders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ offset_minutes: offsetMinutes }),
+  })
+}
+
+export function deleteReminder(eventUuid: string, reminderId: number): Promise<void> {
+  return apiFetch('events', `/${eventUuid}/reminders/${reminderId}`, { method: 'DELETE' })
+}
