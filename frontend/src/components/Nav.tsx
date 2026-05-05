@@ -24,7 +24,7 @@ export default function Nav() {
 
             {/* Center links — absolutely centered in the nav */}
             <div className="nav-center">
-                <a className="nav-link">How It Works</a>
+                <Link to="/howitworks" className="nav-link">How It Works</Link>
                 <a className="nav-link">Browse Templates</a>
             </div>
 

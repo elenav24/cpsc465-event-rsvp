@@ -10,6 +10,7 @@ import CreateEventPage from './pages/CreateEventPage'
 import EventPage from './pages/EventPage'
 import ProfilePage from './pages/ProfilePage'
 import { joinViaInvite } from './api/events'
+import HowItWorks from './pages/HowItWorks'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -70,6 +71,7 @@ export default function App() {
       <PendingInviteResolver />
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/howitworks" element={<HowItWorks />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/join/:token" element={<JoinPage />} />
