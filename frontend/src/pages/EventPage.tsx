@@ -1,5 +1,6 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { marked } from 'marked'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import {
@@ -708,7 +709,6 @@ function AnnouncementsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId
 // ── Markdown renderer ─────────────────────────────────────────────────────────
 function MarkdownContent({ content }: { content: string }) {
   const html = useMemo(() => {
-    const { marked } = require('marked') as typeof import('marked')
     marked.setOptions({ breaks: true })
     return marked.parse(content) as string
   }, [content])
