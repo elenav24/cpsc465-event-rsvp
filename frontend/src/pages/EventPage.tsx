@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { marked } from 'marked'
 import {
   FiCalendar, FiRepeat, FiLink, FiMapPin, FiStar,
-  FiCheck, FiX, FiBell,
+  FiCheck, FiX,
 } from 'react-icons/fi'
 import { MdOutlineCelebration } from 'react-icons/md'
 import { BsStars } from 'react-icons/bs'
@@ -16,15 +16,13 @@ import {
   getTasks, createTask, updateTask, deleteTask,
   getAnnouncements, createAnnouncement, deleteAnnouncement,
   regenerateInvite, updateEvent, revokeInvite,
-  updateMemberRole, removeMember,
-  getReminders, createReminder, deleteReminder,
   askAi,
 } from '../api/events'
 import type { AiMessage } from '../api/events'
 import { EventChatSocket } from '../api/chat'
 import type {
   EventOut, MemberOut, RSVPOut, PollOut, PotluckItemOut,
-  TaskOut, AnnouncementOut, RSVPStatus, ReminderOut,
+  TaskOut, AnnouncementOut, RSVPStatus
 } from '../api/types'
 import type { WsMessage } from '../api/chat'
 
@@ -834,201 +832,6 @@ function AiTab({
           </svg>
         </button>
       </div>
-    </div>
-  )
-}
-
-// ── Reminders Tab ─────────────────────────────────────────────────────────────
-const REMINDER_OPTIONS = [
-  { label: '1 hour before', minutes: 60 },
-  { label: '6 hours before', minutes: 360 },
-  { label: '24 hours before', minutes: 1440 },
-  { label: '1 week before', minutes: 10080 },
-]
-
-function RemindersTab({ eventUuid, hasStartDt }: { eventUuid: string; hasStartDt: boolean }) {
-  const [reminders, setReminders] = useState<ReminderOut[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [adding, setAdding] = useState(false)
-
-  useEffect(() => {
-    getReminders(eventUuid).then(setReminders).catch(() => {}).finally(() => setLoading(false))
-  }, [eventUuid])
-
-  const handleAdd = async (offsetMinutes: number) => {
-    setAdding(true)
-    setError(null)
-    try {
-      const reminder = await createReminder(eventUuid, offsetMinutes)
-      setReminders(prev => [...prev, reminder])
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to set reminder')
-    } finally {
-      setAdding(false)
-    }
-  }
-
-  const handleDelete = async (id: number) => {
-    try {
-      await deleteReminder(eventUuid, id)
-      setReminders(prev => prev.filter(r => r.id !== id))
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to remove reminder')
-    }
-  }
-
-  const activeOffsets = new Set(reminders.map(r => r.offset_minutes))
-
-  if (loading) return <div style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>Loading reminders...</div>
-
-  return (
-    <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 600, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <FiBell size={14} /> Email Reminders
-      </div>
-      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-        Get an email before the event starts. You'll receive reminders at the times you select below.
-      </div>
-
-      {error && <div style={{ color: '#c00', fontSize: '0.82rem', background: '#fff0f0', padding: '0.5rem', borderRadius: 6 }}>{error}</div>}
-
-      {!hasStartDt && (
-        <div style={{ fontSize: '0.82rem', color: '#856404', background: '#fffbe6', padding: '0.5rem 0.75rem', borderRadius: 6 }}>
-          This event has no start date set — reminders can't be scheduled yet.
-        </div>
-      )}
-
-      {hasStartDt && REMINDER_OPTIONS.map(opt => {
-        const isActive = activeOffsets.has(opt.minutes)
-        const reminder = reminders.find(r => r.offset_minutes === opt.minutes)
-        return (
-          <div key={opt.minutes} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: isActive ? '#e6f9ee' : 'white', border: `1px solid ${isActive ? '#b7ebc8' : 'var(--border)'}`, borderRadius: 8 }}>
-            <span style={{ fontSize: '0.85rem', color: isActive ? '#1a7a3c' : 'var(--text-mid)', fontWeight: isActive ? 600 : 400, display: 'flex', alignItems: 'center', gap: 4 }}>
-              {isActive && <FiCheck size={13} />}{opt.label}
-            </span>
-            {isActive ? (
-              <button onClick={() => handleDelete(reminder!.id)} style={{ fontSize: '0.72rem', color: '#c00', background: 'none', border: '1px solid #fcc', borderRadius: 100, padding: '2px 8px', cursor: 'pointer', fontFamily: 'Albert Sans' }}>
-                Remove
-              </button>
-            ) : (
-              <button onClick={() => handleAdd(opt.minutes)} disabled={adding} style={{ fontSize: '0.72rem', color: 'var(--pink)', background: 'var(--pink-bg)', border: '1px solid var(--pink-pale)', borderRadius: 100, padding: '2px 10px', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600 }}>
-                {adding ? '...' : 'Set'}
-              </button>
-            )}
-          </div>
-        )
-      })}
-
-      {reminders.length > 0 && (
-        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-          You have {reminders.length} reminder{reminders.length > 1 ? 's' : ''} set.
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Guests Tab ────────────────────────────────────────────────────────────────
-function GuestsTab({ eventUuid, myId, isHost, hostId, rsvps }: { eventUuid: string; myId: string; isHost: boolean; hostId: string; rsvps: RSVPOut[] }) {
-  const [members, setMembers] = useState<MemberOut[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    getMembers(eventUuid).then(setMembers).catch(() => {}).finally(() => setLoading(false))
-  }, [eventUuid])
-
-  const handlePromote = async (userId: string) => {
-    try {
-      const updated = await updateMemberRole(eventUuid, userId, 'co_host')
-      setMembers(prev => prev.map(m => m.user_id === userId ? updated : m))
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to update role')
-    }
-  }
-
-  const handleDemote = async (userId: string) => {
-    try {
-      const updated = await updateMemberRole(eventUuid, userId, 'attendee')
-      setMembers(prev => prev.map(m => m.user_id === userId ? updated : m))
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to update role')
-    }
-  }
-
-  const handleRemove = async (userId: string) => {
-    try {
-      await removeMember(eventUuid, userId)
-      setMembers(prev => prev.filter(m => m.user_id !== userId))
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to remove member')
-    }
-  }
-
-  if (loading) return <div style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>Loading guests...</div>
-
-  const rsvpMap = Object.fromEntries(rsvps.map(r => [r.user_id, r]))
-  // Only the original host can manage roles
-  const isOriginalHost = myId === hostId
-
-  return (
-    <div style={{ padding: '1rem' }}>
-      {error && <div style={{ color: '#c00', fontSize: '0.82rem', background: '#fff0f0', padding: '0.5rem', borderRadius: 6, marginBottom: '0.75rem' }}>{error}</div>}
-      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-        {members.length} member{members.length !== 1 ? 's' : ''}
-      </div>
-      {members.map(m => {
-        const rsvp = rsvpMap[m.user_id]
-        const rsvpStatus = rsvp?.status
-        const isMe = m.user_id === myId
-        const name = isMe ? 'You' : (m.display_name || m.user_id.slice(0, 8) + '…')
-        const initials = isMe
-          ? (m.display_name || 'Y').slice(0, 2).toUpperCase()
-          : (m.display_name ? m.display_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : m.user_id.slice(0, 2).toUpperCase())
-        const canManage = isOriginalHost && !isMe && m.role !== 'host'
-        return (
-          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, var(--purple-pale), var(--pink-pale))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'var(--pink)', flexShrink: 0 }}>
-              {initials}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {name}
-              </div>
-              <div style={{ fontSize: '0.72rem', color: m.role === 'host' ? 'var(--pink)' : m.role === 'co_host' ? '#7F77DD' : 'var(--text-muted)', textTransform: 'capitalize', fontWeight: m.role !== 'attendee' ? 600 : 400 }}>{m.role.replace('_', ' ')}</div>
-            </div>
-            {rsvpStatus && (
-              <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: 100, background: rsvpStatus === 'yes' ? '#e6f9ee' : rsvpStatus === 'no' ? '#fff0f0' : '#fffbe6', color: rsvpStatus === 'yes' ? '#1a7a3c' : rsvpStatus === 'no' ? '#c00' : '#856404', fontWeight: 600, flexShrink: 0 }}>
-                {rsvpStatus === 'yes' ? 'Going' : rsvpStatus === 'no' ? 'Not going' : 'Maybe'}
-                {rsvp?.guest_count > 0 && ` +${rsvp.guest_count}`}
-              </span>
-            )}
-            {canManage && (
-              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                {m.role === 'attendee' ? (
-                  <button onClick={() => handlePromote(m.user_id)} title="Promote to co-host" style={{ fontSize: '0.68rem', color: '#7F77DD', background: '#EEEDFE', border: '1px solid #d8d5f7', borderRadius: 100, padding: '2px 8px', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600 }}>
-                    ↑ Co-host
-                  </button>
-                ) : (
-                  <button onClick={() => handleDemote(m.user_id)} title="Demote to attendee" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', background: '#f5f5f5', border: '1px solid var(--border)', borderRadius: 100, padding: '2px 8px', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 500 }}>
-                    ↓ Attendee
-                  </button>
-                )}
-                <button onClick={() => handleRemove(m.user_id)} title="Remove member" style={{ fontSize: '0.68rem', color: '#c00', background: 'none', border: '1px solid #fcc', borderRadius: 100, padding: '2px 6px', cursor: 'pointer', fontFamily: 'Albert Sans' }}>
-                  ✕
-                </button>
-              </div>
-            )}
-            {/* Non-host privileged users can remove themselves */}
-            {isMe && m.role !== 'host' && isHost && !isOriginalHost && (
-              <button onClick={() => handleRemove(m.user_id)} title="Leave event" style={{ fontSize: '0.68rem', color: '#c00', background: 'none', border: '1px solid #fcc', borderRadius: 100, padding: '2px 8px', cursor: 'pointer', fontFamily: 'Albert Sans' }}>
-                Leave
-              </button>
-            )}
-          </div>
-        )
-      })}
     </div>
   )
 }
