@@ -338,7 +338,7 @@ export default function BrowseTemplatesPage() {
     : TEMPLATES.filter((t) => t.category === activeCategory)
 
   const handleUse = (template: Template) => {
-    navigate('/events/new', { state: { template: template.prefill } })
+    navigate('/events/new', { state: { template: { ...template.prefill, id: template.id } } })
   }
 
   return (
