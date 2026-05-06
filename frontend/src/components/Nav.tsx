@@ -59,16 +59,17 @@ export default function Nav() {
             </Link>
 
             {/* Center links — fade out on scroll, hidden on event page */}
-            <div
-                className="absolute left-1/2 -translate-x-1/2 flex items-center gap-10 transition-opacity duration-300 ease-in-out"
-                style={{
-                    opacity: hideCenter ? 0 : 1,
-                    pointerEvents: hideCenter ? 'none' : 'auto',
-                }}
-            >
-                <Link to="/how-it-works" className="font-sans text-[18px] font-medium text-[#444] no-underline cursor-pointer transition-colors duration-200 whitespace-nowrap hover:text-pink hover:no-underline">How It Works</Link>
-                <Link to="/templates" className="font-sans text-[18px] font-medium text-[#444] no-underline cursor-pointer transition-colors duration-200 whitespace-nowrap hover:text-pink hover:no-underline">Browse Templates</Link>
-            </div>
+            {
+                <div
+                    className="absolute left-1/2 -translate-x-1/2 flex items-center gap-10 transition-opacity duration-300 ease-in-out max-[850px]:hidden"
+                    style={{
+                        opacity: hideCenter ? 0 : 1,
+                        pointerEvents: hideCenter ? 'none' : 'auto',
+                    }}
+                >
+                    <Link to="/how-it-works" className="font-sans text-[18px] font-medium text-[#444] no-underline cursor-pointer transition-colors duration-200 whitespace-nowrap hover:text-pink hover:no-underline">How It Works</Link>
+                    <Link to="/templates" className="font-sans text-[18px] font-medium text-[#444] no-underline cursor-pointer transition-colors duration-200 whitespace-nowrap hover:text-pink hover:no-underline">Browse Templates</Link>
+                </div>}
 
             {/* Right actions */}
             <div className="flex items-center gap-3 flex-shrink-0 z-[1]">
