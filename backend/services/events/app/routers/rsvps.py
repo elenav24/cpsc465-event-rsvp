@@ -88,4 +88,15 @@ def upsert_rsvp(
 
     db.commit()
     db.refresh(rsvp)
+
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        broadcast_event_update(event_id, "rsvp", "upsert", {
+            "id": rsvp.id, "event_id": rsvp.event_id, "user_id": rsvp.user_id,
+            "status": rsvp.status, "guest_count": rsvp.guest_count,
+            "updated_at": rsvp.updated_at.isoformat() if rsvp.updated_at else None,
+        })
+    except Exception:
+        pass
+
     return rsvp

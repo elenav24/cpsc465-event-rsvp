@@ -70,6 +70,12 @@ def create_task(
     db.add(task)
     db.commit()
     db.refresh(task)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import task_dict
+        broadcast_event_update(event.id, "task", "create", task_dict(task))
+    except Exception:
+        pass
     return task
 
 
@@ -120,6 +126,12 @@ def update_task(
 
     db.commit()
     db.refresh(task)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import task_dict
+        broadcast_event_update(event.id, "task", "upsert", task_dict(task))
+    except Exception:
+        pass
     return task
 
 
@@ -137,3 +149,8 @@ def delete_task(
         raise HTTPException(status_code=404, detail="Task not found")
     db.delete(task)
     db.commit()
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        broadcast_event_update(event.id, "task", "delete", {"id": task_id})
+    except Exception:
+        pass

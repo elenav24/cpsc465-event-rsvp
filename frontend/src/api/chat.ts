@@ -22,8 +22,15 @@ export interface WsMessage {
   timestamp: string
 }
 
+export interface EventUpdate {
+  kind: 'rsvp' | 'poll' | 'potluck' | 'task' | 'announcement' | 'event' | 'member'
+  action: 'create' | 'upsert' | 'delete'
+  data: Record<string, unknown>
+}
+
 export type ChatEventHandler = (msg: WsMessage) => void
 export type HistoryHandler = (msgs: WsMessage[], lastKey?: string) => void
+export type EventUpdateHandler = (update: EventUpdate) => void
 
 export class EventChatSocket {
   private ws: WebSocket | null = null
@@ -33,6 +40,7 @@ export class EventChatSocket {
   private senderName: string
   private onMessage: ChatEventHandler
   private onHistory: HistoryHandler
+  private onEventUpdate?: EventUpdateHandler
   private onConnect?: () => void
   private onDisconnect?: () => void
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -45,6 +53,7 @@ export class EventChatSocket {
     senderName: string
     onMessage: ChatEventHandler
     onHistory: HistoryHandler
+    onEventUpdate?: EventUpdateHandler
     onConnect?: () => void
     onDisconnect?: () => void
   }) {
@@ -54,6 +63,7 @@ export class EventChatSocket {
     this.senderName = opts.senderName
     this.onMessage = opts.onMessage
     this.onHistory = opts.onHistory
+    this.onEventUpdate = opts.onEventUpdate
     this.onConnect = opts.onConnect
     this.onDisconnect = opts.onDisconnect
     this.connect()
@@ -77,6 +87,8 @@ export class EventChatSocket {
           this.onMessage(data as WsMessage)
         } else if (data.type === 'history') {
           this.onHistory(data.messages ?? [], data.last_key)
+        } else if (data.type === 'event_update') {
+          this.onEventUpdate?.({ kind: data.kind, action: data.action, data: data.data })
         }
       } catch {
         // ignore malformed frames

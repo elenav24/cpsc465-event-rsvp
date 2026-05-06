@@ -74,6 +74,12 @@ def create_announcement(
     announcement.sms_sent = True
     db.commit()
     db.refresh(announcement)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import announcement_dict
+        broadcast_event_update(event.id, "announcement", "create", announcement_dict(announcement))
+    except Exception:
+        pass
     return announcement
 
 
@@ -126,3 +132,8 @@ def delete_announcement(
         raise HTTPException(status_code=404, detail="Announcement not found")
     db.delete(ann)
     db.commit()
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        broadcast_event_update(event.id, "announcement", "delete", {"id": announcement_id})
+    except Exception:
+        pass
