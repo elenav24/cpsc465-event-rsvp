@@ -102,6 +102,17 @@ export default function Nav() {
                                         </svg>
                                         Edit Profile
                                     </Link>
+                                    <Link
+                                        to="/profile?tab=reminders"
+                                        className="flex items-center gap-2 w-full px-4 py-2 font-sans text-[0.85rem] font-medium text-[#555] bg-transparent border-none cursor-pointer no-underline transition-[background,color] duration-150 text-left hover:bg-pink-bg hover:text-pink hover:no-underline"
+                                        onClick={() => setProfileOpen(false)}
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                            <path d="M13.73 21a2 2 0 01-3.46 0" />
+                                        </svg>
+                                        Reminders
+                                    </Link>
                                     <button
                                         className="flex items-center gap-2 w-full px-4 py-2 font-sans text-[0.85rem] font-medium text-[#c00] bg-transparent border-none cursor-pointer transition-[background,color] duration-150 text-left hover:bg-[#fff0f0] hover:text-[#c00]"
                                         onClick={handleLogout}

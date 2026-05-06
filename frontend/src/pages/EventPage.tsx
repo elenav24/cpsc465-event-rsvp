@@ -1,6 +1,12 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { marked } from 'marked'
+import {
+  FiCalendar, FiRepeat, FiLink, FiMapPin, FiStar,
+  FiCheck, FiX, FiBell,
+} from 'react-icons/fi'
+import { MdOutlineCelebration } from 'react-icons/md'
+import { BsStars } from 'react-icons/bs'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import {
@@ -625,7 +631,7 @@ function TasksTab({ eventUuid, myId, isHost, members }: { eventUuid: string; myI
 }
 
 // ── Announcements Tab ─────────────────────────────────────────────────────────
-function AnnouncementsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string; isHost: boolean }) {
+function AnnouncementsTab({ eventUuid, myId, isHost, onNew }: { eventUuid: string; myId: string; isHost: boolean; onNew?: () => void }) {
   const [announcements, setAnnouncements] = useState<AnnouncementOut[]>([])
   const [loading, setLoading] = useState(true)
   const [body, setBody] = useState('')
@@ -646,6 +652,7 @@ function AnnouncementsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId
       const ann = await createAnnouncement(eventUuid, body.trim())
       setAnnouncements(prev => [ann, ...prev])
       setBody('')
+      onNew?.()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to post announcement')
     } finally {
@@ -771,57 +778,57 @@ function AiTab({
   }
 
   return (
-    <div className="chat-panel">
-      <div className="chat-messages">
+    <div className="ai-panel">
+      <div className="ai-messages">
         {messages.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✨</div>
-            <div style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-dark)' }}>AI Event Assistant</div>
-            <div>Ask anything about this event — guests, polls, tasks, or the chat.</div>
+          <div style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.88rem' }}>
+            <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'center' }}><BsStars size={36} color="rgba(255,255,255,0.7)" /></div>
+            <div style={{ fontWeight: 600, marginBottom: '0.4rem', color: 'rgba(255,255,255,0.9)', fontSize: '1rem' }}>AI Event Assistant</div>
+            <div style={{ lineHeight: 1.6 }}>Ask anything about this event —<br />guests, polls, tasks, or the chat.</div>
           </div>
         )}
         {messages.map((msg, i) => (
-          <div key={i} className={`chat-msg${msg.role === 'user' ? ' mine' : ''}`}>
-            <div className="chat-bubble-avatar">
-              {msg.role === 'user' ? 'You' : '✨'}
+          <div key={i} className={`ai-msg${msg.role === 'user' ? ' ai-msg-user' : ' ai-msg-assistant'}`}>
+            <div className="ai-msg-avatar">
+              {msg.role === 'user' ? 'You' : <BsStars size={12} />}
             </div>
-            <div className="chat-bubble" style={msg.role === 'assistant' ? { background: 'var(--purple-pale)', color: 'var(--text-dark)' } : undefined}>
-              <div className="chat-bubble-name">{msg.role === 'user' ? 'You' : 'AI Assistant'}</div>
+            <div className="ai-msg-bubble">
+              <div className="ai-msg-name">{msg.role === 'user' ? 'You' : 'AI Assistant'}</div>
               {msg.role === 'assistant'
                 ? <MarkdownContent content={msg.content} />
-                : <div className="chat-bubble-text">{msg.content}</div>
+                : <div className="ai-msg-text">{msg.content}</div>
               }
             </div>
           </div>
         ))}
         {loading && (
-          <div className="chat-msg">
-            <div className="chat-bubble-avatar">✨</div>
-            <div className="chat-bubble" style={{ background: 'var(--purple-pale)' }}>
-              <div className="chat-bubble-name">AI Assistant</div>
-              <div className="chat-bubble-text" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <div className="ai-msg ai-msg-assistant">
+            <div className="ai-msg-avatar"><BsStars size={12} /></div>
+            <div className="ai-msg-bubble">
+              <div className="ai-msg-name">AI Assistant</div>
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '2px 0' }}>
                 <span className="ai-dot" /><span className="ai-dot" style={{ animationDelay: '0.2s' }} /><span className="ai-dot" style={{ animationDelay: '0.4s' }} />
               </div>
             </div>
           </div>
         )}
         {error && (
-          <div style={{ margin: '0.5rem 1rem', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 6, padding: '0.5rem 0.75rem', color: '#c00', fontSize: '0.82rem' }}>
+          <div style={{ margin: '0.5rem 1rem', background: 'rgba(255,80,80,0.15)', border: '1px solid rgba(255,80,80,0.3)', borderRadius: 6, padding: '0.5rem 0.75rem', color: '#ff9999', fontSize: '0.82rem' }}>
             {error}
           </div>
         )}
         <div ref={bottomRef} />
       </div>
-      <div className="chat-input-row">
+      <div className="ai-input-row">
         <input
-          className="chat-input"
+          className="ai-input"
           placeholder="Ask about this event..."
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
           disabled={loading}
         />
-        <button className="btn-send" onClick={send} disabled={loading} aria-label="Send">
+        <button className="ai-send-btn" onClick={send} disabled={loading} aria-label="Send">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M14 8L2 2l3 6-3 6 12-6z" fill="white" />
           </svg>
@@ -877,8 +884,8 @@ function RemindersTab({ eventUuid, hasStartDt }: { eventUuid: string; hasStartDt
 
   return (
     <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 600, marginBottom: '0.25rem' }}>
-        🔔 Email Reminders
+      <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 600, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <FiBell size={14} /> Email Reminders
       </div>
       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
         Get an email before the event starts. You'll receive reminders at the times you select below.
@@ -897,8 +904,8 @@ function RemindersTab({ eventUuid, hasStartDt }: { eventUuid: string; hasStartDt
         const reminder = reminders.find(r => r.offset_minutes === opt.minutes)
         return (
           <div key={opt.minutes} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: isActive ? '#e6f9ee' : 'white', border: `1px solid ${isActive ? '#b7ebc8' : 'var(--border)'}`, borderRadius: 8 }}>
-            <span style={{ fontSize: '0.85rem', color: isActive ? '#1a7a3c' : 'var(--text-mid)', fontWeight: isActive ? 600 : 400 }}>
-              {isActive && '✓ '}{opt.label}
+            <span style={{ fontSize: '0.85rem', color: isActive ? '#1a7a3c' : 'var(--text-mid)', fontWeight: isActive ? 600 : 400, display: 'flex', alignItems: 'center', gap: 4 }}>
+              {isActive && <FiCheck size={13} />}{opt.label}
             </span>
             {isActive ? (
               <button onClick={() => handleDelete(reminder!.id)} style={{ fontSize: '0.72rem', color: '#c00', background: 'none', border: '1px solid #fcc', borderRadius: 100, padding: '2px 8px', cursor: 'pointer', fontFamily: 'Albert Sans' }}>
@@ -1142,7 +1149,7 @@ export default function EventPage() {
   const [eventMembers, setEventMembers] = useState<MemberOut[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState('chat')
+  const [activeTab, setActiveTab] = useState('ai')
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -1151,6 +1158,11 @@ export default function EventPage() {
   const [inviteLinkVisible, setInviteLinkVisible] = useState(false)
   const [aiMessages, setAiMessages] = useState<AiMessage[]>([])
   const [liveChatMessages, setLiveChatMessages] = useState<WsMessage[]>([])
+  // Track which tabs have unseen updates since they were last active
+  const [unreadTabs, setUnreadTabs] = useState<Set<string>>(new Set())
+
+  const markRead = (tab: string) => setUnreadTabs(prev => { const s = new Set(prev); s.delete(tab); return s })
+  const markUnread = (tab: string) => setUnreadTabs(prev => activeTab === tab ? prev : new Set([...prev, tab]))
 
   const eventUuid = id ?? ''
   const myId = profile?.cognito_sub ?? ''
@@ -1224,15 +1236,12 @@ export default function EventPage() {
 
   const isHost = event?.host_id === myId || event?.host_id === myDbId
 
-  const sidebarItems = [
-    { key: 'chat', label: 'Event Chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" /></svg> },
-    { key: 'ai', label: 'AI Assistant', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2a2 2 0 012 2v1a7 7 0 010 14v1a2 2 0 01-4 0v-1a7 7 0 010-14V4a2 2 0 012-2z" strokeLinecap="round" /><circle cx="12" cy="12" r="3" /></svg> },
+  const tabItems = [
+    { key: 'ai', label: 'AI', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2a2 2 0 012 2v1a7 7 0 010 14v1a2 2 0 01-4 0v-1a7 7 0 010-14V4a2 2 0 012-2z" strokeLinecap="round" /><circle cx="12" cy="12" r="3" /></svg> },
     { key: 'polls', label: 'Polls', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="10" width="4" height="11" rx="1" /><rect x="10" y="6" width="4" height="15" rx="1" /><rect x="17" y="2" width="4" height="19" rx="1" /></svg> },
     { key: 'potluck', label: 'Potluck', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" strokeLinecap="round" /><path d="M8 12h8M12 8v8" strokeLinecap="round" /></svg> },
     { key: 'tasks', label: 'Tasks', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 11l3 3L22 4" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeLinecap="round" strokeLinejoin="round" /></svg> },
-    { key: 'announcements', label: 'Announcements', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" /></svg> },
-    { key: 'reminders', label: 'Reminders', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" /><path d="M13.73 21a2 2 0 01-3.46 0" /></svg> },
-    { key: 'guests', label: 'Guest List', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" /><path d="M16 3.13a4 4 0 010 7.75" /><path d="M21 21v-2a4 4 0 00-3-3.87" /></svg> },
+    { key: 'announcements', label: 'Announce', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" /></svg> },
   ]
 
   if (loading) return (
@@ -1253,10 +1262,14 @@ export default function EventPage() {
 
   return (
     <div className="event-page">
-      {/* Main — tabs are the focus */}
-      <div className="event-main">
+      {/* Left — event info & RSVP */}
+      {/* Sidebar rendered first so it appears on the left */}
+      {/* We use CSS order to control visual position */}
+
+      {/* Center — tabs */}
+      <div className="event-main" style={{ order: 2 }}>
         <div className="main-header">
-          <div className="event-cat-badge">🎉 Event</div>
+          <div className="event-cat-badge"><MdOutlineCelebration size={13} /> Event</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <h1 className="event-title">{event.title}</h1>
             {isHost && !editing && (
@@ -1270,10 +1283,7 @@ export default function EventPage() {
           </div>
           {event.location && (
             <div className="event-location">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 1.5A4.5 4.5 0 0113.5 6c0 3-4.5 8.5-4.5 8.5S4.5 9 4.5 6A4.5 4.5 0 018 1.5z" stroke="var(--text-muted)" strokeWidth="1.5" />
-                <circle cx="8" cy="6" r="1.5" stroke="var(--text-muted)" strokeWidth="1.5" />
-              </svg>
+              <FiMapPin size={14} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
               {event.location}
             </div>
           )}
@@ -1297,23 +1307,21 @@ export default function EventPage() {
 
         {/* Horizontal tab bar */}
         <div className="main-tabs">
-          {sidebarItems.map((item) => (
+          {tabItems.map((item) => (
             <button
               key={item.key}
               className={`main-tab${activeTab === item.key ? ' active' : ''}`}
-              onClick={() => setActiveTab(item.key)}
+              onClick={() => { setActiveTab(item.key); markRead(item.key) }}
             >
               <span className="main-tab-icon">{item.icon}</span>
               <span className="main-tab-label">{item.label}</span>
+              {unreadTabs.has(item.key) && <span className="tab-unread-dot" />}
             </button>
           ))}
         </div>
 
         {/* Tab content */}
         <div className="main-tab-content">
-          {activeTab === 'chat' && (
-            <ChatTab eventId={eventUuid} myId={myId} myName={myName} token={token} onMessagesChange={setLiveChatMessages} />
-          )}
           {activeTab === 'ai' && (
             <AiTab eventUuid={eventUuid} messages={aiMessages} setMessages={setAiMessages} chatMessages={liveChatMessages} />
           )}
@@ -1334,24 +1342,23 @@ export default function EventPage() {
           )}
           {activeTab === 'announcements' && (
             <div style={{ overflowY: 'auto', flex: 1 }}>
-              <AnnouncementsTab eventUuid={eventUuid} myId={myId} isHost={isHost} />
-            </div>
-          )}
-          {activeTab === 'reminders' && (
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              <RemindersTab eventUuid={eventUuid} hasStartDt={!!event.start_dt} />
-            </div>
-          )}
-          {activeTab === 'guests' && (
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              <GuestsTab eventUuid={eventUuid} myId={myId} isHost={isHost} hostId={String(event.host_id)} rsvps={rsvps} />
+              <AnnouncementsTab eventUuid={eventUuid} myId={myId} isHost={isHost} onNew={() => markUnread('announcements')} />
             </div>
           )}
         </div>
       </div>
 
+      {/* Right column — always-visible chat */}
+      <div className="event-chat-col" style={{ order: 3 }}>
+        <div className="chat-col-header">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ flexShrink: 0 }}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Event Chat
+        </div>
+        <ChatTab eventId={eventUuid} myId={myId} myName={myName} token={token} onMessagesChange={(msgs) => { setLiveChatMessages(msgs); markUnread('chat') }} />
+      </div>
+
       {/* Sidebar — event info & RSVP */}
-      <div className="event-sidebar">
+      <div className="event-sidebar" style={{ order: 1 }}>
         {/* Flyer / hero — click to expand if there's a flyer */}
         <div
           className={`sidebar-hero${event.flyer_url ? ' sidebar-hero-clickable' : ''}`}
@@ -1476,7 +1483,7 @@ export default function EventPage() {
             </div>
             {event.start_dt && (
               <div className="detail-row">
-                <span className="detail-icon">📅</span>
+                <FiCalendar size={14} style={{ flexShrink: 0, marginTop: 2, color: 'var(--text-muted)' }} />
                 <div>
                   <div className="detail-val">{formatDate(event.start_dt)}{event.end_dt ? ` – ${formatDate(event.end_dt)}` : ''}</div>
                 </div>
@@ -1484,7 +1491,7 @@ export default function EventPage() {
             )}
             {event.recurrence_rule && (
               <div className="detail-row">
-                <span className="detail-icon">🔁</span>
+                <FiRepeat size={14} style={{ flexShrink: 0, marginTop: 2, color: 'var(--text-muted)' }} />
                 <div>
                   <div className="detail-val">
                     {event.recurrence_rule.charAt(0) + event.recurrence_rule.slice(1).toLowerCase()}
@@ -1495,9 +1502,42 @@ export default function EventPage() {
             )}
             {event.viewable_by_link && (
               <div style={{ fontSize: '0.75rem', color: '#7F77DD', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                🔗 Viewable by anyone with the link
+                <FiLink size={12} /> Viewable by anyone with the link
               </div>
             )}
+          </div>
+
+          {/* Guest list */}
+          <div className="sidebar-section">
+            <div className="sidebar-section-title">Guests ({eventMembers.length})</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {eventMembers.slice(0, 8).map(m => {
+                const rsvp = rsvps.find(r => r.user_id === m.user_id)
+                const isMe = m.user_id === myId
+                const name = isMe ? 'You' : (m.display_name || m.user_id.slice(0, 8) + '…')
+                const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                return (
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, var(--purple-pale), var(--pink-pale))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem', fontWeight: 700, color: 'var(--pink)', flexShrink: 0 }}>
+                      {initials}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+                      <div style={{ fontSize: '0.68rem', color: m.role === 'host' ? 'var(--pink)' : m.role === 'co_host' ? '#7F77DD' : 'var(--text-muted)' }}>{m.role.replace('_', ' ')}</div>
+                    </div>
+                    {rsvp && (
+                      <span style={{ fontSize: '0.65rem', padding: '1px 6px', borderRadius: 100, background: rsvp.status === 'yes' ? '#e6f9ee' : rsvp.status === 'no' ? '#fff0f0' : '#fffbe6', color: rsvp.status === 'yes' ? '#1a7a3c' : rsvp.status === 'no' ? '#c00' : '#856404', fontWeight: 600, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {rsvp.status === 'yes' ? <FiCheck size={10} /> : rsvp.status === 'no' ? <FiX size={10} /> : <FiStar size={10} />}
+                        {rsvp.guest_count > 0 && ` +${rsvp.guest_count}`}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+              {eventMembers.length > 8 && (
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>+{eventMembers.length - 8} more</div>
+              )}
+            </div>
           </div>
 
           {/* Invite link (host only) */}
@@ -1533,8 +1573,8 @@ export default function EventPage() {
                         </svg>
                       )}
                     </button>
-                    <button onClick={handleCopyInvite} style={{ background: inviteCopied ? '#1a7a3c' : 'var(--pink)', color: 'white', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      {inviteCopied ? '✓' : 'Copy'}
+                    <button onClick={handleCopyInvite} style={{ background: inviteCopied ? '#1a7a3c' : 'var(--pink)', color: 'white', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {inviteCopied ? <><FiCheck size={12} /> Copied</> : 'Copy'}
                     </button>
                   </div>
                   <div style={{ display: 'flex', gap: 10 }}>
@@ -1560,30 +1600,34 @@ export default function EventPage() {
       </div>
 
       <style>{`
-        .event-page { display: flex; flex-direction: row-reverse; width: 100%; overflow: hidden; height: calc(100svh - var(--nav-height)); margin-top: var(--nav-height); }
+        .event-page { display: flex; flex-direction: row; width: 100%; overflow: hidden; height: calc(100svh - var(--nav-height)); margin-top: var(--nav-height); }
 
-        /* ── Main (left) ── */
-        .event-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; height: 100%; }
+        /* ── Left (info) ── */
+        .event-sidebar { width: 22%; flex-shrink: 0; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+
+        /* ── Center (tabs) ── */
+        .event-main { width: 48%; flex-shrink: 0; display: flex; flex-direction: column; min-width: 0; overflow: hidden; height: 100%; background: white; border-right: 1px solid var(--border); }
         .main-header { padding: 1.25rem 1.5rem 0.75rem; border-bottom: 1px solid var(--border); flex-shrink: 0; background: white; }
         .event-cat-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--pink-bg); border: 1px solid var(--pink-pale); border-radius: 100px; padding: 3px 10px; font-size: 0.75rem; color: var(--pink); font-weight: 600; margin-bottom: 0.4rem; }
-        .event-title { font-family: 'Anton', sans-serif; font-size: 1.8rem; margin: 0 0 2px; color: var(--text-dark); line-height: 1.1; }
+        .event-title { font-family: 'Anton', sans-serif; font-size: 1.6rem; margin: 0 0 2px; color: var(--text-dark); line-height: 1.1; }
         .event-location { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
 
         /* Tab bar */
-        .main-tabs { display: flex; gap: 0; padding: 0 1.5rem; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; flex-shrink: 0; background: white; }
+        .main-tabs { display: flex; gap: 0; padding: 0 0.75rem; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; flex-shrink: 0; background: white; }
         .main-tabs::-webkit-scrollbar { display: none; }
-        .main-tab { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: none; border: none; border-bottom: 2px solid transparent; font-family: 'Albert Sans', sans-serif; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; margin-bottom: -1px; }
+        .main-tab { display: flex; align-items: center; gap: 5px; padding: 9px 8px; background: none; border: none; border-bottom: 2px solid transparent; font-family: 'Albert Sans', sans-serif; font-size: 0.72rem; font-weight: 500; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; margin-bottom: -1px; }
         .main-tab:hover { color: var(--text-dark); }
         .main-tab.active { color: var(--pink); border-bottom-color: var(--pink); font-weight: 600; }
         .main-tab-icon { display: flex; align-items: center; justify-content: center; }
-        .main-tab-icon svg { width: 14px; height: 14px; }
+        .main-tab-icon svg { width: 13px; height: 13px; }
 
-        /* Tab content area — fills remaining height, each tab scrolls internally */
+        /* Tab content */
         .main-tab-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
         .main-tab-content > div { flex: 1; overflow-y: auto; min-height: 0; }
 
-        /* ── Sidebar (right) ── */
-        .event-sidebar { width: 40%; flex-shrink: 0; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        /* ── Right (chat) ── */
+        .event-chat-col { width: 30%; flex-shrink: 0; background: white; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .chat-col-header { display: flex; align-items: center; gap: 8px; padding: 0.875rem 1.125rem; border-bottom: 1px solid var(--border); font-size: 0.82rem; font-weight: 600; color: var(--text-dark); flex-shrink: 0; background: white; }
         .sidebar-hero { width: 100%; height: 150px; background: linear-gradient(135deg, var(--purple-pale) 0%, var(--pink-pale) 100%); flex-shrink: 0; overflow: hidden; position: relative; }
         .sidebar-hero img { width: 100%; height: 100%; object-fit: cover; }
         .sidebar-hero-clickable { cursor: zoom-in; }
@@ -1623,7 +1667,6 @@ export default function EventPage() {
 
         /* Detail rows */
         .detail-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 0.4rem; }
-        .detail-icon { font-size: 0.95rem; flex-shrink: 0; margin-top: 1px; }
         .detail-val { font-size: 0.82rem; color: var(--text-mid); line-height: 1.5; }
 
         /* Edit button */
@@ -1667,30 +1710,56 @@ export default function EventPage() {
         .btn-send:hover { background: #b04068; }
         .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
         @keyframes ai-bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-4px); opacity: 1; } }
-        .ai-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--pink); animation: ai-bounce 1.2s ease-in-out infinite; }
+        .ai-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #a78bfa; animation: ai-bounce 1.2s ease-in-out infinite; }
+
+        /* AI panel — light themed, distinct from chat */
+        .ai-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; background: #faf8ff; }
+        .ai-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
+        .ai-msg { display: flex; gap: 8px; align-items: flex-start; }
+        .ai-msg-user { flex-direction: row-reverse; }
+        .ai-msg-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; flex-shrink: 0; }
+        .ai-msg-user .ai-msg-avatar { background: var(--pink); color: white; }
+        .ai-msg-assistant .ai-msg-avatar { background: var(--purple-pale); color: #7F77DD; }
+        .ai-msg-bubble { border-radius: 14px; padding: 8px 12px; max-width: 85%; }
+        .ai-msg-user .ai-msg-bubble { background: var(--pink); color: white; }
+        .ai-msg-assistant .ai-msg-bubble { background: white; border: 1px solid var(--border); color: var(--text-dark); }
+        .ai-msg-name { font-size: 0.68rem; font-weight: 700; margin-bottom: 3px; }
+        .ai-msg-user .ai-msg-name { color: rgba(255,255,255,0.75); }
+        .ai-msg-assistant .ai-msg-name { color: #7F77DD; }
+        .ai-msg-text { font-size: 0.85rem; line-height: 1.5; }
+        .ai-input-row { display: flex; gap: 8px; padding: 0.75rem 1rem; border-top: 1px solid var(--border); flex-shrink: 0; background: #faf8ff; }
+        .ai-input { flex: 1; border: 1.5px solid var(--border); border-radius: 100px; padding: 9px 16px; font-family: 'Albert Sans', sans-serif; font-size: 0.88rem; outline: none; transition: border-color 0.2s; background: white; color: var(--text-dark); }
+        .ai-input::placeholder { color: var(--text-muted); }
+        .ai-input:focus { border-color: #7F77DD; }
+        .ai-send-btn { background: #7F77DD; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
+        .ai-send-btn:hover { background: #6d5fc7; }
+        .ai-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .ai-markdown { font-size: 0.85rem; line-height: 1.6; color: var(--text-dark); }
         .ai-markdown p { margin: 0 0 0.5em; }
         .ai-markdown p:last-child { margin-bottom: 0; }
         .ai-markdown ul, .ai-markdown ol { margin: 0.25em 0 0.5em 1.25em; padding: 0; }
         .ai-markdown li { margin-bottom: 0.2em; }
-        .ai-markdown strong { font-weight: 700; }
+        .ai-markdown strong { font-weight: 700; color: #5b4a9e; }
         .ai-markdown em { font-style: italic; }
-        .ai-markdown code { background: rgba(0,0,0,0.08); border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 0.82em; }
-        .ai-markdown pre { background: rgba(0,0,0,0.08); border-radius: 6px; padding: 0.75em 1em; overflow-x: auto; margin: 0.5em 0; }
+        .ai-markdown code { background: var(--purple-pale); border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 0.82em; color: #5b4a9e; }
+        .ai-markdown pre { background: var(--purple-pale); border-radius: 6px; padding: 0.75em 1em; overflow-x: auto; margin: 0.5em 0; }
         .ai-markdown pre code { background: none; padding: 0; }
-        .ai-markdown h1, .ai-markdown h2, .ai-markdown h3 { font-family: 'Albert Sans', sans-serif; font-weight: 700; margin: 0.5em 0 0.25em; color: var(--text-dark); }
-        .ai-markdown h1 { font-size: 1rem; }
-        .ai-markdown h2 { font-size: 0.95rem; }
-        .ai-markdown h3 { font-size: 0.9rem; }
-        .ai-markdown blockquote { border-left: 3px solid var(--pink-pale); margin: 0.5em 0; padding-left: 0.75em; color: var(--text-muted); }
-        .ai-markdown a { color: var(--pink); text-decoration: underline; }
-        .ai-markdown hr { border: none; border-top: 1px solid var(--border); margin: 0.5em 0; }
+        .ai-markdown h1, .ai-markdown h2, .ai-markdown h3 { font-family: 'Albert Sans', sans-serif; font-weight: 700; margin: 0.5em 0 0.25em; color: #5b4a9e; }
+        .ai-markdown blockquote { border-left: 3px solid var(--purple-light); margin: 0.5em 0; padding-left: 0.75em; color: var(--text-muted); }
+        .ai-markdown a { color: #7F77DD; text-decoration: underline; }
+
+        /* Unread dot on tabs */
+        .tab-unread-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pink); flex-shrink: 0; margin-left: 2px; }
 
         @media (max-width: 900px) {
-          .event-page { flex-direction: column; height: auto; overflow: visible; margin-top: var(--nav-height); }
-          .event-sidebar { width: 100%; height: auto; flex-shrink: 0; border-right: none; border-bottom: 1px solid var(--border); }
-          .sidebar-scroll { max-height: 60vh; }
-          .event-main { height: calc(100svh - var(--nav-height)); flex-shrink: 0; }
+          .event-page { flex-direction: column; height: auto; overflow: auto; margin-top: var(--nav-height); }
+          .event-sidebar { order: 1 !important; width: 100%; height: auto; flex-shrink: 0; border-right: none; border-bottom: 1px solid var(--border); overflow: visible; }
+          .event-main { order: 2 !important; width: 100%; height: 100svh; flex-shrink: 0; min-height: 100svh; border-right: none; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+          .event-chat-col { order: 3 !important; width: 100%; height: 70svh; flex-shrink: 0; border-top: 1px solid var(--border); }
+          .sidebar-scroll { overflow-y: visible; max-height: none; }
+          .sidebar-hero { height: 120px; }
+          .event-title { font-size: 1.3rem; }
+          .main-tab { padding: 8px 8px; font-size: 0.72rem; gap: 4px; }
         }
       `}</style>
     </div>
