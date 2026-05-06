@@ -148,11 +148,11 @@ function StepCard({ step, hovered, onEnter, onLeave }: {
 
     const cardContent = (
         <div className={[
-            step.cardBgClass,
-            'rounded-[16px] md:rounded-[24px] p-3 md:p-5 overflow-hidden',
-            'border border-border',
-            'transition-transform duration-300',
-            hovered ? 'rotate-0' : step.rotateClass,
+            'bg-white rounded-[16px] md:rounded-[24px] p-3 md:p-5 overflow-hidden',
+            'border-r border-b border-[#973B69] border-l border-t border-l-[#e8e4ed] border-t-[#e8e4ed]',
+            'shadow-[4px_4px_0px_#973B69]',
+            'transition-all duration-300',
+            hovered ? 'rotate-0 shadow-[6px_6px_0px_#973B69]' : step.rotateClass,
         ].join(' ')}>
             <step.CardVisual />
         </div>
@@ -243,8 +243,9 @@ function StepsSection() {
                             {step.description}
                         </p>
                         <div className={[
-                            step.cardBgClass,
-                            'rounded-[24px] p-5 overflow-hidden border border-border',
+                            'bg-white rounded-[24px] p-5 overflow-hidden',
+                            'border-r border-b border-[#973B69] border-l border-t border-l-[#e8e4ed] border-t-[#e8e4ed]',
+                            'shadow-[4px_4px_0px_#973B69]',
                         ].join(' ')}>
                             <step.CardVisual />
                         </div>
@@ -258,33 +259,35 @@ function StepsSection() {
 function CTASection() {
     return (
         <section className="container mt-20 text-center">
-            <div className="bg-pink-dark text-white rounded-[48px] py-24 px-10 relative overflow-hidden shadow-[var(--shadow-lg)]">
+            <div className="max-w-3xl mx-auto">
+            <div className="bg-pink-dark text-white rounded-[48px] py-14 px-10 relative overflow-hidden shadow-[var(--shadow-lg)]">
                 <img
                     src={starSvg}
                     alt=""
                     aria-hidden="true"
-                    className="absolute -top-8 -left-8 w-48 h-48 opacity-[0.15] pointer-events-none select-none"
+                    className="absolute -top-8 -left-8 w-36 h-36 opacity-[0.15] pointer-events-none select-none"
                     style={{ filter: 'brightness(0) invert(1)' }}
                 />
                 <h2
-                    className="font-display text-7xl uppercase relative z-10 leading-none tracking-wider mb-8"
+                    className="font-display text-5xl uppercase relative z-10 leading-none tracking-wider mb-5"
                 >
                     Ready to Cohost?
                 </h2>
-                <p className="font-sans text-xl mb-12 max-w-[50%] mx-auto text-pink-pale relative z-10 leading-relaxed">
+                <p className="font-sans text-base mb-8 max-w-[50%] mx-auto text-pink-pale relative z-10 leading-relaxed">
                     Join thousands of hosts who have traded planning anxiety for party anticipation.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-6 justify-center relative z-10">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
                     <Link
                         to="/signup"
-                        className="btn bg-white text-pink-dark font-heading rounded-[2rem] px-16 py-4 text-xl tracking-wide hover:scale-105 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200"
+                        className="btn bg-white text-pink-dark font-heading rounded-[2rem] px-10 py-3 text-base tracking-wide hover:scale-105 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200"
                     >
                         Create My Event
                     </Link>
-                    <button className="btn bg-transparent border-2 border-white text-white font-heading rounded-[2rem] px-16 py-4 text-xl tracking-wide hover:scale-105 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:bg-white/10 transition-all duration-200">
+                    <button className="btn bg-transparent border-2 border-white text-white font-heading rounded-[2rem] px-10 py-3 text-base tracking-wide hover:scale-105 hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:bg-white/10 transition-all duration-200">
                         Browse Templates
                     </button>
                 </div>
+            </div>
             </div>
         </section>
     )
