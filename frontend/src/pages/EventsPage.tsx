@@ -522,14 +522,15 @@ export default function EventsPage() {
 
           {/* Buttons */}
           <div className="flex items-center gap-2">
-            <button
-              className="flex items-center gap-1.5 rounded-full px-4 py-2.5 font-sans text-[0.82rem] font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap"
+            <Link
+              to="/templates"
+              className="flex items-center gap-1.5 rounded-full px-4 py-2.5 font-sans text-[0.82rem] font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap no-underline"
               style={{ border: '1.5px solid var(--border)', background: 'white', color: 'var(--text-muted)' }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#be185d'; e.currentTarget.style.color = '#be185d' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)' }}
             >
               <FiStar size={13} /> Browse Templates
-            </button>
+            </Link>
             <Link
               to="/events/new"
               className="flex items-center gap-1.5 text-white border-none rounded-full px-5 py-2.5 font-sans text-[0.88rem] font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap no-underline hover:opacity-90 hover:-translate-y-px"

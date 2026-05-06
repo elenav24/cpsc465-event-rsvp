@@ -192,7 +192,7 @@ const TEMPLATES: Template[] = [
     title: 'Watch Party',
     tag: 'Social',
     category: 'Social',
-    image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829e1?w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=600&q=80',
     description: "Cheer together, cry together. Whether it's the finale or the big game, watch parties are better with a crowd.",
     guestRange: '6–20 Guests',
     features: [

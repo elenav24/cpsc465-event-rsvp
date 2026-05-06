@@ -24,7 +24,7 @@ const TEMPLATE_IMAGES: TemplateImage[] = [
   { id: 'game-night',      label: 'Game Night',      url: 'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=600&q=80' },
   { id: 'picnic',          label: 'Park Picnic',     url: 'https://images.unsplash.com/photo-1526401485004-46910ecc8e51?w=600&q=80' },
   { id: 'brunch',          label: 'Sunday Brunch',   url: 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=600&q=80' },
-  { id: 'watch-party',     label: 'Watch Party',     url: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829e1?w=600&q=80' },
+  { id: 'watch-party',     label: 'Watch Party',     url: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=600&q=80' },
   { id: 'hike',            label: 'Group Hike',      url: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&q=80' },
   { id: 'dinner-party',    label: 'Dinner Party',    url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80' },
 ]
@@ -237,7 +237,7 @@ export default function CreateEventPage() {
       )}
 
       <form onSubmit={handleCreate}>
-        <div className="grid grid-cols-2 gap-6 mb-6 max-[700px]:grid-cols-1">
+        <div className="grid grid-cols-2 gap-6 mb-6 max-[700px]:grid-cols-1 items-stretch">
 
           {/* ── Card 1: Basics ── */}
           <div style={CARD_STYLE} className="p-6">
@@ -347,9 +347,9 @@ export default function CreateEventPage() {
 
             {/* Preview */}
             <div
-              className="relative w-full rounded-xl overflow-hidden mb-4 flex-shrink-0"
+              className="relative w-full rounded-xl overflow-hidden mb-3 flex-shrink-0"
               style={{
-                height: 160,
+                height: 120,
                 background: 'linear-gradient(135deg, #f3e8ff 0%, #ede9ff 100%)',
                 border: '1.5px dashed #d8b4fe',
               }}
@@ -383,7 +383,7 @@ export default function CreateEventPage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-[0.82rem] font-semibold mb-5 transition-all duration-150"
+              className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-[0.82rem] font-semibold mb-4 transition-all duration-150"
               style={{
                 border: '1.5px solid #d8b4fe',
                 background: '#f3e8ff',
@@ -401,14 +401,14 @@ export default function CreateEventPage() {
             />
 
             {/* Divider */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-3">
               <div className="flex-1 h-px" style={{ background: '#e9d5ff' }} />
               <span className="text-[0.72rem] font-bold uppercase tracking-wider text-[#a78bfa]">or pick a template image</span>
               <div className="flex-1 h-px" style={{ background: '#e9d5ff' }} />
             </div>
 
-            {/* Template image grid */}
-            <div className="grid grid-cols-3 gap-2 overflow-y-auto flex-1" style={{ maxHeight: 260 }}>
+            {/* Template image grid — 4 cols, 3 rows, no scroll needed for 11 images */}
+            <div className="grid grid-cols-4 gap-1.5">
               {TEMPLATE_IMAGES.map((img) => {
                 const selected = selectedTemplateImage === img.url
                 return (
