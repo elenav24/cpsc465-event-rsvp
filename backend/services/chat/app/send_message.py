@@ -81,15 +81,17 @@ def handle(event: dict, context) -> dict:
 
     messages_table.put_item(Item=message_item)
 
-    broadcast_payload = json.dumps({
-        "type": "message",
-        "message_id": message_id,
-        "event_id": event_id,
-        "sender_id": sender_id,
-        "sender_name": sender_name,
-        "content": content,
-        "timestamp": timestamp,
-    }).encode("utf-8")
+    broadcast_payload = json.dumps(
+        {
+            "type": "message",
+            "message_id": message_id,
+            "event_id": event_id,
+            "sender_id": sender_id,
+            "sender_name": sender_name,
+            "content": content,
+            "timestamp": timestamp,
+        }
+    ).encode("utf-8")
 
     apigw = _get_apigw_client()
     connections_response = connections_table.query(

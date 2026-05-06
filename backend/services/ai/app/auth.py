@@ -1,4 +1,5 @@
 """JWT verification — same pattern as the events service."""
+
 import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -32,15 +33,21 @@ def get_current_user_sub(
         header = jwt.get_unverified_header(token)
         key = next((k for k in jwks["keys"] if k["kid"] == header["kid"]), None)
         if key is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token key")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token key"
+            )
         public_key = jwk.construct(key)
         payload = jwt.decode(
-            token, public_key, algorithms=["RS256"],
+            token,
+            public_key,
+            algorithms=["RS256"],
             options={"verify_aud": False, "verify_at_hash": False},
         )
         sub = payload.get("sub")
         if not sub:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing sub")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing sub"
+            )
         return sub
     except JWTError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))

@@ -28,7 +28,9 @@ def _verify_token(token: str) -> dict:
         header = jwt.get_unverified_header(token)
         key = next((k for k in jwks["keys"] if k["kid"] == header["kid"]), None)
         if key is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token key")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token key"
+            )
         public_key = jwk.construct(key)
         payload = jwt.decode(
             token,
@@ -48,5 +50,7 @@ def get_current_user_sub(
     payload = _verify_token(credentials.credentials)
     sub = payload.get("sub")
     if not sub:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing sub in token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing sub in token"
+        )
     return sub

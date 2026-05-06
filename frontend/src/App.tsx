@@ -1,99 +1,146 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
-import { useAuth } from './auth/AuthContext'
-import Nav from './components/Nav'
-import LandingPage from './pages/LandingPage'
-import LoginPage from './pages/LoginPage'
-import SignupPage from './pages/SignupPage'
-import EventsPage from './pages/EventsPage'
-import CreateEventPage from './pages/CreateEventPage'
-import EventPage from './pages/EventPage'
-import ProfilePage from './pages/ProfilePage'
-import { joinViaInvite } from './api/events'
-import HowItWorks from './pages/HowItWorks'
-import BrowseTemplatesPage from './pages/BrowseTemplatesPage'
-import Footer from './components/Footer.tsx'
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useParams,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+import { useEffect } from "react";
+import { useAuth } from "./auth/AuthContext";
+import Nav from "./components/Nav";
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import EventsPage from "./pages/EventsPage";
+import CreateEventPage from "./pages/CreateEventPage";
+import EventPage from "./pages/EventPage";
+import ProfilePage from "./pages/ProfilePage";
+import { joinViaInvite } from "./api/events";
+import HowItWorks from "./pages/HowItWorks";
+import BrowseTemplatesPage from "./pages/BrowseTemplatesPage";
+import Footer from "./components/Footer.tsx";
 
 // Stays true for the lifetime of this page load if it started with ?code=
 // This prevents any content from rendering during the OAuth token exchange.
-const isOAuthCallback = new URLSearchParams(window.location.search).has('code')
+const isOAuthCallback = new URLSearchParams(window.location.search).has("code");
 
 // Block all rendering until auth state is resolved — covers OAuth callbacks,
 // returning users with an existing session token, and fresh page loads.
 function OAuthGate({ children }: { children: React.ReactNode }) {
-  const { loading } = useAuth()
+  const { loading } = useAuth();
   // During an OAuth callback, stay blank until window.location.replace fires.
-  if (loading || isOAuthCallback) return null
-  return <>{children}</>
+  if (loading || isOAuthCallback) return null;
+  return <>{children}</>;
 }
 
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>Loading…</div>
-  if (user) return <Navigate to="/events" replace />
-  return <>{children}</>
+  const { user, loading } = useAuth();
+  if (loading)
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "60vh",
+        }}
+      >
+        Loading…
+      </div>
+    );
+  if (user) return <Navigate to="/events" replace />;
+  return <>{children}</>;
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>Loading…</div>
-  if (!user) return <Navigate to="/login" replace />
-  return <>{children}</>
+  const { user, loading } = useAuth();
+  if (loading)
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "60vh",
+        }}
+      >
+        Loading…
+      </div>
+    );
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
 }
 
 /** Handles /join/:token — joins the event then redirects to it */
 function JoinPage() {
-  const { token } = useParams<{ token: string }>()
-  const { user, loading, profile } = useAuth()
-  const navigate = useNavigate()
+  const { token } = useParams<{ token: string }>();
+  const { user, loading, profile } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (loading) return
+    if (loading) return;
     if (!user) {
       // Store token in sessionStorage so we can join after login
-      if (token) sessionStorage.setItem('pendingInviteToken', token)
-      navigate('/login', { replace: true })
-      return
+      if (token) sessionStorage.setItem("pendingInviteToken", token);
+      navigate("/login", { replace: true });
+      return;
     }
-    if (!token) { navigate('/events', { replace: true }); return }
-    const displayName = profile?.display_name ?? profile?.email ?? undefined
+    if (!token) {
+      navigate("/events", { replace: true });
+      return;
+    }
+    const displayName = profile?.display_name ?? profile?.email ?? undefined;
     joinViaInvite(token, displayName)
-      .then((result) => navigate(`/events/${result.event_uuid}`, { replace: true }))
-      .catch(() => navigate('/events', { replace: true }))
-  }, [token, user, loading, navigate, profile])
+      .then((result) =>
+        navigate(`/events/${result.event_uuid}`, { replace: true }),
+      )
+      .catch(() => navigate("/events", { replace: true }));
+  }, [token, user, loading, navigate, profile]);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: 'var(--text-muted)' }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "60vh",
+        color: "var(--text-muted)",
+      }}
+    >
       Joining event…
     </div>
-  )
+  );
 }
 
 /** After login, resolve any pending invite token stored in sessionStorage */
 function PendingInviteResolver() {
-  const { user, profile } = useAuth()
-  const navigate = useNavigate()
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) return
-    const token = sessionStorage.getItem('pendingInviteToken')
-    if (!token) return
-    sessionStorage.removeItem('pendingInviteToken')
-    const displayName = profile?.display_name ?? profile?.email ?? undefined
+    if (!user) return;
+    const token = sessionStorage.getItem("pendingInviteToken");
+    if (!token) return;
+    sessionStorage.removeItem("pendingInviteToken");
+    const displayName = profile?.display_name ?? profile?.email ?? undefined;
     joinViaInvite(token, displayName)
-      .then((result) => navigate(`/events/${result.event_uuid}`, { replace: true }))
-      .catch(() => { })
-  }, [user, navigate, profile])
+      .then((result) =>
+        navigate(`/events/${result.event_uuid}`, { replace: true }),
+      )
+      .catch(() => {});
+  }, [user, navigate, profile]);
 
-  return null
+  return null;
 }
 
 function AppFooter() {
-  const { pathname } = useLocation()
+  const { pathname } = useLocation();
   // Hide footer entirely on the event detail page — it uses a fixed-height layout
   // and the footer would push it out of the viewport and break internal scrolling.
-  if (/^\/events\/[^/]+$/.test(pathname)) return null
-  return <Footer />
+  if (/^\/events\/[^/]+$/.test(pathname)) return null;
+  return <Footer />;
 }
 
 export default function App() {
@@ -103,7 +150,14 @@ export default function App() {
         <Nav />
         <PendingInviteResolver />
         <Routes>
-          <Route path="/" element={<PublicOnlyRoute><LandingPage /></PublicOnlyRoute>} />
+          <Route
+            path="/"
+            element={
+              <PublicOnlyRoute>
+                <LandingPage />
+              </PublicOnlyRoute>
+            }
+          />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/templates" element={<BrowseTemplatesPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -146,5 +200,5 @@ export default function App() {
         <AppFooter />
       </OAuthGate>
     </BrowserRouter>
-  )
+  );
 }

@@ -3,14 +3,15 @@ Unit tests for app/context.py.
 
 All DB and DynamoDB calls are mocked — no real infrastructure needed.
 """
+
 from unittest.mock import patch, MagicMock, call
 from datetime import datetime
 
 from app.context import build_system_prompt
 from tests.conftest import MOCK_EVENT_CONTEXT, TEST_USER_SUB
 
-
 # ── build_system_prompt ───────────────────────────────────────────────────────
+
 
 class TestBuildSystemPrompt:
     def test_contains_event_title(self):
@@ -115,6 +116,7 @@ class TestBuildSystemPrompt:
 
 # ── gather_event_context ──────────────────────────────────────────────────────
 
+
 class TestGatherEventContext:
     """
     Tests for gather_event_context. We mock the SQLAlchemy engine and
@@ -132,17 +134,24 @@ class TestGatherEventContext:
             if "events" in sql and "uuid" in sql:
                 row = MagicMock()
                 row.items.return_value = [
-                    ("id", event_id), ("uuid", event_uuid), ("title", "Test"),
-                    ("description", None), ("location", None),
-                    ("start_dt", None), ("end_dt", None),
-                    ("recurrence_rule", None), ("recurrence_end_dt", None),
+                    ("id", event_id),
+                    ("uuid", event_uuid),
+                    ("title", "Test"),
+                    ("description", None),
+                    ("location", None),
+                    ("start_dt", None),
+                    ("end_dt", None),
+                    ("recurrence_rule", None),
+                    ("recurrence_end_dt", None),
                 ]
                 mapping.first.return_value = row
             elif "event_members" in sql:
                 mapping.return_value = iter([])
             elif "rsvps" in sql:
                 mapping.return_value = iter([])
-            elif "polls" in sql and "poll_options" not in sql and "poll_votes" not in sql:
+            elif (
+                "polls" in sql and "poll_options" not in sql and "poll_votes" not in sql
+            ):
                 mapping.return_value = iter([])
             elif "poll_options" in sql:
                 mapping.return_value = iter([])
@@ -182,16 +191,18 @@ class TestGatherEventContext:
 
             with patch("app.context.Session", return_value=mock_session):
                 import pytest
+
                 with pytest.raises(ValueError, match="not found"):
                     gather_event_context("nonexistent-uuid")
 
     def test_returns_expected_keys(self):
         from app.context import gather_event_context
 
-        with patch("app.context._get_engine"), \
-             patch("app.context.Session") as MockSession, \
-             patch("app.context.MESSAGES_TABLE", ""), \
-             patch("app.context._get_msg_table"):
+        with patch("app.context._get_engine"), patch(
+            "app.context.Session"
+        ) as MockSession, patch("app.context.MESSAGES_TABLE", ""), patch(
+            "app.context._get_msg_table"
+        ):
 
             mock_session = MagicMock()
             mock_session.__enter__ = lambda s: mock_session
@@ -201,10 +212,15 @@ class TestGatherEventContext:
             # Event row
             event_row = MagicMock()
             event_row.items.return_value = [
-                ("id", 1), ("uuid", "test-uuid"), ("title", "T"),
-                ("description", None), ("location", None),
-                ("start_dt", None), ("end_dt", None),
-                ("recurrence_rule", None), ("recurrence_end_dt", None),
+                ("id", 1),
+                ("uuid", "test-uuid"),
+                ("title", "T"),
+                ("description", None),
+                ("location", None),
+                ("start_dt", None),
+                ("end_dt", None),
+                ("recurrence_rule", None),
+                ("recurrence_end_dt", None),
             ]
 
             def execute_side_effect(stmt, params=None):
@@ -222,15 +238,25 @@ class TestGatherEventContext:
 
             ctx = gather_event_context("test-uuid")
 
-        expected_keys = {"event", "members", "rsvps", "polls", "potluck", "tasks", "announcements", "chat_messages", "name_map"}
+        expected_keys = {
+            "event",
+            "members",
+            "rsvps",
+            "polls",
+            "potluck",
+            "tasks",
+            "announcements",
+            "chat_messages",
+            "name_map",
+        }
         assert expected_keys.issubset(ctx.keys())
 
     def test_chat_messages_empty_when_no_table(self):
         from app.context import gather_event_context
 
-        with patch("app.context._get_engine"), \
-             patch("app.context.Session") as MockSession, \
-             patch("app.context.MESSAGES_TABLE", ""):
+        with patch("app.context._get_engine"), patch(
+            "app.context.Session"
+        ) as MockSession, patch("app.context.MESSAGES_TABLE", ""):
 
             mock_session = MagicMock()
             mock_session.__enter__ = lambda s: mock_session
@@ -239,10 +265,15 @@ class TestGatherEventContext:
 
             event_row = MagicMock()
             event_row.items.return_value = [
-                ("id", 1), ("uuid", "u"), ("title", "T"),
-                ("description", None), ("location", None),
-                ("start_dt", None), ("end_dt", None),
-                ("recurrence_rule", None), ("recurrence_end_dt", None),
+                ("id", 1),
+                ("uuid", "u"),
+                ("title", "T"),
+                ("description", None),
+                ("location", None),
+                ("start_dt", None),
+                ("end_dt", None),
+                ("recurrence_rule", None),
+                ("recurrence_end_dt", None),
             ]
 
             def execute_side_effect(stmt, params=None):

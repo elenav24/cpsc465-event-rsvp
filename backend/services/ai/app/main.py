@@ -8,6 +8,7 @@ POST /ai/{event_uuid}/chat
 The service fetches full event context (DB + DynamoDB chat) on every request
 and injects it as a system prompt so Claude always has up-to-date information.
 """
+
 import logging
 from typing import Annotated
 
@@ -47,7 +48,7 @@ app.add_middleware(
 
 
 class ChatMessage(BaseModel):
-    role: str   # "user" | "assistant"
+    role: str  # "user" | "assistant"
     content: str
 
 
@@ -66,7 +67,9 @@ def event_chat(
     user_id: Annotated[str, Depends(get_current_user_sub)],
 ):
     if not body.messages:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="messages cannot be empty")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="messages cannot be empty"
+        )
 
     # Validate roles
     for msg in body.messages:

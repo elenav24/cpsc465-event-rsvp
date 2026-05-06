@@ -53,7 +53,9 @@ def _verify_token(token: str) -> dict:
             jwks = _get_jwks()
             key = next((k for k in jwks["keys"] if k["kid"] == header["kid"]), None)
         if key is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token key")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token key"
+            )
         public_key = jwk.construct(key)
         payload = jwt.decode(
             token,
@@ -74,7 +76,9 @@ def get_current_user(
     payload = _verify_token(credentials.credentials)
     sub = payload.get("sub")
     if not sub:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing sub in token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing sub in token"
+        )
 
     user = db.query(User).filter(User.cognito_sub == sub).first()
     if not user:
@@ -90,7 +94,9 @@ def get_current_user(
                     db.refresh(existing)
                 except IntegrityError:
                     db.rollback()
-                    logger.error("IntegrityError linking cognito_sub %s to email %s", sub, email)
+                    logger.error(
+                        "IntegrityError linking cognito_sub %s to email %s", sub, email
+                    )
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         detail="Account linking failed",

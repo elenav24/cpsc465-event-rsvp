@@ -15,7 +15,9 @@ load_dotenv()
 
 def run_migrations():
     alembic_cfg = Config(os.path.join(os.path.dirname(__file__), "..", "alembic.ini"))
-    alembic_cfg.set_main_option("script_location", os.path.join(os.path.dirname(__file__), "..", "alembic"))
+    alembic_cfg.set_main_option(
+        "script_location", os.path.join(os.path.dirname(__file__), "..", "alembic")
+    )
     command.upgrade(alembic_cfg, "head")
 
 
@@ -25,10 +27,11 @@ class UnifiedSlashMiddleware(BaseHTTPMiddleware):
         if path != "/" and path.endswith("/"):
             new_path = path.rstrip("/")
             request.scope["path"] = new_path
-            
+
         request.scope["scheme"] = "https"
-        
+
         return await call_next(request)
+
 
 app = FastAPI(redirect_slashes=False)
 app.add_middleware(UnifiedSlashMiddleware)
@@ -45,6 +48,7 @@ app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(events.router, prefix="/events", tags=["events"])
 
 _mangum_handler = Mangum(app)
+
 
 def handler(event, context):
     if event.get("action") == "migrate":

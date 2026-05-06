@@ -2,6 +2,7 @@ from pydantic import BaseModel, HttpUrl
 from typing import Optional
 from datetime import datetime
 
+
 class EventCreate(BaseModel):
     title: str
     host_id: int
@@ -9,6 +10,7 @@ class EventCreate(BaseModel):
     location: Optional[str] = None
     start_dt: Optional[datetime] = None
     end_dt: Optional[datetime] = None
+
 
 class EventOut(BaseModel):
     id: int
@@ -23,6 +25,7 @@ class EventOut(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class EventUpdate(BaseModel):
     title: Optional[str] = None

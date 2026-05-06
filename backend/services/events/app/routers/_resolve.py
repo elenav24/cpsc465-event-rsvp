@@ -1,4 +1,5 @@
 """Shared helper to resolve event UUID path param → Event model instance."""
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 

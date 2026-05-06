@@ -3,6 +3,7 @@ Unit tests for app/bedrock.py.
 
 Mocks the boto3 bedrock-runtime client — no real AWS calls.
 """
+
 import json
 import pytest
 from unittest.mock import patch, MagicMock
@@ -10,27 +11,22 @@ from botocore.exceptions import ClientError
 
 from app.bedrock import chat
 
-
 SYSTEM_PROMPT = "You are a helpful assistant."
 MESSAGES = [{"role": "user", "content": "What time is the party?"}]
 
 
 def _make_bedrock_response(text: str) -> dict:
     """Build a minimal Bedrock converse API response."""
-    return {
-        "output": {
-            "message": {
-                "content": [{"text": text}]
-            }
-        }
-    }
+    return {"output": {"message": {"content": [{"text": text}]}}}
 
 
 class TestBedrockChat:
     def test_returns_reply_text(self):
         with patch("app.bedrock._get_client") as mock_get:
             client = MagicMock()
-            client.converse.return_value = _make_bedrock_response("The party is at 7pm!")
+            client.converse.return_value = _make_bedrock_response(
+                "The party is at 7pm!"
+            )
             mock_get.return_value = client
 
             result = chat(SYSTEM_PROMPT, MESSAGES)
@@ -63,6 +59,7 @@ class TestBedrockChat:
 
     def test_passes_correct_model_id(self):
         from app.config import BEDROCK_MODEL_ID
+
         assert "claude-haiku-4-5" in BEDROCK_MODEL_ID
         with patch("app.bedrock._get_client") as mock_get:
             client = MagicMock()
@@ -93,7 +90,9 @@ class TestBedrockChat:
         ]
         with patch("app.bedrock._get_client") as mock_get:
             client = MagicMock()
-            client.converse.return_value = _make_bedrock_response("Charlie hasn't RSVPed yet.")
+            client.converse.return_value = _make_bedrock_response(
+                "Charlie hasn't RSVPed yet."
+            )
             mock_get.return_value = client
 
             result = chat(SYSTEM_PROMPT, messages)
@@ -104,7 +103,12 @@ class TestBedrockChat:
         with patch("app.bedrock._get_client") as mock_get:
             client = MagicMock()
             client.converse.side_effect = ClientError(
-                {"Error": {"Code": "AccessDeniedException", "Message": "Not authorized"}},
+                {
+                    "Error": {
+                        "Code": "AccessDeniedException",
+                        "Message": "Not authorized",
+                    }
+                },
                 "Converse",
             )
             mock_get.return_value = client
@@ -114,8 +118,7 @@ class TestBedrockChat:
 
     def test_client_is_reused_across_calls(self):
         """The boto3 client should be cached (lazy singleton)."""
-        with patch("app.bedrock._bedrock", None), \
-             patch("boto3.client") as mock_boto:
+        with patch("app.bedrock._bedrock", None), patch("boto3.client") as mock_boto:
             mock_boto_client = MagicMock()
             mock_boto_client.converse.return_value = _make_bedrock_response("ok")
             mock_boto.return_value = mock_boto_client

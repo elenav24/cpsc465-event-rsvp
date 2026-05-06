@@ -1,36 +1,36 @@
-import { useState, useRef, useEffect } from 'react'
-import type { ChatMessage } from '../../data/sampleData'
+import { useState, useRef, useEffect } from "react";
+import type { ChatMessage } from "../../data/sampleData";
 
 interface ChatPanelProps {
-  eventId: string
-  messages: ChatMessage[]
-  currentUserId: string
-  currentUserName: string
-  isOpen: boolean
-  onClose: () => void
+  eventId: string;
+  messages: ChatMessage[];
+  currentUserId: string;
+  currentUserName: string;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 function formatTime(iso: string): string {
-  const d = new Date(iso)
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  const d = new Date(iso);
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
 function formatDay(iso: string): string {
-  const d = new Date(iso)
-  const today = new Date()
-  const diff = today.getDate() - d.getDate()
-  if (diff === 0) return 'Today'
-  if (diff === 1) return 'Yesterday'
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const d = new Date(iso);
+  const today = new Date();
+  const diff = today.getDate() - d.getDate();
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function getInitials(name: string): string {
   return name
-    .split(' ')
+    .split(" ")
     .map((n) => n[0])
-    .join('')
+    .join("")
     .toUpperCase()
-    .slice(0, 2)
+    .slice(0, 2);
 }
 
 export default function ChatPanel({
@@ -40,78 +40,87 @@ export default function ChatPanel({
   isOpen,
   onClose,
 }: ChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
-  const [input, setInput] = useState('')
-  const [sending, setSending] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Scroll to bottom when messages change or panel opens
   useEffect(() => {
     if (isOpen) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isOpen])
+  }, [messages, isOpen]);
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const text = input.trim()
-    if (!text || sending) return
+    e.preventDefault();
+    const text = input.trim();
+    if (!text || sending) return;
 
-    setSending(true)
+    setSending(true);
     const newMsg: ChatMessage = {
       id: `local-${Date.now()}`,
       userId: currentUserId,
       userName: currentUserName,
       text,
       timestamp: new Date().toISOString(),
-    }
-    setMessages((prev) => [...prev, newMsg])
-    setInput('')
+    };
+    setMessages((prev) => [...prev, newMsg]);
+    setInput("");
 
     // Simulate WebSocket send — replace with real WS call
     // ws.send(JSON.stringify({ action: 'sendMessage', eventId, text }))
-    await new Promise((res) => setTimeout(res, 200))
-    setSending(false)
-  }
+    await new Promise((res) => setTimeout(res, 200));
+    setSending(false);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage(e as unknown as React.FormEvent)
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(e as unknown as React.FormEvent);
     }
-  }
+  };
 
   // Group messages by day
-  const grouped: { day: string; msgs: ChatMessage[] }[] = []
+  const grouped: { day: string; msgs: ChatMessage[] }[] = [];
   messages.forEach((msg) => {
-    const day = formatDay(msg.timestamp)
-    const last = grouped[grouped.length - 1]
+    const day = formatDay(msg.timestamp);
+    const last = grouped[grouped.length - 1];
     if (last && last.day === day) {
-      last.msgs.push(msg)
+      last.msgs.push(msg);
     } else {
-      grouped.push({ day, msgs: [msg] })
+      grouped.push({ day, msgs: [msg] });
     }
-  })
+  });
 
   return (
-    <aside className={`chat-panel${isOpen ? ' chat-panel--open' : ''}`} aria-label="Event chat">
+    <aside
+      className={`chat-panel${isOpen ? " chat-panel--open" : ""}`}
+      aria-label="Event chat"
+    >
       {/* Header */}
       <div className="chat-header">
         <div className="chat-header-info">
           <span className="chat-header-icon">💬</span>
           <div>
             <h3 className="chat-header-title">Event Chat</h3>
-            <span className="chat-header-count">{messages.length} messages</span>
+            <span className="chat-header-count">
+              {messages.length} messages
+            </span>
           </div>
         </div>
-        <button className="chat-close-btn" onClick={onClose} aria-label="Close chat">
+        <button
+          className="chat-close-btn"
+          onClick={onClose}
+          aria-label="Close chat"
+        >
           ✕
         </button>
       </div>
@@ -130,31 +139,35 @@ export default function ChatPanel({
                 <span>{day}</span>
               </div>
               {msgs.map((msg, i) => {
-                const isMine = msg.userId === currentUserId
-                const prevMsg = msgs[i - 1]
-                const isConsecutive = prevMsg && prevMsg.userId === msg.userId
+                const isMine = msg.userId === currentUserId;
+                const prevMsg = msgs[i - 1];
+                const isConsecutive = prevMsg && prevMsg.userId === msg.userId;
                 return (
                   <div
                     key={msg.id}
-                    className={`chat-msg${isMine ? ' chat-msg--mine' : ''}${isConsecutive ? ' chat-msg--consecutive' : ''}`}
+                    className={`chat-msg${isMine ? " chat-msg--mine" : ""}${isConsecutive ? " chat-msg--consecutive" : ""}`}
                   >
                     {!isMine && !isConsecutive && (
                       <div className="chat-avatar" aria-hidden="true">
                         {getInitials(msg.userName)}
                       </div>
                     )}
-                    {!isMine && isConsecutive && <div className="chat-avatar-spacer" />}
+                    {!isMine && isConsecutive && (
+                      <div className="chat-avatar-spacer" />
+                    )}
                     <div className="chat-bubble-wrap">
                       {!isMine && !isConsecutive && (
                         <span className="chat-sender">{msg.userName}</span>
                       )}
                       <div className="chat-bubble">
                         <span className="chat-text">{msg.text}</span>
-                        <span className="chat-time">{formatTime(msg.timestamp)}</span>
+                        <span className="chat-time">
+                          {formatTime(msg.timestamp)}
+                        </span>
                       </div>
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           ))
@@ -182,7 +195,7 @@ export default function ChatPanel({
           disabled={!input.trim() || sending}
           aria-label="Send message"
         >
-          {sending ? '…' : '↑'}
+          {sending ? "…" : "↑"}
         </button>
       </form>
 
@@ -409,5 +422,5 @@ export default function ChatPanel({
         }
       `}</style>
     </aside>
-  )
+  );
 }

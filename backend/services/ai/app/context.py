@@ -8,6 +8,7 @@ Gathers all event context needed for the AI prompt:
   - Announcements
   - Recent chat messages (from DynamoDB)
 """
+
 from __future__ import annotations
 
 import json
@@ -31,7 +32,9 @@ _engine = None
 def _get_engine():
     global _engine
     if _engine is None:
-        _engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_size=2, max_overflow=0)
+        _engine = create_engine(
+            DATABASE_URL, pool_pre_ping=True, pool_size=2, max_overflow=0
+        )
     return _engine
 
 
@@ -68,74 +71,122 @@ def _row(mapping) -> dict:
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+
 def gather_event_context(event_uuid: str, chat_limit: int = 100) -> dict[str, Any]:
     """Return a dict with all event context. Raises ValueError if event not found."""
     engine = _get_engine()
     with Session(engine) as db:
         # Event
-        event_row = db.execute(
-            text("SELECT * FROM events WHERE uuid = :uuid"), {"uuid": event_uuid}
-        ).mappings().first()
+        event_row = (
+            db.execute(
+                text("SELECT * FROM events WHERE uuid = :uuid"), {"uuid": event_uuid}
+            )
+            .mappings()
+            .first()
+        )
         if not event_row:
             raise ValueError(f"Event {event_uuid} not found")
         event = _row(event_row)
         event_id = event["id"]
 
         # Members
-        members = [_row(r) for r in db.execute(
-            text("SELECT user_id, role, display_name, joined_at FROM event_members WHERE event_id = :eid"),
-            {"eid": event_id},
-        ).mappings()]
+        members = [
+            _row(r)
+            for r in db.execute(
+                text(
+                    "SELECT user_id, role, display_name, joined_at FROM event_members WHERE event_id = :eid"
+                ),
+                {"eid": event_id},
+            ).mappings()
+        ]
 
         # RSVPs
-        rsvps = [_row(r) for r in db.execute(
-            text("SELECT user_id, status, guest_count FROM rsvps WHERE event_id = :eid"),
-            {"eid": event_id},
-        ).mappings()]
+        rsvps = [
+            _row(r)
+            for r in db.execute(
+                text(
+                    "SELECT user_id, status, guest_count FROM rsvps WHERE event_id = :eid"
+                ),
+                {"eid": event_id},
+            ).mappings()
+        ]
 
         # Polls + options + votes
-        polls_raw = [_row(r) for r in db.execute(
-            text("SELECT id, question, allow_multi_select, is_anonymous, is_closed, closes_at FROM polls WHERE event_id = :eid"),
-            {"eid": event_id},
-        ).mappings()]
+        polls_raw = [
+            _row(r)
+            for r in db.execute(
+                text(
+                    "SELECT id, question, allow_multi_select, is_anonymous, is_closed, closes_at FROM polls WHERE event_id = :eid"
+                ),
+                {"eid": event_id},
+            ).mappings()
+        ]
         polls = []
         for p in polls_raw:
-            options = [_row(r) for r in db.execute(
-                text("SELECT id, text, display_order FROM poll_options WHERE poll_id = :pid ORDER BY display_order"),
-                {"pid": p["id"]},
-            ).mappings()]
-            vote_counts = {r["option_id"]: r["cnt"] for r in db.execute(
-                text("SELECT option_id, COUNT(*) as cnt FROM poll_votes WHERE poll_id = :pid GROUP BY option_id"),
-                {"pid": p["id"]},
-            ).mappings()}
+            options = [
+                _row(r)
+                for r in db.execute(
+                    text(
+                        "SELECT id, text, display_order FROM poll_options WHERE poll_id = :pid ORDER BY display_order"
+                    ),
+                    {"pid": p["id"]},
+                ).mappings()
+            ]
+            vote_counts = {
+                r["option_id"]: r["cnt"]
+                for r in db.execute(
+                    text(
+                        "SELECT option_id, COUNT(*) as cnt FROM poll_votes WHERE poll_id = :pid GROUP BY option_id"
+                    ),
+                    {"pid": p["id"]},
+                ).mappings()
+            }
             for opt in options:
                 opt["vote_count"] = vote_counts.get(opt["id"], 0)
             polls.append({**p, "options": options})
 
         # Potluck
-        potluck_raw = [_row(r) for r in db.execute(
-            text("SELECT id, name, description, quantity_needed FROM potluck_items WHERE event_id = :eid"),
-            {"eid": event_id},
-        ).mappings()]
+        potluck_raw = [
+            _row(r)
+            for r in db.execute(
+                text(
+                    "SELECT id, name, description, quantity_needed FROM potluck_items WHERE event_id = :eid"
+                ),
+                {"eid": event_id},
+            ).mappings()
+        ]
         potluck = []
         for item in potluck_raw:
-            claims = [_row(r) for r in db.execute(
-                text("SELECT user_id FROM potluck_claims WHERE item_id = :iid"),
-                {"iid": item["id"]},
-            ).mappings()]
+            claims = [
+                _row(r)
+                for r in db.execute(
+                    text("SELECT user_id FROM potluck_claims WHERE item_id = :iid"),
+                    {"iid": item["id"]},
+                ).mappings()
+            ]
             potluck.append({**item, "claims": [c["user_id"] for c in claims]})
 
         # Tasks
-        tasks = [_row(r) for r in db.execute(
-            text("SELECT title, description, assigned_to, due_date, is_completed FROM tasks WHERE event_id = :eid ORDER BY created_at"),
-            {"eid": event_id},
-        ).mappings()]
+        tasks = [
+            _row(r)
+            for r in db.execute(
+                text(
+                    "SELECT title, description, assigned_to, due_date, is_completed FROM tasks WHERE event_id = :eid ORDER BY created_at"
+                ),
+                {"eid": event_id},
+            ).mappings()
+        ]
 
         # Announcements
-        announcements = [_row(r) for r in db.execute(
-            text("SELECT body, created_at FROM announcements WHERE event_id = :eid ORDER BY created_at DESC LIMIT 20"),
-            {"eid": event_id},
-        ).mappings()]
+        announcements = [
+            _row(r)
+            for r in db.execute(
+                text(
+                    "SELECT body, created_at FROM announcements WHERE event_id = :eid ORDER BY created_at DESC LIMIT 20"
+                ),
+                {"eid": event_id},
+            ).mappings()
+        ]
 
     # Chat history from DynamoDB
     # The chat service stores messages keyed by the event UUID (not the integer ID)
@@ -226,7 +277,10 @@ def build_system_prompt(ctx: dict[str, Any]) -> str:
         for item in ctx["potluck"]:
             claimed = len(item["claims"])
             needed = item["quantity_needed"]
-            claimers = ", ".join(ctx["name_map"].get(uid, uid[:8]) for uid in item["claims"]) or "nobody yet"
+            claimers = (
+                ", ".join(ctx["name_map"].get(uid, uid[:8]) for uid in item["claims"])
+                or "nobody yet"
+            )
             lines.append(f"- {item['name']} ({claimed}/{needed} claimed by {claimers})")
 
     if ctx["tasks"]:

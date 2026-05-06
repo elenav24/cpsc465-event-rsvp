@@ -1,4 +1,5 @@
 """Tests for RSVP endpoints and potluck claim auto-release."""
+
 from tests.conftest import TEST_USER_SUB, OTHER_USER_SUB
 
 
@@ -14,7 +15,9 @@ def _setup(client, set_user):
 
 def test_rsvp_yes(client):
     event_uuid = client.post("/events", data={"title": "E"}).json()["uuid"]
-    res = client.put(f"/events/{event_uuid}/rsvps", json={"status": "yes", "guest_count": 2})
+    res = client.put(
+        f"/events/{event_uuid}/rsvps", json={"status": "yes", "guest_count": 2}
+    )
     assert res.status_code == 200
     assert res.json()["status"] == "yes"
     assert res.json()["guest_count"] == 2
@@ -38,9 +41,9 @@ def test_rsvp_no_releases_potluck_claim(client, set_user):
 
     # Host creates a potluck item
     set_user(TEST_USER_SUB)
-    item = client.post(f"/events/{event_uuid}/potluck", json={
-        "name": "Chips", "quantity_needed": 2
-    }).json()
+    item = client.post(
+        f"/events/{event_uuid}/potluck", json={"name": "Chips", "quantity_needed": 2}
+    ).json()
 
     # Other user RSVPs yes and claims the item
     set_user(OTHER_USER_SUB)

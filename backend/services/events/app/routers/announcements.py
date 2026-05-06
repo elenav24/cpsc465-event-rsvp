@@ -18,10 +18,14 @@ router = APIRouter()
 
 
 def _require_member(event_id: int, user_id: str, db: Session) -> EventMember:
-    member = db.query(EventMember).filter(
-        EventMember.event_id == event_id,
-        EventMember.user_id == user_id,
-    ).first()
+    member = (
+        db.query(EventMember)
+        .filter(
+            EventMember.event_id == event_id,
+            EventMember.user_id == user_id,
+        )
+        .first()
+    )
     if not member:
         raise HTTPException(status_code=403, detail="Not a member of this event")
     return member
@@ -42,12 +46,19 @@ def get_announcements(
 ):
     event = resolve_event(event_uuid, db)
     _require_member(event.id, user_id, db)
-    return db.query(Announcement).filter(
-        Announcement.event_id == event.id
-    ).order_by(Announcement.created_at.desc()).all()
+    return (
+        db.query(Announcement)
+        .filter(Announcement.event_id == event.id)
+        .order_by(Announcement.created_at.desc())
+        .all()
+    )
 
 
-@router.post("/{event_uuid}/announcements", response_model=AnnouncementOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{event_uuid}/announcements",
+    response_model=AnnouncementOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_announcement(
     event_uuid: str,
     body: AnnouncementCreate,
@@ -77,7 +88,10 @@ def create_announcement(
     try:
         from app.utils.broadcast import broadcast_event_update
         from app.utils._broadcast_helpers import announcement_dict
-        broadcast_event_update(event.id, "announcement", "create", announcement_dict(announcement))
+
+        broadcast_event_update(
+            event.id, "announcement", "create", announcement_dict(announcement)
+        )
     except Exception:
         pass
     return announcement
@@ -103,19 +117,24 @@ def _send_announcement_sms(event, announcement: Announcement, db: Session):
     try:
         sns.publish(
             TopicArn=topic_arn,
-            Message=json.dumps({
-                "event_id": event.id,
-                "announcement_id": announcement.id,
-                "message": announcement.body,
-                "author_id": announcement.author_id,
-            }),
+            Message=json.dumps(
+                {
+                    "event_id": event.id,
+                    "announcement_id": announcement.id,
+                    "message": announcement.body,
+                    "author_id": announcement.author_id,
+                }
+            ),
             Subject="cohosted announcement",
         )
     except Exception as e:
         logger.warning("Failed to publish announcement to SNS: %s", e)
 
 
-@router.delete("/{event_uuid}/announcements/{announcement_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{event_uuid}/announcements/{announcement_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 def delete_announcement(
     event_uuid: str,
     announcement_id: int,
@@ -124,16 +143,23 @@ def delete_announcement(
 ):
     event = resolve_event(event_uuid, db)
     _require_host_or_cohost(event.id, user_id, db)
-    ann = db.query(Announcement).filter(
-        Announcement.id == announcement_id,
-        Announcement.event_id == event.id,
-    ).first()
+    ann = (
+        db.query(Announcement)
+        .filter(
+            Announcement.id == announcement_id,
+            Announcement.event_id == event.id,
+        )
+        .first()
+    )
     if not ann:
         raise HTTPException(status_code=404, detail="Announcement not found")
     db.delete(ann)
     db.commit()
     try:
         from app.utils.broadcast import broadcast_event_update
-        broadcast_event_update(event.id, "announcement", "delete", {"id": announcement_id})
+
+        broadcast_event_update(
+            event.id, "announcement", "delete", {"id": announcement_id}
+        )
     except Exception:
         pass

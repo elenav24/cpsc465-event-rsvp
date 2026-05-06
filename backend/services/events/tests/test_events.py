@@ -1,4 +1,5 @@
 """Tests for event CRUD and invite link endpoints."""
+
 from tests.conftest import TEST_USER_SUB, OTHER_USER_SUB
 
 

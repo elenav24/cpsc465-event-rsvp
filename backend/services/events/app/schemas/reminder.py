@@ -2,7 +2,14 @@ from pydantic import BaseModel, field_validator
 from datetime import datetime
 from typing import Optional
 
-VALID_OFFSETS = {60, 360, 1440, 10080, 43200, 525600}  # 1h, 6h, 24h, 1wk, 30d, 1yr (in minutes)
+VALID_OFFSETS = {
+    60,
+    360,
+    1440,
+    10080,
+    43200,
+    525600,
+}  # 1h, 6h, 24h, 1wk, 30d, 1yr (in minutes)
 
 
 class ReminderCreate(BaseModel):

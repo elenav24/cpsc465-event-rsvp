@@ -2,6 +2,7 @@
 Serialisation helpers for broadcasting domain objects as plain dicts.
 Keeps the router files clean.
 """
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
@@ -31,12 +32,16 @@ def poll_dict(poll) -> dict:
         "closes_at": _dt(poll.closes_at),
         "created_at": _dt(poll.created_at),
         "options": [
-            {"id": o.id, "text": o.text, "display_order": o.display_order, "vote_count": len(o.votes)}
+            {
+                "id": o.id,
+                "text": o.text,
+                "display_order": o.display_order,
+                "vote_count": len(o.votes),
+            }
             for o in poll.options
         ],
         "votes": [
-            {"option_id": v.option_id, "voter_id": v.voter_id}
-            for v in poll.votes
+            {"option_id": v.option_id, "voter_id": v.voter_id} for v in poll.votes
         ],
     }
 
@@ -51,7 +56,12 @@ def potluck_dict(item) -> dict:
         "quantity_needed": item.quantity_needed,
         "claims_count": len(item.claims),
         "claims": [
-            {"id": c.id, "item_id": c.item_id, "user_id": c.user_id, "claimed_at": _dt(c.claimed_at)}
+            {
+                "id": c.id,
+                "item_id": c.item_id,
+                "user_id": c.user_id,
+                "claimed_at": _dt(c.claimed_at),
+            }
             for c in item.claims
         ],
         "created_at": _dt(item.created_at),

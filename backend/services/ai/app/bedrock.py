@@ -1,6 +1,7 @@
 """
 Thin wrapper around Amazon Bedrock's converse API for Claude 3 Haiku.
 """
+
 import json
 import logging
 import boto3
@@ -30,8 +31,7 @@ def chat(system_prompt: str, messages: list[dict], max_tokens: int = 1024) -> st
 
     # Bedrock converse API format
     bedrock_messages = [
-        {"role": m["role"], "content": [{"text": m["content"]}]}
-        for m in messages
+        {"role": m["role"], "content": [{"text": m["content"]}]} for m in messages
     ]
 
     try:

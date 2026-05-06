@@ -9,12 +9,20 @@ from app.deps.auth import get_current_user_sub
 from app.utils.upload_to_s3 import upload_file_to_s3
 from app.db.models.event import Event
 from app.db.models.event_member import EventMember
-from app.schemas.event import EventCreate, EventOut, EventUpdate, MemberOut, MemberRoleUpdate, JoinResult
+from app.schemas.event import (
+    EventCreate,
+    EventOut,
+    EventUpdate,
+    MemberOut,
+    MemberRoleUpdate,
+    JoinResult,
+)
 
 router = APIRouter()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _get_event_by_uuid_or_404(event_uuid: str, db: Session) -> Event:
     event = db.query(Event).filter(Event.uuid == event_uuid).first()
@@ -31,10 +39,14 @@ def _get_event_or_404(event_id: int, db: Session) -> Event:
 
 
 def _get_member(event_id: int, user_id: str, db: Session) -> Optional[EventMember]:
-    return db.query(EventMember).filter(
-        EventMember.event_id == event_id,
-        EventMember.user_id == user_id,
-    ).first()
+    return (
+        db.query(EventMember)
+        .filter(
+            EventMember.event_id == event_id,
+            EventMember.user_id == user_id,
+        )
+        .first()
+    )
 
 
 def _require_host_or_cohost(event_id: int, user_id: str, db: Session) -> EventMember:
@@ -47,11 +59,14 @@ def _require_host_or_cohost(event_id: int, user_id: str, db: Session) -> EventMe
 def _require_member(event_id: int, user_id: str, db: Session) -> EventMember:
     member = _get_member(event_id, user_id, db)
     if not member:
-        raise HTTPException(status_code=403, detail="You are not a member of this event")
+        raise HTTPException(
+            status_code=403, detail="You are not a member of this event"
+        )
     return member
 
 
 # ── Event CRUD ────────────────────────────────────────────────────────────────
+
 
 @router.get("", response_model=list[EventOut])
 def get_my_events(
@@ -123,7 +138,11 @@ def create_event(
     db.flush()  # get event.id before adding member
 
     # Add creator as host member
-    db.add(EventMember(event_id=event.id, user_id=user_id, role="host", display_name=display_name))
+    db.add(
+        EventMember(
+            event_id=event.id, user_id=user_id, role="host", display_name=display_name
+        )
+    )
     db.commit()
     db.refresh(event)
     return event
@@ -145,6 +164,7 @@ def update_event(
     try:
         from app.utils.broadcast import broadcast_event_update
         from app.utils._broadcast_helpers import event_dict
+
         broadcast_event_update(event.id, "event", "upsert", event_dict(event))
     except Exception:
         pass
@@ -167,6 +187,7 @@ def delete_event(
 
 # ── Invite link ───────────────────────────────────────────────────────────────
 
+
 @router.post("/{event_uuid}/invite/regenerate", response_model=EventOut)
 def regenerate_invite(
     event_uuid: str,
@@ -177,7 +198,9 @@ def regenerate_invite(
     event = _get_event_by_uuid_or_404(event_uuid, db)
     member = _get_member(event.id, user_id, db)
     if not member or member.role != "host":
-        raise HTTPException(status_code=403, detail="Only the host can regenerate the invite link")
+        raise HTTPException(
+            status_code=403, detail="Only the host can regenerate the invite link"
+        )
     event.invite_token = secrets.token_urlsafe(16)
     event.invite_active = True
     db.commit()
@@ -195,14 +218,20 @@ def revoke_invite(
     event = _get_event_by_uuid_or_404(event_uuid, db)
     member = _get_member(event.id, user_id, db)
     if not member or member.role != "host":
-        raise HTTPException(status_code=403, detail="Only the host can revoke the invite link")
+        raise HTTPException(
+            status_code=403, detail="Only the host can revoke the invite link"
+        )
     event.invite_active = False
     db.commit()
     db.refresh(event)
     return event
 
 
-@router.post("/join/{invite_token}", response_model=JoinResult, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/join/{invite_token}",
+    response_model=JoinResult,
+    status_code=status.HTTP_201_CREATED,
+)
 def join_via_invite(
     invite_token: str,
     user_id: Annotated[str, Depends(get_current_user_sub)],
@@ -216,10 +245,14 @@ def join_via_invite(
     """
     from app.db.models.pending_invite import PendingInvite
 
-    event = db.query(Event).filter(
-        Event.invite_token == invite_token,
-        Event.invite_active == True,  # noqa: E712
-    ).first()
+    event = (
+        db.query(Event)
+        .filter(
+            Event.invite_token == invite_token,
+            Event.invite_active == True,  # noqa: E712
+        )
+        .first()
+    )
     if not event:
         raise HTTPException(status_code=404, detail="Invalid or revoked invite link")
 
@@ -239,7 +272,9 @@ def join_via_invite(
             joined_at=existing.joined_at,
         )
 
-    member = EventMember(event_id=event.id, user_id=user_id, role="attendee", display_name=display_name)
+    member = EventMember(
+        event_id=event.id, user_id=user_id, role="attendee", display_name=display_name
+    )
     db.add(member)
 
     # Clean up any pending invite records for this token
@@ -250,6 +285,7 @@ def join_via_invite(
     try:
         from app.utils.broadcast import broadcast_event_update
         from app.utils._broadcast_helpers import member_dict
+
         broadcast_event_update(event.id, "member", "create", member_dict(member))
     except Exception:
         pass
@@ -276,28 +312,39 @@ def register_pending_invite(
     """
     from app.db.models.pending_invite import PendingInvite
 
-    event = db.query(Event).filter(
-        Event.invite_token == invite_token,
-        Event.invite_active == True,  # noqa: E712
-    ).first()
+    event = (
+        db.query(Event)
+        .filter(
+            Event.invite_token == invite_token,
+            Event.invite_active == True,  # noqa: E712
+        )
+        .first()
+    )
     if not event:
         raise HTTPException(status_code=404, detail="Invalid or revoked invite link")
 
     # Upsert — if session_token already exists, ignore
-    existing = db.query(PendingInvite).filter(PendingInvite.session_token == session_token).first()
+    existing = (
+        db.query(PendingInvite)
+        .filter(PendingInvite.session_token == session_token)
+        .first()
+    )
     if existing:
         return {"status": "already_registered"}
 
-    db.add(PendingInvite(
-        event_id=event.id,
-        invite_token=invite_token,
-        session_token=session_token,
-    ))
+    db.add(
+        PendingInvite(
+            event_id=event.id,
+            invite_token=invite_token,
+            session_token=session_token,
+        )
+    )
     db.commit()
     return {"status": "registered"}
 
 
 # ── Members & roles ───────────────────────────────────────────────────────────
+
 
 @router.get("/{event_uuid}/members", response_model=list[MemberOut])
 def get_members(
@@ -321,7 +368,9 @@ def update_member_role(
     """Only the original host can change roles."""
     event = _get_event_by_uuid_or_404(event_uuid, db)
     if event.host_id != user_id:
-        raise HTTPException(status_code=403, detail="Only the original host can change roles")
+        raise HTTPException(
+            status_code=403, detail="Only the original host can change roles"
+        )
     if body.role not in ("co_host", "attendee"):
         raise HTTPException(status_code=400, detail="Role must be co_host or attendee")
 
@@ -337,13 +386,16 @@ def update_member_role(
     try:
         from app.utils.broadcast import broadcast_event_update
         from app.utils._broadcast_helpers import member_dict
+
         broadcast_event_update(event.id, "member", "upsert", member_dict(target))
     except Exception:
         pass
     return target
 
 
-@router.delete("/{event_uuid}/members/{target_user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{event_uuid}/members/{target_user_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 def remove_member(
     event_uuid: str,
     target_user_id: str,

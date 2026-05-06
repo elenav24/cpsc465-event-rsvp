@@ -2,6 +2,7 @@
 Unit tests for the broadcast_event_update utility.
 DynamoDB and API Gateway calls are mocked.
 """
+
 import json
 from unittest.mock import MagicMock, patch, call
 from botocore.exceptions import ClientError
@@ -23,10 +24,12 @@ def test_broadcast_sends_to_all_connections():
     }
     mock_apigw = MagicMock()
 
-    with patch("app.broadcast._get_connections_table", return_value=mock_table), \
-         patch("app.broadcast._get_apigw_client", return_value=mock_apigw), \
-         patch("app.broadcast.CONNECTIONS_TABLE", "test-table"), \
-         patch("app.broadcast.WS_ENDPOINT", "abc.execute-api.us-east-1.amazonaws.com/production"):
+    with patch("app.broadcast._get_connections_table", return_value=mock_table), patch(
+        "app.broadcast._get_apigw_client", return_value=mock_apigw
+    ), patch("app.broadcast.CONNECTIONS_TABLE", "test-table"), patch(
+        "app.broadcast.WS_ENDPOINT",
+        "abc.execute-api.us-east-1.amazonaws.com/production",
+    ):
 
         broadcast_event_update(1, "rsvp", "upsert", {"user_id": "u1", "status": "yes"})
 
@@ -56,10 +59,12 @@ def test_broadcast_cleans_up_stale_connections():
         None,
     ]
 
-    with patch("app.broadcast._get_connections_table", return_value=mock_table), \
-         patch("app.broadcast._get_apigw_client", return_value=mock_apigw), \
-         patch("app.broadcast.CONNECTIONS_TABLE", "test-table"), \
-         patch("app.broadcast.WS_ENDPOINT", "abc.execute-api.us-east-1.amazonaws.com/production"):
+    with patch("app.broadcast._get_connections_table", return_value=mock_table), patch(
+        "app.broadcast._get_apigw_client", return_value=mock_apigw
+    ), patch("app.broadcast.CONNECTIONS_TABLE", "test-table"), patch(
+        "app.broadcast.WS_ENDPOINT",
+        "abc.execute-api.us-east-1.amazonaws.com/production",
+    ):
 
         broadcast_event_update(1, "task", "delete", {"id": 5})
 
@@ -73,8 +78,9 @@ def test_broadcast_skips_when_env_not_configured():
     """If CONNECTIONS_TABLE or WS_ENDPOINT are empty, broadcast is a no-op."""
     from app.broadcast import broadcast_event_update
 
-    with patch("app.broadcast.CONNECTIONS_TABLE", ""), \
-         patch("app.broadcast.WS_ENDPOINT", ""):
+    with patch("app.broadcast.CONNECTIONS_TABLE", ""), patch(
+        "app.broadcast.WS_ENDPOINT", ""
+    ):
 
         # Should not raise and should not try to connect to anything
         broadcast_event_update(1, "event", "upsert", {"title": "Test"})
@@ -84,9 +90,12 @@ def test_broadcast_survives_unexpected_errors():
     """Errors inside broadcast must never propagate to the caller."""
     from app.broadcast import broadcast_event_update
 
-    with patch("app.broadcast._get_connections_table", side_effect=RuntimeError("boom")), \
-         patch("app.broadcast.CONNECTIONS_TABLE", "test-table"), \
-         patch("app.broadcast.WS_ENDPOINT", "abc.execute-api.us-east-1.amazonaws.com/production"):
+    with patch(
+        "app.broadcast._get_connections_table", side_effect=RuntimeError("boom")
+    ), patch("app.broadcast.CONNECTIONS_TABLE", "test-table"), patch(
+        "app.broadcast.WS_ENDPOINT",
+        "abc.execute-api.us-east-1.amazonaws.com/production",
+    ):
 
         # Should not raise
         broadcast_event_update(1, "poll", "create", {"question": "Q?"})

@@ -15,35 +15,41 @@
  */
 
 // Strip trailing slash so we never get double-slashes
-const EVENTS_BASE = (import.meta.env.VITE_EVENTS_API_URL ?? '').replace(/\/$/, '')
-const USERS_BASE = (import.meta.env.VITE_USERS_API_URL ?? '').replace(/\/$/, '')
-const AI_BASE = (import.meta.env.VITE_AI_API_URL ?? '').replace(/\/$/, '')
+const EVENTS_BASE = (import.meta.env.VITE_EVENTS_API_URL ?? "").replace(
+  /\/$/,
+  "",
+);
+const USERS_BASE = (import.meta.env.VITE_USERS_API_URL ?? "").replace(
+  /\/$/,
+  "",
+);
+const AI_BASE = (import.meta.env.VITE_AI_API_URL ?? "").replace(/\/$/, "");
 
 // Token getter is injected at startup by AuthContext
-let _getToken: (() => string | null) | null = null
+let _getToken: (() => string | null) | null = null;
 
 export function setTokenGetter(fn: () => string | null) {
-  _getToken = fn
+  _getToken = fn;
 }
 
 function authHeaders(): Record<string, string> {
-  const token = _getToken?.()
-  return token ? { Authorization: `Bearer ${token}` } : {}
+  const token = _getToken?.();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    let detail = `HTTP ${res.status}`
+    let detail = `HTTP ${res.status}`;
     try {
-      const body = await res.json()
-      detail = body.detail ?? body.message ?? detail
+      const body = await res.json();
+      detail = body.detail ?? body.message ?? detail;
     } catch {
       // ignore parse errors
     }
-    throw new Error(detail)
+    throw new Error(detail);
   }
-  if (res.status === 204) return undefined as T
-  return res.json() as Promise<T>
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
 }
 
 /**
@@ -52,30 +58,32 @@ async function handleResponse<T>(res: Response): Promise<T> {
  *                 Do NOT include the service name again — the base URL already has it.
  */
 export async function apiFetch<T>(
-  base: 'events' | 'users' | 'ai',
+  base: "events" | "users" | "ai",
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const baseUrl = base === 'events' ? EVENTS_BASE : base === 'ai' ? AI_BASE : USERS_BASE
-  const url = `${baseUrl}${path}`
+  const baseUrl =
+    base === "events" ? EVENTS_BASE : base === "ai" ? AI_BASE : USERS_BASE;
+  const url = `${baseUrl}${path}`;
 
-  const makeRequest = () => fetch(url, {
-    ...options,
-    headers: {
-      ...authHeaders(),
-      ...(options.headers as Record<string, string> | undefined),
-    },
-  })
+  const makeRequest = () =>
+    fetch(url, {
+      ...options,
+      headers: {
+        ...authHeaders(),
+        ...(options.headers as Record<string, string> | undefined),
+      },
+    });
 
-  let res = await makeRequest()
+  let res = await makeRequest();
 
   // If 401 (expired token), wait briefly for the background refresh then retry once
   if (res.status === 401) {
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    res = await makeRequest()
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    res = await makeRequest();
   }
 
-  return handleResponse<T>(res)
+  return handleResponse<T>(res);
 }
 
-export { EVENTS_BASE, USERS_BASE, AI_BASE }
+export { EVENTS_BASE, USERS_BASE, AI_BASE };

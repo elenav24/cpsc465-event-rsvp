@@ -4,6 +4,7 @@ Revision ID: 0002_users
 Revises: 0001_users
 Create Date: 2026-05-03
 """
+
 from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
@@ -17,7 +18,10 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.add_column("users", sa.Column("display_name", sa.String(), nullable=True))
     op.add_column("users", sa.Column("phone_number", sa.String(), nullable=True))
-    op.add_column("users", sa.Column("sms_opted_in", sa.Boolean(), nullable=False, server_default="false"))
+    op.add_column(
+        "users",
+        sa.Column("sms_opted_in", sa.Boolean(), nullable=False, server_default="false"),
+    )
 
 
 def downgrade() -> None:

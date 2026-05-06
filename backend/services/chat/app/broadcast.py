@@ -45,7 +45,9 @@ def _get_apigw_client():
     )
 
 
-def broadcast_event_update(event_id: int | str, kind: str, action: str, data: dict) -> None:
+def broadcast_event_update(
+    event_id: int | str, kind: str, action: str, data: dict
+) -> None:
     """
     Fan-out an event_update frame to all WebSocket connections for event_id.
     Silently skips if env vars are not configured (local dev).
@@ -53,20 +55,20 @@ def broadcast_event_update(event_id: int | str, kind: str, action: str, data: di
     if not CONNECTIONS_TABLE or not WS_ENDPOINT:
         return
 
-    payload = json.dumps({
-        "type": "event_update",
-        "kind": kind,
-        "action": action,
-        "data": data,
-    }).encode("utf-8")
+    payload = json.dumps(
+        {
+            "type": "event_update",
+            "kind": kind,
+            "action": action,
+            "data": data,
+        }
+    ).encode("utf-8")
 
     try:
         table = _get_connections_table()
         apigw = _get_apigw_client()
 
-        response = table.query(
-            KeyConditionExpression=Key("event_id").eq(str(event_id))
-        )
+        response = table.query(KeyConditionExpression=Key("event_id").eq(str(event_id)))
 
         stale = []
         for conn in response.get("Items", []):
@@ -82,7 +84,10 @@ def broadcast_event_update(event_id: int | str, kind: str, action: str, data: di
 
         for conn in stale:
             table.delete_item(
-                Key={"event_id": conn["event_id"], "connection_id": conn["connection_id"]}
+                Key={
+                    "event_id": conn["event_id"],
+                    "connection_id": conn["connection_id"],
+                }
             )
 
     except Exception as e:
