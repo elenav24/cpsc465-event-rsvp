@@ -27,6 +27,11 @@ const TEMPLATE_IMAGES: TemplateImage[] = [
   { id: 'watch-party',     label: 'Watch Party',     url: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=600&q=80' },
   { id: 'hike',            label: 'Group Hike',      url: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&q=80' },
   { id: 'dinner-party',    label: 'Dinner Party',    url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80' },
+  { id: 'cocktail-hour',  label: 'Cocktail Hour',   url: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&q=80' },
+  { id: 'trivia-night',   label: 'Trivia Night',    url: 'https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=600&q=80' },
+  { id: 'yoga-wellness',  label: 'Wellness Morning', url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80' },
+  { id: 'karaoke-night',  label: 'Karaoke Night',   url: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&q=80' },
+  { id: 'rooftop-party', label: 'Rooftop Party',   url: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600&q=80' },
 ]
 
 // Map template id → image url for auto-selection when coming from BrowseTemplates

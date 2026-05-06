@@ -248,19 +248,121 @@ const TEMPLATES: Template[] = [
       tasks: ['Set the table', 'Prepare appetizers', 'Chill the wine', 'Prepare dessert station'],
     },
   },
+  {
+    id: 'cocktail-hour',
+    title: 'Cocktail Hour',
+    tag: 'Social',
+    category: 'Social',
+    image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&q=80',
+    description: 'Shaken, stirred, and shared. A laid-back mixer where everyone brings a bottle and a story.',
+    guestRange: '8–25 Guests',
+    features: [
+      { type: 'poll', label: 'Cocktail Vote' },
+      { type: 'potluck', label: 'Bottle Signup' },
+    ],
+    prefill: {
+      title: 'Cocktail Hour',
+      description: "Come thirsty! We're hosting a cocktail mixer — sign up to bring a bottle and we'll shake up something great together.",
+      hasPotluck: true,
+      polls: ['Signature cocktail theme?', 'Start time preference?'],
+      tasks: ['Stock mixers & garnishes', 'Set up bar area', 'Prepare glassware', 'Make ice'],
+    },
+  },
+  {
+    id: 'trivia-night',
+    title: 'Trivia Night',
+    tag: 'Competitive',
+    category: 'Competitive',
+    image: 'https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=600&q=80',
+    description: 'Put your knowledge to the test. Organize teams, pick categories, and crown a champion.',
+    guestRange: '6–30 Guests',
+    features: [
+      { type: 'poll', label: 'Category Vote' },
+      { type: 'task', label: 'Host Prep Tasks' },
+    ],
+    prefill: {
+      title: 'Trivia Night',
+      description: "Think you know everything? Prove it! Form your team and get ready for a night of brain-busting trivia.",
+      hasPotluck: false,
+      polls: ['Trivia categories?', 'Team size: 2, 3, or 4?'],
+      tasks: ['Prepare question sets', 'Set up scoring sheet', 'Arrange seating by team', 'Prepare prizes'],
+    },
+  },
+  {
+    id: 'yoga-wellness',
+    title: 'Wellness Morning',
+    tag: 'Wellness',
+    category: 'Wellness',
+    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80',
+    description: 'Start the day right together. A gentle group session for yoga, stretching, or meditation followed by a healthy brunch.',
+    guestRange: '4–15 People',
+    features: [
+      { type: 'poll', label: 'Activity Vote' },
+      { type: 'potluck', label: 'Healthy Bites Signup' },
+    ],
+    prefill: {
+      title: 'Wellness Morning',
+      description: "Let's slow down and recharge together. Join us for a morning of movement, mindfulness, and good food.",
+      hasPotluck: true,
+      polls: ['Yoga or meditation focus?', 'Indoor or outdoor?'],
+      tasks: ['Bring yoga mats', 'Set up space', 'Prepare smoothie station', 'Create calming playlist'],
+    },
+  },
+  {
+    id: 'karaoke-night',
+    title: 'Karaoke Night',
+    tag: 'Energetic',
+    category: 'Energetic',
+    image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&q=80',
+    description: 'No talent required — just confidence and a good song. The ultimate low-stakes, high-energy night out.',
+    guestRange: '6–20 Guests',
+    features: [
+      { type: 'poll', label: 'Song Request Poll' },
+      { type: 'task', label: 'Setup Tasks' },
+    ],
+    prefill: {
+      title: 'Karaoke Night',
+      description: "Grab the mic and own the stage! No judgment, just vibes. Vote on your song requests and let's make some memories.",
+      hasPotluck: false,
+      polls: ['Top song requests?', 'Solo or duets?'],
+      tasks: ['Set up karaoke system', 'Prepare song list', 'Set up snack table', 'Create warm-up playlist'],
+    },
+  },
+  {
+    id: 'rooftop-party',
+    title: 'Rooftop Party',
+    tag: 'Social',
+    category: 'Social',
+    image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600&q=80',
+    description: 'Skyline views, string lights, and good company. The perfect setting for a summer evening with your crew.',
+    guestRange: '15–50 Guests',
+    features: [
+      { type: 'poll', label: 'Music Vibe Poll' },
+      { type: 'potluck', label: 'Drinks Signup' },
+      { type: 'task', label: 'Setup Tasks' },
+    ],
+    prefill: {
+      title: 'Rooftop Party',
+      description: "We're taking it to the top! Join us for a rooftop night with great views, great music, and even better company.",
+      hasPotluck: true,
+      polls: ['Music vibe: chill or hype?', 'Start time preference?'],
+      tasks: ['Set up string lights', 'Arrange seating areas', 'Set up drinks station', 'Create playlist'],
+    },
+  },
 ]
 
 // ─── Category filter list ─────────────────────────────────────────────────────
-const CATEGORIES = ['All Templates', 'Casual', 'Cozy', 'Social', 'Energetic', 'Productive']
+const CATEGORIES = ['All Templates', 'Casual', 'Cozy', 'Social', 'Energetic', 'Productive', 'Competitive', 'Wellness']
 
 // ─── Category tag colors ──────────────────────────────────────────────────────
 const TAG_CLASSES: Record<string, string> = {
-  Casual:     'bg-[#FFF8C5]  text-[#7a6520]  border-[#FFF8C5]',  // pastel yellow
-  Cozy:       'bg-[#EAE4FF]  text-[#4a3a8a]  border-[#EAE4FF]',  // pastel lavender
-  Social:     'bg-[#FFD6E7]  text-[#7a2d4a]  border-[#FFD6E7]',  // pastel pink
-  Energetic:  'bg-[#C8E8FF]  text-[#1a4a6e]  border-[#C8E8FF]',  // pastel sky blue
-  Productive: 'bg-[#C8F0DA]  text-[#1a4d32]  border-[#C8F0DA]',  // pastel mint
-  Competitive:'bg-[#FFD6E7]  text-[#7a2d4a]  border-[#FFD6E7]',  // fallback pink
+  Casual:      'bg-[#FFF8C5]  text-[#7a6520]  border-[#FFF8C5]',
+  Cozy:        'bg-[#EAE4FF]  text-[#4a3a8a]  border-[#EAE4FF]',
+  Social:      'bg-[#FFD6E7]  text-[#7a2d4a]  border-[#FFD6E7]',
+  Energetic:   'bg-[#C8E8FF]  text-[#1a4a6e]  border-[#C8E8FF]',
+  Productive:  'bg-[#C8F0DA]  text-[#1a4d32]  border-[#C8F0DA]',
+  Competitive: 'bg-[#FFE4C8]  text-[#7a3d10]  border-[#FFE4C8]',
+  Wellness:    'bg-[#D4F0E8]  text-[#1a5040]  border-[#D4F0E8]',
 }
 const FEATURE_META: Record<TemplateFeature['type'], { bg: string; text: string }> = {
   poll:    { bg: '#E8E4F5', text: '#4a4070' },  // dusty purple
