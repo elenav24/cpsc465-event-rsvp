@@ -82,10 +82,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading: true,
   })
 
-  // Keep the API client's token getter in sync
+  // Keep the API client's token getter in sync.
+  // The getter is async-aware: if the session is expired it refreshes first.
   useEffect(() => {
-    setTokenGetter(() => state.session?.getIdToken().getJwtToken() ?? null)
-  }, [state.session])
+    const user = state.user
+    const session = state.session
+
+    if (!user || !session) {
+      setTokenGetter(() => null)
+      return
+    }
+
+    setTokenGetter(() => {
+      // If the token is still valid (Cognito gives ~1h, we check with 60s buffer)
+      const exp = session.getIdToken().getExpiration()
+      const nowSec = Math.floor(Date.now() / 1000)
+      if (exp - nowSec > 60) {
+        return session.getIdToken().getJwtToken()
+      }
+
+      // Token is expired or about to expire — trigger a background refresh.
+      // Return the current (expired) token for this call; the next call will
+      // have the fresh token once refreshSession completes.
+      user.refreshSession(session.getRefreshToken(), (err, newSession: CognitoUserSession) => {
+        if (err) {
+          // Refresh failed (e.g. refresh token expired after 30 days) — log out
+          user.signOut()
+          setTokenGetter(() => null)
+          setState({ user: null, session: null, profile: null, loading: false })
+          return
+        }
+        setTokenGetter(() => newSession.getIdToken().getJwtToken())
+        setState(s => ({ ...s, session: newSession }))
+      })
+
+      // Return current token for this request — it may still work if only
+      // slightly expired; the retry on 401 below will use the fresh one.
+      return session.getIdToken().getJwtToken()
+    })
+  }, [state.session, state.user])
 
   const fetchProfile = async (): Promise<UserOut | null> => {
     try {

@@ -58,13 +58,23 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const baseUrl = base === 'events' ? EVENTS_BASE : base === 'ai' ? AI_BASE : USERS_BASE
   const url = `${baseUrl}${path}`
-  const res = await fetch(url, {
+
+  const makeRequest = () => fetch(url, {
     ...options,
     headers: {
       ...authHeaders(),
       ...(options.headers as Record<string, string> | undefined),
     },
   })
+
+  let res = await makeRequest()
+
+  // If 401 (expired token), wait briefly for the background refresh then retry once
+  if (res.status === 401) {
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    res = await makeRequest()
+  }
+
   return handleResponse<T>(res)
 }
 
