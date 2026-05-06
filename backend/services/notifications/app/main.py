@@ -184,13 +184,13 @@ def _handle_announcement(sns_message: str) -> None:
 
 def handler(event: dict, context) -> dict:
     # EventBridge Scheduler invokes with a plain dict (reminder payload)
+    # Route to reminder handler if it looks like a reminder (has user_id + message)
     if "email" in event:
         _handle_reminder(event)
         return {"statusCode": 200}
 
-    # Legacy: support old reminder format with phone_number (send email instead)
-    if "phone_number" in event and "user_id" in event:
-        # Look up email from DB for this user
+    # Reminder payload with user_id — look up email from DB
+    if "user_id" in event and "message" in event:
         _handle_legacy_reminder(event)
         return {"statusCode": 200}
 

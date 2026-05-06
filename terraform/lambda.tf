@@ -106,11 +106,15 @@ resource "aws_lambda_function" "events" {
 
   environment {
     variables = merge(local.lambda_common_env, {
-      S3_BUCKET         = aws_s3_bucket.flyers.bucket
-      S3_REGION         = var.aws_region
+      S3_BUCKET                = aws_s3_bucket.flyers.bucket
+      S3_REGION                = var.aws_region
       # Real-time broadcast — fan out event updates to open WebSocket clients
-      CONNECTIONS_TABLE = aws_dynamodb_table.chat_connections.name
-      WS_ENDPOINT       = "${aws_apigatewayv2_api.chat_ws.id}.execute-api.${var.aws_region}.amazonaws.com/${aws_apigatewayv2_stage.chat_ws.name}"
+      CONNECTIONS_TABLE        = aws_dynamodb_table.chat_connections.name
+      WS_ENDPOINT              = "${aws_apigatewayv2_api.chat_ws.id}.execute-api.${var.aws_region}.amazonaws.com/${aws_apigatewayv2_stage.chat_ws.name}"
+      # Reminders — EventBridge Scheduler targets the notifications Lambda
+      NOTIFICATIONS_LAMBDA_ARN = aws_lambda_function.notifications.arn
+      SCHEDULER_ROLE_ARN       = aws_iam_role.scheduler.arn
+      SNS_TOPIC_ARN            = aws_sns_topic.announcements.arn
     })
   }
 
