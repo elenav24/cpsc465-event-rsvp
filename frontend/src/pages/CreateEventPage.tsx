@@ -198,12 +198,6 @@ export default function CreateEventPage() {
     >
       {/* ── Page heading ── */}
       <div className="text-center mb-10">
-        <div
-          className="inline-block text-[0.65rem] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3"
-          style={{ background: '#f3e8ff', color: '#6C3483', border: '1px solid #d8b4fe' }}
-        >
-          New Event
-        </div>
         <h1 className="font-display text-[2.6rem] leading-[1.1] text-text-dark mb-2">
           Let's get this party started.
         </h1>
