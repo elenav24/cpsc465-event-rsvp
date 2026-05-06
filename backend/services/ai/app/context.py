@@ -138,11 +138,12 @@ def gather_event_context(event_uuid: str, chat_limit: int = 100) -> dict[str, An
         ).mappings()]
 
     # Chat history from DynamoDB
+    # The chat service stores messages keyed by the event UUID (not the integer ID)
     chat_messages: list[dict] = []
     if MESSAGES_TABLE:
         try:
             resp = _get_msg_table().query(
-                KeyConditionExpression=Key("event_id").eq(str(event_id)),
+                KeyConditionExpression=Key("event_id").eq(event_uuid),
                 Limit=chat_limit,
                 ScanIndexForward=False,  # newest first
             )
