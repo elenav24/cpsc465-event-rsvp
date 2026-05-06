@@ -73,7 +73,7 @@ export default function SignupPage() {
   return (
     <div className="flex-1 flex flex-col pt-[var(--nav-height)] w-full">
       <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="bg-white rounded-[var(--radius-xl)] border border-border w-full max-w-[480px] px-10 py-12 shadow-[var(--shadow)] max-[480px]:px-5 max-[480px]:py-8">
+        <div className="bg-white rounded-[var(--radius-xl)] border-r border-b border-[#973B69] border-l border-t border-l-[#e8e4ed] border-t-[#e8e4ed] w-full max-w-[480px] px-10 py-12 shadow-[4px_4px_0px_#973B69] max-[480px]:px-5 max-[480px]:py-8">
           {step === 'register' ? (
             <>
               <h1 className="font-heading text-[1.9rem] text-center mb-8 text-text-dark">Create an account</h1>

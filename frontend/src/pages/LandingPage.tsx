@@ -121,7 +121,7 @@ export default function LandingPage() {
 
                     {/* Subtitle */}
                     <p
-                        className="text-black leading-relaxed w-full md:max-w-[80%]"
+                        className="text-black leading-relaxed w-full md:max-w-[70%]"
                         style={{ fontFamily: "'Albert Sans', sans-serif", fontSize: 'clamp(1.15rem, 1.39vw, 20px)' }}
                     >
                         The RSVP tool built for potlucks, watch parties, and group hangs.{' '}
