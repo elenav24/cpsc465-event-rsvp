@@ -1148,7 +1148,7 @@ export default function EventPage() {
   const [eventMembers, setEventMembers] = useState<MemberOut[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState('chat')
+  const [activeTab, setActiveTab] = useState('ai')
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -1231,7 +1231,6 @@ export default function EventPage() {
   const isHost = event?.host_id === myId || event?.host_id === myDbId
 
   const tabItems = [
-    { key: 'chat', label: 'Chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" /></svg> },
     { key: 'ai', label: 'AI', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2a2 2 0 012 2v1a7 7 0 010 14v1a2 2 0 01-4 0v-1a7 7 0 010-14V4a2 2 0 012-2z" strokeLinecap="round" /><circle cx="12" cy="12" r="3" /></svg> },
     { key: 'polls', label: 'Polls', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="10" width="4" height="11" rx="1" /><rect x="10" y="6" width="4" height="15" rx="1" /><rect x="17" y="2" width="4" height="19" rx="1" /></svg> },
     { key: 'potluck', label: 'Potluck', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" strokeLinecap="round" /><path d="M8 12h8M12 8v8" strokeLinecap="round" /></svg> },
@@ -1258,8 +1257,12 @@ export default function EventPage() {
 
   return (
     <div className="event-page">
-      {/* Main — tabs are the focus */}
-      <div className="event-main">
+      {/* Left — event info & RSVP */}
+      {/* Sidebar rendered first so it appears on the left */}
+      {/* We use CSS order to control visual position */}
+
+      {/* Center — tabs */}
+      <div className="event-main" style={{ order: 2 }}>
         <div className="main-header">
           <div className="event-cat-badge"><MdOutlineCelebration size={13} /> Event</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -1313,9 +1316,6 @@ export default function EventPage() {
 
         {/* Tab content */}
         <div className="main-tab-content">
-          {activeTab === 'chat' && (
-            <ChatTab eventId={eventUuid} myId={myId} myName={myName} token={token} onMessagesChange={setLiveChatMessages} />
-          )}
           {activeTab === 'ai' && (
             <AiTab eventUuid={eventUuid} messages={aiMessages} setMessages={setAiMessages} chatMessages={liveChatMessages} />
           )}
@@ -1347,8 +1347,17 @@ export default function EventPage() {
         </div>
       </div>
 
+      {/* Right column — always-visible chat */}
+      <div className="event-chat-col" style={{ order: 3 }}>
+        <div className="chat-col-header">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ flexShrink: 0 }}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Event Chat
+        </div>
+        <ChatTab eventId={eventUuid} myId={myId} myName={myName} token={token} onMessagesChange={setLiveChatMessages} />
+      </div>
+
       {/* Sidebar — event info & RSVP */}
-      <div className="event-sidebar">
+      <div className="event-sidebar" style={{ order: 1 }}>
         {/* Flyer / hero — click to expand if there's a flyer */}
         <div
           className={`sidebar-hero${event.flyer_url ? ' sidebar-hero-clickable' : ''}`}
@@ -1590,19 +1599,22 @@ export default function EventPage() {
       </div>
 
       <style>{`
-        .event-page { display: flex; flex-direction: row-reverse; width: 100%; overflow: hidden; height: calc(100svh - var(--nav-height)); margin-top: var(--nav-height); }
+        .event-page { display: flex; flex-direction: row; width: 100%; overflow: hidden; height: calc(100svh - var(--nav-height)); margin-top: var(--nav-height); }
 
-        /* ── Main right (tabs) ── */
-        .event-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; height: 100%; }
+        /* ── Left (info) ── */
+        .event-sidebar { width: 33.333%; flex-shrink: 0; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+
+        /* ── Center (tabs) ── */
+        .event-main { width: 33.333%; flex-shrink: 0; display: flex; flex-direction: column; min-width: 0; overflow: hidden; height: 100%; background: white; border-right: 1px solid var(--border); }
         .main-header { padding: 1.25rem 1.5rem 0.75rem; border-bottom: 1px solid var(--border); flex-shrink: 0; background: white; }
         .event-cat-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--pink-bg); border: 1px solid var(--pink-pale); border-radius: 100px; padding: 3px 10px; font-size: 0.75rem; color: var(--pink); font-weight: 600; margin-bottom: 0.4rem; }
-        .event-title { font-family: 'Anton', sans-serif; font-size: 1.8rem; margin: 0 0 2px; color: var(--text-dark); line-height: 1.1; }
+        .event-title { font-family: 'Anton', sans-serif; font-size: 1.6rem; margin: 0 0 2px; color: var(--text-dark); line-height: 1.1; }
         .event-location { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
 
         /* Tab bar */
-        .main-tabs { display: flex; gap: 0; padding: 0 1rem; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; flex-shrink: 0; background: white; }
+        .main-tabs { display: flex; gap: 0; padding: 0 0.75rem; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; flex-shrink: 0; background: white; }
         .main-tabs::-webkit-scrollbar { display: none; }
-        .main-tab { display: flex; align-items: center; gap: 5px; padding: 9px 10px; background: none; border: none; border-bottom: 2px solid transparent; font-family: 'Albert Sans', sans-serif; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; margin-bottom: -1px; }
+        .main-tab { display: flex; align-items: center; gap: 5px; padding: 9px 8px; background: none; border: none; border-bottom: 2px solid transparent; font-family: 'Albert Sans', sans-serif; font-size: 0.72rem; font-weight: 500; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; margin-bottom: -1px; }
         .main-tab:hover { color: var(--text-dark); }
         .main-tab.active { color: var(--pink); border-bottom-color: var(--pink); font-weight: 600; }
         .main-tab-icon { display: flex; align-items: center; justify-content: center; }
@@ -1612,8 +1624,9 @@ export default function EventPage() {
         .main-tab-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
         .main-tab-content > div { flex: 1; overflow-y: auto; min-height: 0; }
 
-        /* ── Sidebar left (info) ── */
-        .event-sidebar { width: 50%; flex-shrink: 0; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        /* ── Right (chat) ── */
+        .event-chat-col { width: 33.333%; flex-shrink: 0; background: white; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .chat-col-header { display: flex; align-items: center; gap: 8px; padding: 0.875rem 1.125rem; border-bottom: 1px solid var(--border); font-size: 0.82rem; font-weight: 600; color: var(--text-dark); flex-shrink: 0; background: white; }
         .sidebar-hero { width: 100%; height: 150px; background: linear-gradient(135deg, var(--purple-pale) 0%, var(--pink-pale) 100%); flex-shrink: 0; overflow: hidden; position: relative; }
         .sidebar-hero img { width: 100%; height: 100%; object-fit: cover; }
         .sidebar-hero-clickable { cursor: zoom-in; }
@@ -1717,10 +1730,11 @@ export default function EventPage() {
 
         @media (max-width: 900px) {
           .event-page { flex-direction: column; height: auto; overflow: auto; margin-top: var(--nav-height); }
-          .event-sidebar { width: 100%; height: auto; flex-shrink: 0; border-right: none; border-bottom: 1px solid var(--border); overflow: visible; }
+          .event-sidebar { order: 1 !important; width: 100%; height: auto; flex-shrink: 0; border-right: none; border-bottom: 1px solid var(--border); overflow: visible; }
+          .event-main { order: 2 !important; width: 100%; height: 100svh; flex-shrink: 0; min-height: 100svh; border-right: none; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+          .event-chat-col { order: 3 !important; width: 100%; height: 70svh; flex-shrink: 0; border-top: 1px solid var(--border); }
           .sidebar-scroll { overflow-y: visible; max-height: none; }
           .sidebar-hero { height: 120px; }
-          .event-main { height: 100svh; flex-shrink: 0; min-height: 100svh; }
           .event-title { font-size: 1.3rem; }
           .main-tab { padding: 8px 8px; font-size: 0.72rem; gap: 4px; }
         }
