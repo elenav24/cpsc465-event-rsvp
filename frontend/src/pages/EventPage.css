@@ -414,6 +414,90 @@
 .ep-guest-rsvp--no { background: #fef2f2; color: #dc2626; }
 .ep-guest-rsvp--maybe { background: #fffbeb; color: #d97706; }
 
+/* Guest role management (host-only, revealed on row hover) */
+.ep-guest-actions {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.ep-guest-row:hover .ep-guest-actions { display: flex; }
+.ep-guest-row:hover .ep-guest-rsvp { display: none; }
+.ep-guest-role-btn {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 100px;
+  border: 1.5px solid #f9a8d4;
+  background: #fce7f3;
+  color: #be185d;
+  cursor: pointer;
+  font-family: 'Albert Sans', sans-serif;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.ep-guest-role-btn:hover { background: #be185d; color: white; border-color: #be185d; }
+.ep-guest-role-btn--promote {
+  background: #fdf2f8;
+  color: #be185d;
+}
+.ep-guest-remove-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid #fca5a5;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.6rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.ep-guest-remove-btn:hover { background: #dc2626; color: white; border-color: #dc2626; }
+
+/* QR code modal */
+.ep-qr-modal {
+  background: white;
+  border-radius: 20px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  border: 2px solid #f9a8d4;
+}
+.ep-qr-title {
+  font-family: 'Anton', sans-serif;
+  font-size: 1.4rem;
+  color: #be185d;
+  letter-spacing: 0.02em;
+}
+.ep-qr-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: -4px;
+  margin-bottom: 4px;
+}
+.ep-qr-code {
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  border: 2px dashed #f9a8d4;
+}
+.ep-qr-url {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-family: monospace;
+  word-break: break-all;
+  text-align: center;
+  max-width: 260px;
+  margin-top: 4px;
+}
+
 /* ── CENTER: MAIN TABS ── */
 .ep-main {
   flex: 4 1 0;

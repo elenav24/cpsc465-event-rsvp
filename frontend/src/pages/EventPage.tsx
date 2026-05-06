@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fi'
 import { BsStars } from 'react-icons/bs'
 import { useParams, useNavigate } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import './EventPage.css'
 import { useAuth } from '../auth/AuthContext'
 import {
@@ -15,6 +16,7 @@ import {
   getTasks, createTask, updateTask, deleteTask,
   getAnnouncements, createAnnouncement, deleteAnnouncement,
   regenerateInvite, updateEvent, revokeInvite,
+  updateMemberRole, removeMember,
   askAi,
 } from '../api/events'
 import type { AiMessage } from '../api/events'
@@ -747,6 +749,7 @@ export default function EventPage() {
   const [guestCount, setGuestCount] = useState(0)
   const [flyerOpen, setFlyerOpen] = useState(false)
   const [inviteLinkVisible, setInviteLinkVisible] = useState(false)
+  const [qrOpen, setQrOpen] = useState(false)
   const [aiMessages, setAiMessages] = useState<AiMessage[]>([])
   const [liveChatMessages, setLiveChatMessages] = useState<WsMessage[]>([])
   const [unreadTabs, setUnreadTabs] = useState<Set<string>>(new Set())
@@ -809,6 +812,21 @@ export default function EventPage() {
     if (!event) return
     try { const u = await revokeInvite(eventUuid); setEvent(u) }
     catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed') }
+  }
+
+  const handleRoleChange = async (userId: string, newRole: 'co_host' | 'attendee') => {
+    try {
+      const updated = await updateMemberRole(eventUuid, userId, newRole)
+      setEventMembers(prev => prev.map(m => m.user_id === userId ? updated : m))
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed to update role') }
+  }
+
+  const handleRemoveMember = async (userId: string) => {
+    try {
+      await removeMember(eventUuid, userId)
+      setEventMembers(prev => prev.filter(m => m.user_id !== userId))
+      setRsvps(prev => prev.filter(r => r.user_id !== userId))
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed to remove member') }
   }
 
   // ── Real-time update handler ──────────────────────────────────────────────
@@ -1078,9 +1096,16 @@ export default function EventPage() {
                         {inviteCopied ? <><FiCheck size={11} /> Copied</> : 'Copy'}
                       </button>
                     </div>
-                    <div className="ep-invite-actions">
+                  <div className="ep-invite-actions">
                       <button onClick={handleRegenerateInvite} className="ep-link-btn">Regenerate</button>
                       <button onClick={handleRevokeInvite} className="ep-link-btn ep-link-btn--danger">Disable</button>
+                      <button onClick={() => setQrOpen(true)} className="ep-link-btn" style={{ marginLeft: 'auto' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 3 }}>
+                          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+                          <path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3M14 21h3M21 18v3"/>
+                        </svg>
+                        QR Code
+                      </button>
                     </div>
                   </>
                 ) : (
@@ -1093,6 +1118,27 @@ export default function EventPage() {
             </div>
           )}
 
+          {/* QR Code modal */}
+          {qrOpen && event?.invite_token && event.invite_active && (
+            <div className="ep-lightbox" onClick={() => setQrOpen(false)}>
+              <button className="ep-lightbox-close" onClick={() => setQrOpen(false)} aria-label="Close">✕</button>
+              <div className="ep-qr-modal" onClick={e => e.stopPropagation()}>
+                <div className="ep-qr-title">Scan to join</div>
+                <div className="ep-qr-subtitle">{event.title}</div>
+                <div className="ep-qr-code">
+                  <QRCodeSVG
+                    value={`${window.location.origin}/join/${event.invite_token}`}
+                    size={220}
+                    fgColor="#be185d"
+                    bgColor="#ffffff"
+                    level="M"
+                  />
+                </div>
+                <div className="ep-qr-url">{`${window.location.origin}/join/${event.invite_token}`}</div>
+              </div>
+            </div>
+          )}
+
           {/* Guest list card */}
           <div className="ep-info-card">
             <div className="ep-info-card-header ep-info-card-header--rose">
@@ -1100,17 +1146,19 @@ export default function EventPage() {
             </div>
             <div className="ep-info-card-body">
               <div className="ep-guest-list">
-                {eventMembers.slice(0, 8).map(m => {
+                {eventMembers.slice(0, 10).map(m => {
                   const rsvp = rsvps.find(r => r.user_id === m.user_id)
                   const isMe = m.user_id === myId
                   const name = isMe ? 'You' : (m.display_name || m.user_id.slice(0, 8) + '…')
                   const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                  const isHost_ = m.role === 'host'
+                  const isCoHost = m.role === 'co_host'
                   return (
                     <div key={m.id} className="ep-guest-row">
                       <div className="ep-guest-avatar">{initials}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div className="ep-guest-name">{name}</div>
-                        <div className="ep-meta" style={{ color: m.role === 'host' ? 'var(--pink)' : m.role === 'co_host' ? 'var(--pink)' : 'var(--text-muted)' }}>
+                        <div className="ep-meta" style={{ color: isHost_ ? 'var(--pink)' : isCoHost ? '#db7093' : 'var(--text-muted)' }}>
                           {m.role.replace('_', ' ')}
                         </div>
                       </div>
@@ -1120,11 +1168,40 @@ export default function EventPage() {
                           {rsvp.guest_count > 0 && ` +${rsvp.guest_count}`}
                         </span>
                       )}
+                      {/* Host-only role controls — shown on hover via CSS */}
+                      {isHost && !isMe && !isHost_ && (
+                        <div className="ep-guest-actions">
+                          {isCoHost ? (
+                            <button
+                              className="ep-guest-role-btn"
+                              title="Demote to attendee"
+                              onClick={() => handleRoleChange(m.user_id, 'attendee')}
+                            >
+                              co-host ↓
+                            </button>
+                          ) : (
+                            <button
+                              className="ep-guest-role-btn ep-guest-role-btn--promote"
+                              title="Promote to co-host"
+                              onClick={() => handleRoleChange(m.user_id, 'co_host')}
+                            >
+                              + co-host
+                            </button>
+                          )}
+                          <button
+                            className="ep-guest-remove-btn"
+                            title="Remove from event"
+                            onClick={() => handleRemoveMember(m.user_id)}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
-                {eventMembers.length > 8 && (
-                  <div className="ep-meta" style={{ marginTop: 4 }}>+{eventMembers.length - 8} more</div>
+                {eventMembers.length > 10 && (
+                  <div className="ep-meta" style={{ marginTop: 4 }}>+{eventMembers.length - 10} more</div>
                 )}
               </div>
             </div>
