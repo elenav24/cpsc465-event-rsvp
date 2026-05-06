@@ -631,7 +631,7 @@ function TasksTab({ eventUuid, myId, isHost, members }: { eventUuid: string; myI
 }
 
 // ── Announcements Tab ─────────────────────────────────────────────────────────
-function AnnouncementsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string; isHost: boolean }) {
+function AnnouncementsTab({ eventUuid, myId, isHost, onNew }: { eventUuid: string; myId: string; isHost: boolean; onNew?: () => void }) {
   const [announcements, setAnnouncements] = useState<AnnouncementOut[]>([])
   const [loading, setLoading] = useState(true)
   const [body, setBody] = useState('')
@@ -652,6 +652,7 @@ function AnnouncementsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId
       const ann = await createAnnouncement(eventUuid, body.trim())
       setAnnouncements(prev => [ann, ...prev])
       setBody('')
+      onNew?.()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to post announcement')
     } finally {
@@ -777,57 +778,57 @@ function AiTab({
   }
 
   return (
-    <div className="chat-panel">
-      <div className="chat-messages">
+    <div className="ai-panel">
+      <div className="ai-messages">
         {messages.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}><BsStars size={32} color="var(--pink)" /></div>
-            <div style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-dark)' }}>AI Event Assistant</div>
-            <div>Ask anything about this event — guests, polls, tasks, or the chat.</div>
+          <div style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.88rem' }}>
+            <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'center' }}><BsStars size={36} color="rgba(255,255,255,0.7)" /></div>
+            <div style={{ fontWeight: 600, marginBottom: '0.4rem', color: 'rgba(255,255,255,0.9)', fontSize: '1rem' }}>AI Event Assistant</div>
+            <div style={{ lineHeight: 1.6 }}>Ask anything about this event —<br />guests, polls, tasks, or the chat.</div>
           </div>
         )}
         {messages.map((msg, i) => (
-          <div key={i} className={`chat-msg${msg.role === 'user' ? ' mine' : ''}`}>
-            <div className="chat-bubble-avatar">
+          <div key={i} className={`ai-msg${msg.role === 'user' ? ' ai-msg-user' : ' ai-msg-assistant'}`}>
+            <div className="ai-msg-avatar">
               {msg.role === 'user' ? 'You' : <BsStars size={12} />}
             </div>
-            <div className="chat-bubble" style={msg.role === 'assistant' ? { background: 'var(--purple-pale)', color: 'var(--text-dark)' } : undefined}>
-              <div className="chat-bubble-name">{msg.role === 'user' ? 'You' : 'AI Assistant'}</div>
+            <div className="ai-msg-bubble">
+              <div className="ai-msg-name">{msg.role === 'user' ? 'You' : 'AI Assistant'}</div>
               {msg.role === 'assistant'
                 ? <MarkdownContent content={msg.content} />
-                : <div className="chat-bubble-text">{msg.content}</div>
+                : <div className="ai-msg-text">{msg.content}</div>
               }
             </div>
           </div>
         ))}
         {loading && (
-          <div className="chat-msg">
-            <div className="chat-bubble-avatar"><BsStars size={12} /></div>
-            <div className="chat-bubble" style={{ background: 'var(--purple-pale)' }}>
-              <div className="chat-bubble-name">AI Assistant</div>
-              <div className="chat-bubble-text" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <div className="ai-msg ai-msg-assistant">
+            <div className="ai-msg-avatar"><BsStars size={12} /></div>
+            <div className="ai-msg-bubble">
+              <div className="ai-msg-name">AI Assistant</div>
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '2px 0' }}>
                 <span className="ai-dot" /><span className="ai-dot" style={{ animationDelay: '0.2s' }} /><span className="ai-dot" style={{ animationDelay: '0.4s' }} />
               </div>
             </div>
           </div>
         )}
         {error && (
-          <div style={{ margin: '0.5rem 1rem', background: '#fff0f0', border: '1px solid #fcc', borderRadius: 6, padding: '0.5rem 0.75rem', color: '#c00', fontSize: '0.82rem' }}>
+          <div style={{ margin: '0.5rem 1rem', background: 'rgba(255,80,80,0.15)', border: '1px solid rgba(255,80,80,0.3)', borderRadius: 6, padding: '0.5rem 0.75rem', color: '#ff9999', fontSize: '0.82rem' }}>
             {error}
           </div>
         )}
         <div ref={bottomRef} />
       </div>
-      <div className="chat-input-row">
+      <div className="ai-input-row">
         <input
-          className="chat-input"
+          className="ai-input"
           placeholder="Ask about this event..."
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
           disabled={loading}
         />
-        <button className="btn-send" onClick={send} disabled={loading} aria-label="Send">
+        <button className="ai-send-btn" onClick={send} disabled={loading} aria-label="Send">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M14 8L2 2l3 6-3 6 12-6z" fill="white" />
           </svg>
@@ -1157,6 +1158,11 @@ export default function EventPage() {
   const [inviteLinkVisible, setInviteLinkVisible] = useState(false)
   const [aiMessages, setAiMessages] = useState<AiMessage[]>([])
   const [liveChatMessages, setLiveChatMessages] = useState<WsMessage[]>([])
+  // Track which tabs have unseen updates since they were last active
+  const [unreadTabs, setUnreadTabs] = useState<Set<string>>(new Set())
+
+  const markRead = (tab: string) => setUnreadTabs(prev => { const s = new Set(prev); s.delete(tab); return s })
+  const markUnread = (tab: string) => setUnreadTabs(prev => activeTab === tab ? prev : new Set([...prev, tab]))
 
   const eventUuid = id ?? ''
   const myId = profile?.cognito_sub ?? ''
@@ -1236,7 +1242,6 @@ export default function EventPage() {
     { key: 'potluck', label: 'Potluck', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" strokeLinecap="round" /><path d="M8 12h8M12 8v8" strokeLinecap="round" /></svg> },
     { key: 'tasks', label: 'Tasks', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 11l3 3L22 4" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeLinecap="round" strokeLinejoin="round" /></svg> },
     { key: 'announcements', label: 'Announce', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" /></svg> },
-    { key: 'reminders', label: 'Reminders', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" /><path d="M13.73 21a2 2 0 01-3.46 0" /></svg> },
   ]
 
   if (loading) return (
@@ -1306,10 +1311,11 @@ export default function EventPage() {
             <button
               key={item.key}
               className={`main-tab${activeTab === item.key ? ' active' : ''}`}
-              onClick={() => setActiveTab(item.key)}
+              onClick={() => { setActiveTab(item.key); markRead(item.key) }}
             >
               <span className="main-tab-icon">{item.icon}</span>
               <span className="main-tab-label">{item.label}</span>
+              {unreadTabs.has(item.key) && <span className="tab-unread-dot" />}
             </button>
           ))}
         </div>
@@ -1336,12 +1342,7 @@ export default function EventPage() {
           )}
           {activeTab === 'announcements' && (
             <div style={{ overflowY: 'auto', flex: 1 }}>
-              <AnnouncementsTab eventUuid={eventUuid} myId={myId} isHost={isHost} />
-            </div>
-          )}
-          {activeTab === 'reminders' && (
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              <RemindersTab eventUuid={eventUuid} hasStartDt={!!event.start_dt} />
+              <AnnouncementsTab eventUuid={eventUuid} myId={myId} isHost={isHost} onNew={() => markUnread('announcements')} />
             </div>
           )}
         </div>
@@ -1353,7 +1354,7 @@ export default function EventPage() {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ flexShrink: 0 }}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" /></svg>
           Event Chat
         </div>
-        <ChatTab eventId={eventUuid} myId={myId} myName={myName} token={token} onMessagesChange={setLiveChatMessages} />
+        <ChatTab eventId={eventUuid} myId={myId} myName={myName} token={token} onMessagesChange={(msgs) => { setLiveChatMessages(msgs); markUnread('chat') }} />
       </div>
 
       {/* Sidebar — event info & RSVP */}
@@ -1709,24 +1710,46 @@ export default function EventPage() {
         .btn-send:hover { background: #b04068; }
         .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
         @keyframes ai-bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-4px); opacity: 1; } }
-        .ai-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--pink); animation: ai-bounce 1.2s ease-in-out infinite; }
-        .ai-markdown { font-size: 0.85rem; line-height: 1.6; color: var(--text-dark); }
+        .ai-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #a78bfa; animation: ai-bounce 1.2s ease-in-out infinite; }
+
+        /* AI panel — dark themed */
+        .ai-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; background: #0f0f1a; }
+        .ai-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
+        .ai-msg { display: flex; gap: 8px; align-items: flex-start; }
+        .ai-msg-user { flex-direction: row-reverse; }
+        .ai-msg-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; flex-shrink: 0; }
+        .ai-msg-user .ai-msg-avatar { background: var(--pink); color: white; }
+        .ai-msg-assistant .ai-msg-avatar { background: #2d1f4e; color: #a78bfa; }
+        .ai-msg-bubble { border-radius: 14px; padding: 8px 12px; max-width: 85%; }
+        .ai-msg-user .ai-msg-bubble { background: var(--pink); color: white; }
+        .ai-msg-assistant .ai-msg-bubble { background: #1e1535; border: 1px solid #3d2d6e; color: #e2d9f3; }
+        .ai-msg-name { font-size: 0.68rem; font-weight: 700; margin-bottom: 3px; }
+        .ai-msg-user .ai-msg-name { color: rgba(255,255,255,0.75); }
+        .ai-msg-assistant .ai-msg-name { color: #a78bfa; }
+        .ai-msg-text { font-size: 0.85rem; line-height: 1.5; }
+        .ai-input-row { display: flex; gap: 8px; padding: 0.75rem 1rem; border-top: 1px solid #2a1f3d; flex-shrink: 0; background: #0f0f1a; }
+        .ai-input { flex: 1; border: 1.5px solid #3d2d6e; border-radius: 100px; padding: 9px 16px; font-family: 'Albert Sans', sans-serif; font-size: 0.88rem; outline: none; transition: border-color 0.2s; background: #1e1535; color: #e2d9f3; }
+        .ai-input::placeholder { color: rgba(162,139,250,0.4); }
+        .ai-input:focus { border-color: #a78bfa; }
+        .ai-send-btn { background: #7c3aed; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
+        .ai-send-btn:hover { background: #6d28d9; }
+        .ai-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .ai-markdown { font-size: 0.85rem; line-height: 1.6; color: #e2d9f3; }
         .ai-markdown p { margin: 0 0 0.5em; }
         .ai-markdown p:last-child { margin-bottom: 0; }
         .ai-markdown ul, .ai-markdown ol { margin: 0.25em 0 0.5em 1.25em; padding: 0; }
         .ai-markdown li { margin-bottom: 0.2em; }
-        .ai-markdown strong { font-weight: 700; }
+        .ai-markdown strong { font-weight: 700; color: #c4b5fd; }
         .ai-markdown em { font-style: italic; }
-        .ai-markdown code { background: rgba(0,0,0,0.08); border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 0.82em; }
-        .ai-markdown pre { background: rgba(0,0,0,0.08); border-radius: 6px; padding: 0.75em 1em; overflow-x: auto; margin: 0.5em 0; }
+        .ai-markdown code { background: rgba(167,139,250,0.15); border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 0.82em; color: #c4b5fd; }
+        .ai-markdown pre { background: rgba(167,139,250,0.1); border-radius: 6px; padding: 0.75em 1em; overflow-x: auto; margin: 0.5em 0; border: 1px solid #3d2d6e; }
         .ai-markdown pre code { background: none; padding: 0; }
-        .ai-markdown h1, .ai-markdown h2, .ai-markdown h3 { font-family: 'Albert Sans', sans-serif; font-weight: 700; margin: 0.5em 0 0.25em; color: var(--text-dark); }
-        .ai-markdown h1 { font-size: 1rem; }
-        .ai-markdown h2 { font-size: 0.95rem; }
-        .ai-markdown h3 { font-size: 0.9rem; }
-        .ai-markdown blockquote { border-left: 3px solid var(--pink-pale); margin: 0.5em 0; padding-left: 0.75em; color: var(--text-muted); }
-        .ai-markdown a { color: var(--pink); text-decoration: underline; }
-        .ai-markdown hr { border: none; border-top: 1px solid var(--border); margin: 0.5em 0; }
+        .ai-markdown h1, .ai-markdown h2, .ai-markdown h3 { font-family: 'Albert Sans', sans-serif; font-weight: 700; margin: 0.5em 0 0.25em; color: #c4b5fd; }
+        .ai-markdown blockquote { border-left: 3px solid #3d2d6e; margin: 0.5em 0; padding-left: 0.75em; color: rgba(162,139,250,0.7); }
+        .ai-markdown a { color: #a78bfa; text-decoration: underline; }
+
+        /* Unread dot on tabs */
+        .tab-unread-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pink); flex-shrink: 0; margin-left: 2px; }
 
         @media (max-width: 900px) {
           .event-page { flex-direction: column; height: auto; overflow: auto; margin-top: var(--nav-height); }
