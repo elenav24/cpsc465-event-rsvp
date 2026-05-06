@@ -956,8 +956,8 @@ export default function EventPage() {
 
           {/* About card */}
           <div className="ep-info-card">
-            <div className="ep-info-card-header ep-info-card-header--purple">
-              <div className="ep-info-label ep-info-label--purple">ABOUT</div>
+            <div className="ep-info-card-header ep-info-card-header--pink">
+              <div className="ep-info-label ep-info-label--pink">ABOUT</div>
             </div>
             <div className="ep-info-card-body">
               <p className="ep-info-desc">{event.description || 'No description provided.'}</p>
@@ -983,9 +983,9 @@ export default function EventPage() {
                 </div>
               )}
               {event.viewable_by_link && (
-                <div className="ep-info-row" style={{ color: '#7F77DD' }}>
-                  <FiLink size={13} className="ep-info-icon" style={{ color: '#7F77DD' }} />
-                  <span className="ep-info-val" style={{ color: '#7F77DD' }}>Viewable by anyone with the link</span>
+                <div className="ep-info-row" style={{ color: 'var(--pink)' }}>
+                  <FiLink size={13} className="ep-info-icon" style={{ color: 'var(--pink)' }} />
+                  <span className="ep-info-val" style={{ color: 'var(--pink)' }}>Viewable by anyone with the link</span>
                 </div>
               )}
             </div>
@@ -1047,8 +1047,8 @@ export default function EventPage() {
           {/* Invite link card (host only) */}
           {isHost && (
             <div className="ep-info-card">
-              <div className="ep-info-card-header ep-info-card-header--blue">
-                <div className="ep-info-label ep-info-label--blue">INVITE LINK</div>
+              <div className="ep-info-card-header ep-info-card-header--orange">
+                <div className="ep-info-label ep-info-label--orange">INVITE LINK</div>
               </div>
               <div className="ep-info-card-body">
                 {event.invite_token && event.invite_active ? (
@@ -1095,8 +1095,8 @@ export default function EventPage() {
 
           {/* Guest list card */}
           <div className="ep-info-card">
-            <div className="ep-info-card-header ep-info-card-header--pink">
-              <div className="ep-info-label ep-info-label--pink">GUESTS ({eventMembers.length})</div>
+            <div className="ep-info-card-header ep-info-card-header--rose">
+              <div className="ep-info-label ep-info-label--rose">GUESTS ({eventMembers.length})</div>
             </div>
             <div className="ep-info-card-body">
               <div className="ep-guest-list">
@@ -1110,7 +1110,7 @@ export default function EventPage() {
                       <div className="ep-guest-avatar">{initials}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div className="ep-guest-name">{name}</div>
-                        <div className="ep-meta" style={{ color: m.role === 'host' ? 'var(--pink)' : m.role === 'co_host' ? '#7F77DD' : 'var(--text-muted)' }}>
+                        <div className="ep-meta" style={{ color: m.role === 'host' ? 'var(--pink)' : m.role === 'co_host' ? 'var(--pink)' : 'var(--text-muted)' }}>
                           {m.role.replace('_', ' ')}
                         </div>
                       </div>
