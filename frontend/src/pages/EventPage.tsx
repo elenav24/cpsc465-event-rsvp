@@ -510,13 +510,14 @@ function MarkdownContent({ content }: { content: string }) {
 }
 
 // ── AI Tab ────────────────────────────────────────────────────────────────────
-function AiTab({ eventUuid, messages, setMessages, chatMessages, rsvps, members }: {
+function AiTab({ eventUuid, messages, setMessages, chatMessages, rsvps, tasks }: {
   eventUuid: string
   messages: AiMessage[]
   setMessages: React.Dispatch<React.SetStateAction<AiMessage[]>>
   chatMessages: WsMessage[]
   rsvps: RSVPOut[]
   members: MemberOut[]
+  tasks: TaskOut[]
 }) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -528,7 +529,10 @@ function AiTab({ eventUuid, messages, setMessages, chatMessages, rsvps, members 
   const goingCount = rsvps.filter(r => r.status === 'yes').length
   const totalGuests = rsvps.filter(r => r.status === 'yes').reduce((s, r) => s + r.guest_count, 0)
   const totalAttending = goingCount + totalGuests
-  const plannedPct = members.length > 0 ? Math.min(100, Math.round((goingCount / members.length) * 100)) : 0
+
+  // Next action: first incomplete task, or a fallback
+  const nextTask = tasks.find(t => !t.is_completed)
+  const completedCount = tasks.filter(t => t.is_completed).length
 
   const send = async () => {
     const text = input.trim(); if (!text || loading) return
@@ -566,15 +570,16 @@ function AiTab({ eventUuid, messages, setMessages, chatMessages, rsvps, members 
         </div>
         <div className="ep-ai-brain-stats">
           <div className="ep-ai-stat">
-            <div className="ep-ai-stat-label">STATUS</div>
-            <div className="ep-ai-stat-val">{plannedPct}% RSVPed</div>
-          </div>
-          <div className="ep-ai-stat">
             <div className="ep-ai-stat-label">ATTENDING</div>
-            <div className="ep-ai-stat-val">{totalAttending} guests</div>
+            <div className="ep-ai-stat-val">{totalAttending} going</div>
           </div>
-        </div>
-      </div>
+          <div className={`ep-ai-stat${nextTask ? ' ep-ai-stat--action' : ''}`}>
+            <div className="ep-ai-stat-label">NEXT ACTION</div>
+            <div className="ep-ai-stat-val">
+              {nextTask ? nextTask.title : tasks.length > 0 ? `All ${completedCount} done ✓` : 'No tasks yet'}
+            </div>
+          </div>
+        </div>      </div>
 
       {/* AI chat label */}
       <div className="ep-ai-chat-label">
@@ -720,9 +725,10 @@ export default function EventPage() {
   const [myRsvp, setMyRsvp] = useState<RSVPOut | null>(null)
   const [rsvps, setRsvps] = useState<RSVPOut[]>([])
   const [eventMembers, setEventMembers] = useState<MemberOut[]>([])
+  const [eventTasks, setEventTasks] = useState<TaskOut[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState('ai')
+  const [activeTab, setActiveTab] = useState('polls')
   const [rsvpLoading, setRsvpLoading] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -749,11 +755,13 @@ export default function EventPage() {
       getMyRsvp(eventUuid).catch(() => null),
       getRsvps(eventUuid).catch(() => []),
       getMembers(eventUuid).catch(() => []),
-    ]).then(([ev, rsvp, allRsvps, allMembers]) => {
+      getTasks(eventUuid).catch(() => []),
+    ]).then(([ev, rsvp, allRsvps, allMembers, allTasks]) => {
       setEvent(ev)
       setMyRsvp(rsvp)
       setRsvps(allRsvps as RSVPOut[])
       setEventMembers(allMembers as MemberOut[])
+      setEventTasks(allTasks as TaskOut[])
       if (rsvp) setGuestCount((rsvp as RSVPOut).guest_count)
     }).catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
@@ -793,15 +801,9 @@ export default function EventPage() {
   const isHost = event?.host_id === myId || event?.host_id === myDbId
 
   const tabItems = [
-    { key: 'ai', label: 'AI Assistant', icon: <BsStars size={13} /> },
     { key: 'polls', label: 'Polls', icon: (
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <rect x="3" y="10" width="4" height="11" rx="1" /><rect x="10" y="6" width="4" height="15" rx="1" /><rect x="17" y="2" width="4" height="19" rx="1" />
-      </svg>
-    )},
-    { key: 'potluck', label: 'Potluck', icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M18 8h1a4 4 0 010 8h-1" strokeLinecap="round" /><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z" strokeLinecap="round" /><line x1="6" y1="1" x2="6" y2="4" strokeLinecap="round" /><line x1="10" y1="1" x2="10" y2="4" strokeLinecap="round" /><line x1="14" y1="1" x2="14" y2="4" strokeLinecap="round" />
       </svg>
     )},
     { key: 'tasks', label: 'Tasks', icon: (
@@ -810,11 +812,17 @@ export default function EventPage() {
         <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     )},
+    { key: 'potluck', label: 'Potluck', icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M18 8h1a4 4 0 010 8h-1" strokeLinecap="round" /><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z" strokeLinecap="round" /><line x1="6" y1="1" x2="6" y2="4" strokeLinecap="round" /><line x1="10" y1="1" x2="10" y2="4" strokeLinecap="round" /><line x1="14" y1="1" x2="14" y2="4" strokeLinecap="round" />
+      </svg>
+    )},
     { key: 'announcements', label: 'Announce', icon: (
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     )},
+    { key: 'ai', label: 'AI Assistant', icon: <BsStars size={13} /> },
   ]
 
   if (loading) return (
@@ -887,87 +895,90 @@ export default function EventPage() {
 
           {/* About card */}
           <div className="ep-info-card">
-            <div className="ep-info-label">ABOUT</div>
-            <p className="ep-info-desc">{event.description || 'No description provided.'}</p>
-            {event.start_dt && (
-              <div className="ep-info-row">
-                <FiCalendar size={13} className="ep-info-icon" />
-                <span className="ep-info-val">{formatDate(event.start_dt)}{event.end_dt ? ` – ${formatDate(event.end_dt)}` : ''}</span>
-              </div>
-            )}
-            {event.recurrence_rule && (
-              <div className="ep-info-row">
-                <FiRepeat size={13} className="ep-info-icon" />
-                <span className="ep-info-val">
-                  {event.recurrence_rule.charAt(0) + event.recurrence_rule.slice(1).toLowerCase()}
-                  {event.recurrence_end_dt ? ` until ${new Date(event.recurrence_end_dt).toLocaleDateString()}` : ''}
-                </span>
-              </div>
-            )}
-            {event.location && (
-              <div className="ep-info-row">
-                <FiMapPin size={13} className="ep-info-icon" />
-                <span className="ep-info-val">{event.location}</span>
-              </div>
-            )}
-            {event.viewable_by_link && (
-              <div className="ep-info-row" style={{ color: '#7F77DD' }}>
-                <FiLink size={13} className="ep-info-icon" style={{ color: '#7F77DD' }} />
-                <span className="ep-info-val" style={{ color: '#7F77DD' }}>Viewable by anyone with the link</span>
-              </div>
-            )}
-          </div>
-
-          {/* RSVP card */}
-          <div className="ep-info-card">
-            <div className="ep-info-label">YOUR RSVP</div>
-            <div className="ep-rsvp-row">
-              {(['yes', 'maybe', 'no'] as RSVPStatus[]).map(status => {
-                const active = myRsvp?.status === status
-                const labels: Record<RSVPStatus, string> = { yes: 'Going', maybe: 'Maybe', no: 'No' }
-                return (
-                  <button
-                    key={status}
-                    onClick={() => handleRsvp(status)}
-                    disabled={rsvpLoading}
-                    className={`ep-rsvp-btn ep-rsvp-btn--${status}${active ? ' active' : ''}`}
-                  >
-                    {labels[status]}
-                  </button>
-                )
-              })}
+            <div className="ep-info-card-header ep-info-card-header--purple">
+              <div className="ep-info-label ep-info-label--purple">ABOUT</div>
             </div>
-            {(myRsvp?.status === 'yes' || myRsvp?.status === 'maybe') && (
-              <div className="ep-guest-count-row">
-                <span className="ep-guest-count-label">Guests</span>
-                <div className="ep-guest-count-ctrl">
-                  <button type="button" className="ep-guest-count-btn"
-                    onClick={() => { const n = Math.max(0, guestCount - 1); setGuestCount(n); handleRsvp(myRsvp!.status, n) }}
-                    disabled={guestCount === 0 || rsvpLoading}>−</button>
-                  <span className="ep-guest-count-val">{guestCount}</span>
-                  <button type="button" className="ep-guest-count-btn"
-                    onClick={() => { const n = guestCount + 1; setGuestCount(n); handleRsvp(myRsvp!.status, n) }}
-                    disabled={rsvpLoading}>+</button>
+            <div className="ep-info-card-body">
+              <p className="ep-info-desc">{event.description || 'No description provided.'}</p>
+              {event.start_dt && (
+                <div className="ep-info-row">
+                  <FiCalendar size={13} className="ep-info-icon" />
+                  <span className="ep-info-val">{formatDate(event.start_dt)}{event.end_dt ? ` – ${formatDate(event.end_dt)}` : ''}</span>
                 </div>
-              </div>
-            )}
+              )}
+              {event.recurrence_rule && (
+                <div className="ep-info-row">
+                  <FiRepeat size={13} className="ep-info-icon" />
+                  <span className="ep-info-val">
+                    {event.recurrence_rule.charAt(0) + event.recurrence_rule.slice(1).toLowerCase()}
+                    {event.recurrence_end_dt ? ` until ${new Date(event.recurrence_end_dt).toLocaleDateString()}` : ''}
+                  </span>
+                </div>
+              )}
+              {event.location && (
+                <div className="ep-info-row">
+                  <FiMapPin size={13} className="ep-info-icon" />
+                  <span className="ep-info-val">{event.location}</span>
+                </div>
+              )}
+              {event.viewable_by_link && (
+                <div className="ep-info-row" style={{ color: '#7F77DD' }}>
+                  <FiLink size={13} className="ep-info-icon" style={{ color: '#7F77DD' }} />
+                  <span className="ep-info-val" style={{ color: '#7F77DD' }}>Viewable by anyone with the link</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Attendance card */}
+          {/* RSVP + Attendance combined card */}
           <div className="ep-info-card">
-            <div className="ep-info-label">ATTENDANCE</div>
-            <div className="ep-attendance-row">
-              <div className="ep-att-box ep-att-box--going">
-                <div className="ep-att-num">{goingCount}</div>
-                <div className="ep-att-lbl">GOING</div>
+            <div className="ep-info-card-header ep-info-card-header--green">
+              <div className="ep-info-label ep-info-label--green">YOUR RSVP</div>
+            </div>
+            <div className="ep-info-card-body">
+              <div className="ep-rsvp-row">
+                {(['yes', 'maybe', 'no'] as RSVPStatus[]).map(status => {
+                  const active = myRsvp?.status === status
+                  const labels: Record<RSVPStatus, string> = { yes: 'Going', maybe: 'Maybe', no: 'No' }
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => handleRsvp(status)}
+                      disabled={rsvpLoading}
+                      className={`ep-rsvp-btn ep-rsvp-btn--${status}${active ? ' active' : ''}`}
+                    >
+                      {labels[status]}
+                    </button>
+                  )
+                })}
               </div>
-              <div className="ep-att-box ep-att-box--maybe">
-                <div className="ep-att-num">{maybeCount}</div>
-                <div className="ep-att-lbl">MAYBE</div>
-              </div>
-              <div className="ep-att-box ep-att-box--no">
-                <div className="ep-att-num">{noCount}</div>
-                <div className="ep-att-lbl">NO</div>
+              {(myRsvp?.status === 'yes' || myRsvp?.status === 'maybe') && (
+                <div className="ep-guest-count-row">
+                  <span className="ep-guest-count-label">Guests</span>
+                  <div className="ep-guest-count-ctrl">
+                    <button type="button" className="ep-guest-count-btn"
+                      onClick={() => { const n = Math.max(0, guestCount - 1); setGuestCount(n); handleRsvp(myRsvp!.status, n) }}
+                      disabled={guestCount === 0 || rsvpLoading}>−</button>
+                    <span className="ep-guest-count-val">{guestCount}</span>
+                    <button type="button" className="ep-guest-count-btn"
+                      onClick={() => { const n = guestCount + 1; setGuestCount(n); handleRsvp(myRsvp!.status, n) }}
+                      disabled={rsvpLoading}>+</button>
+                  </div>
+                </div>
+              )}
+              <div className="ep-attendance-row">
+                <div className="ep-att-box ep-att-box--going">
+                  <div className="ep-att-num">{goingCount}</div>
+                  <div className="ep-att-lbl">GOING</div>
+                </div>
+                <div className="ep-att-box ep-att-box--maybe">
+                  <div className="ep-att-num">{maybeCount}</div>
+                  <div className="ep-att-lbl">MAYBE</div>
+                </div>
+                <div className="ep-att-box ep-att-box--no">
+                  <div className="ep-att-num">{noCount}</div>
+                  <div className="ep-att-lbl">NO</div>
+                </div>
               </div>
             </div>
           </div>
@@ -975,77 +986,87 @@ export default function EventPage() {
           {/* Invite link card (host only) */}
           {isHost && (
             <div className="ep-info-card">
-              <div className="ep-info-label">INVITE LINK</div>
-              {event.invite_token && event.invite_active ? (
-                <>
-                  <div className="ep-invite-row">
-                    <input
-                      readOnly
-                      type={inviteLinkVisible ? 'text' : 'password'}
-                      value={`${window.location.origin}/join/${event.invite_token}`}
-                      className="ep-invite-input"
-                    />
-                    <button onClick={() => setInviteLinkVisible(v => !v)} className="ep-invite-eye" title={inviteLinkVisible ? 'Hide' : 'Show'}>
-                      {inviteLinkVisible ? (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
-                          <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
-                          <line x1="1" y1="1" x2="23" y2="23" />
-                        </svg>
-                      ) : (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                      )}
-                    </button>
-                    <button onClick={handleCopyInvite} className={`ep-invite-copy${inviteCopied ? ' copied' : ''}`}>
-                      {inviteCopied ? <><FiCheck size={11} /> Copied</> : 'Copy'}
-                    </button>
-                  </div>
-                  <div className="ep-invite-actions">
-                    <button onClick={handleRegenerateInvite} className="ep-link-btn">Regenerate</button>
-                    <button onClick={handleRevokeInvite} className="ep-link-btn ep-link-btn--danger">Revoke</button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="ep-meta" style={{ color: '#c00', marginBottom: 6 }}>Link is disabled.</div>
-                  <button onClick={handleRegenerateInvite} className="ep-btn-ghost" style={{ fontSize: '0.78rem' }}>Generate New Link</button>
-                </>
-              )}
+              <div className="ep-info-card-header ep-info-card-header--blue">
+                <div className="ep-info-label ep-info-label--blue">INVITE LINK</div>
+              </div>
+              <div className="ep-info-card-body">
+                {event.invite_token && event.invite_active ? (
+                  <>
+                    <div className="ep-invite-row">
+                      <input
+                        readOnly
+                        type={inviteLinkVisible ? 'text' : 'password'}
+                        value={`${window.location.origin}/join/${event.invite_token}`}
+                        className="ep-invite-input"
+                      />
+                      <button onClick={() => setInviteLinkVisible(v => !v)} className="ep-invite-eye" title={inviteLinkVisible ? 'Hide' : 'Show'}>
+                        {inviteLinkVisible ? (
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
+                            <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                        ) : (
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        )}
+                      </button>
+                      <button onClick={handleCopyInvite} className={`ep-invite-copy${inviteCopied ? ' copied' : ''}`}>
+                        {inviteCopied ? <><FiCheck size={11} /> Copied</> : 'Copy'}
+                      </button>
+                    </div>
+                    <div className="ep-invite-actions">
+                      <button onClick={handleRegenerateInvite} className="ep-link-btn">Regenerate</button>
+                      <button onClick={handleRevokeInvite} className="ep-link-btn ep-link-btn--danger">Disable</button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="ep-meta" style={{ color: '#c00', marginBottom: 6 }}>Link is disabled.</div>
+                    <button onClick={handleRegenerateInvite} className="ep-btn-ghost" style={{ fontSize: '0.78rem' }}>Generate New Link</button>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
           {/* Guest list card */}
           <div className="ep-info-card">
-            <div className="ep-info-label">GUESTS ({eventMembers.length})</div>
-            <div className="ep-guest-list">
-              {eventMembers.slice(0, 8).map(m => {
-                const rsvp = rsvps.find(r => r.user_id === m.user_id)
-                const isMe = m.user_id === myId
-                const name = isMe ? 'You (host)' : (m.display_name || m.user_id.slice(0, 8) + '…')
-                const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-                return (
-                  <div key={m.id} className="ep-guest-row">
-                    <div className="ep-guest-avatar">{initials}</div>
-                    <div className="ep-guest-name">{name}</div>
-                    {rsvp && (
-                      <span className={`ep-guest-rsvp ep-guest-rsvp--${rsvp.status}`}>
-                        {rsvp.status === 'yes' ? <FiCheck size={10} /> : rsvp.status === 'no' ? <FiX size={10} /> : <FiStar size={10} />}
-                        {rsvp.guest_count > 0 && ` +${rsvp.guest_count}`}
-                      </span>
-                    )}
-                  </div>
-                )
-              })}
-              {eventMembers.length > 8 && (
-                <div className="ep-meta" style={{ marginTop: 4 }}>+{eventMembers.length - 8} more</div>
-              )}
+            <div className="ep-info-card-header ep-info-card-header--pink">
+              <div className="ep-info-label ep-info-label--pink">GUESTS ({eventMembers.length})</div>
             </div>
-            {isHost && (
-              <button className="ep-add-guest-btn">+ Add Guest Manually</button>
-            )}
+            <div className="ep-info-card-body">
+              <div className="ep-guest-list">
+                {eventMembers.slice(0, 8).map(m => {
+                  const rsvp = rsvps.find(r => r.user_id === m.user_id)
+                  const isMe = m.user_id === myId
+                  const name = isMe ? 'You' : (m.display_name || m.user_id.slice(0, 8) + '…')
+                  const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                  return (
+                    <div key={m.id} className="ep-guest-row">
+                      <div className="ep-guest-avatar">{initials}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="ep-guest-name">{name}</div>
+                        <div className="ep-meta" style={{ color: m.role === 'host' ? 'var(--pink)' : m.role === 'co_host' ? '#7F77DD' : 'var(--text-muted)' }}>
+                          {m.role.replace('_', ' ')}
+                        </div>
+                      </div>
+                      {rsvp && (
+                        <span className={`ep-guest-rsvp ep-guest-rsvp--${rsvp.status}`}>
+                          {rsvp.status === 'yes' ? <FiCheck size={10} /> : rsvp.status === 'no' ? <FiX size={10} /> : <FiStar size={10} />}
+                          {rsvp.guest_count > 0 && ` +${rsvp.guest_count}`}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+                {eventMembers.length > 8 && (
+                  <div className="ep-meta" style={{ marginTop: 4 }}>+{eventMembers.length - 8} more</div>
+                )}
+              </div>
+            </div>
           </div>
 
         </div>
@@ -1086,15 +1107,15 @@ export default function EventPage() {
 
         {/* Tab content */}
         <div className="ep-tab-content">
-          {activeTab === 'ai' && (
-            <AiTab eventUuid={eventUuid} messages={aiMessages} setMessages={setAiMessages}
-              chatMessages={liveChatMessages} rsvps={rsvps} members={eventMembers} />
-          )}
           {activeTab === 'polls' && <PollsTab eventUuid={eventUuid} myId={myId} isHost={isHost} />}
-          {activeTab === 'potluck' && <PotluckTab eventUuid={eventUuid} myId={myId} isHost={isHost} />}
           {activeTab === 'tasks' && <TasksTab eventUuid={eventUuid} myId={myId} isHost={isHost} members={eventMembers} />}
+          {activeTab === 'potluck' && <PotluckTab eventUuid={eventUuid} myId={myId} isHost={isHost} />}
           {activeTab === 'announcements' && (
             <AnnouncementsTab eventUuid={eventUuid} myId={myId} isHost={isHost} onNew={() => markUnread('announcements')} />
+          )}
+          {activeTab === 'ai' && (
+            <AiTab eventUuid={eventUuid} messages={aiMessages} setMessages={setAiMessages}
+              chatMessages={liveChatMessages} rsvps={rsvps} members={eventMembers} tasks={eventTasks} />
           )}
         </div>
       </div>
