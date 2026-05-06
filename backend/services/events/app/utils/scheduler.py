@@ -7,6 +7,7 @@ Lambda which sends the SMS.
 
 Rule naming: cohosted-reminder-{event_id}-{user_id_hash}-{offset_minutes}
 """
+
 import hashlib
 import logging
 import json
@@ -28,8 +29,10 @@ def _get_scheduler():
         _scheduler = boto3.client("scheduler", region_name=AWS_REGION)
     return _scheduler
 
+
 # ARN of the notifications Lambda — set as env var
 import os
+
 NOTIFICATIONS_LAMBDA_ARN = os.getenv("NOTIFICATIONS_LAMBDA_ARN", "")
 SCHEDULER_ROLE_ARN = os.getenv("SCHEDULER_ROLE_ARN", "")
 
@@ -51,12 +54,16 @@ def create_reminder_schedule(
     Returns the rule name on success, None on failure.
     """
     if not NOTIFICATIONS_LAMBDA_ARN or not SCHEDULER_ROLE_ARN:
-        logger.warning("NOTIFICATIONS_LAMBDA_ARN or SCHEDULER_ROLE_ARN not set — skipping scheduler")
+        logger.warning(
+            "NOTIFICATIONS_LAMBDA_ARN or SCHEDULER_ROLE_ARN not set — skipping scheduler"
+        )
         return None
 
     fire_at = event_start - timedelta(minutes=offset_minutes)
     # Normalize to UTC-aware for comparison — DB datetimes are stored as naive UTC
-    fire_at_aware = fire_at.replace(tzinfo=timezone.utc) if fire_at.tzinfo is None else fire_at
+    fire_at_aware = (
+        fire_at.replace(tzinfo=timezone.utc) if fire_at.tzinfo is None else fire_at
+    )
     if fire_at_aware <= datetime.now(timezone.utc):
         logger.info("Reminder fire time is in the past — skipping")
         return None
@@ -65,7 +72,11 @@ def create_reminder_schedule(
     schedule_expression = fire_at.strftime("at(%Y-%m-%dT%H:%M:%S)")
 
     hours = offset_minutes // 60
-    label = f"{hours} hour{'s' if hours != 1 else ''}" if hours < 24 else f"{offset_minutes // 1440} day{'s' if offset_minutes // 1440 != 1 else ''}"
+    label = (
+        f"{hours} hour{'s' if hours != 1 else ''}"
+        if hours < 24
+        else f"{offset_minutes // 1440} day{'s' if offset_minutes // 1440 != 1 else ''}"
+    )
     message = f"Reminder: '{event_title}' starts in {label}!"
 
     payload = {

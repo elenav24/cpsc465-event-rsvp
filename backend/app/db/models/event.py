@@ -16,4 +16,6 @@ class Event(Base):
     flyer_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     start_dt: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     end_dt: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, server_default=func.now()
+    )

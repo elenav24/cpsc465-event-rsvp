@@ -7,6 +7,7 @@ Strategy:
   - context.py and bedrock.py are tested with unittest.mock to avoid real
     DB/DynamoDB/Bedrock calls.
 """
+
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
@@ -30,8 +31,18 @@ MOCK_EVENT_CONTEXT = {
         "recurrence_end_dt": None,
     },
     "members": [
-        {"user_id": TEST_USER_SUB, "role": "host", "display_name": "Alice", "joined_at": "2026-01-01T00:00:00"},
-        {"user_id": "other-sub", "role": "attendee", "display_name": "Bob", "joined_at": "2026-01-02T00:00:00"},
+        {
+            "user_id": TEST_USER_SUB,
+            "role": "host",
+            "display_name": "Alice",
+            "joined_at": "2026-01-01T00:00:00",
+        },
+        {
+            "user_id": "other-sub",
+            "role": "attendee",
+            "display_name": "Bob",
+            "joined_at": "2026-01-02T00:00:00",
+        },
     ],
     "rsvps": [
         {"user_id": TEST_USER_SUB, "status": "yes", "guest_count": 0, "name": "Alice"},
@@ -52,7 +63,13 @@ MOCK_EVENT_CONTEXT = {
         }
     ],
     "potluck": [
-        {"id": 1, "name": "Chips", "description": None, "quantity_needed": 2, "claims": [TEST_USER_SUB]},
+        {
+            "id": 1,
+            "name": "Chips",
+            "description": None,
+            "quantity_needed": 2,
+            "claims": [TEST_USER_SUB],
+        },
     ],
     "tasks": [
         {

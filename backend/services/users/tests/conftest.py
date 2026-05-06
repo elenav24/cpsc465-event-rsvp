@@ -10,7 +10,9 @@ from app.db.models import Base
 from app.deps.db import get_db
 from app.deps.auth import get_current_user
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://test:test@localhost:5432/test_users")
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL", "postgresql://test:test@localhost:5432/test_users"
+)
 
 engine = create_engine(DATABASE_URL)
 TestingSessionLocal = sessionmaker(engine, expire_on_commit=False)

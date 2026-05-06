@@ -17,10 +17,13 @@ def test_update_display_name(client):
 
 
 def test_update_phone_and_sms_optin(client):
-    res = client.put("/users/me", json={
-        "phone_number": "+15551234567",
-        "sms_opted_in": True,
-    })
+    res = client.put(
+        "/users/me",
+        json={
+            "phone_number": "+15551234567",
+            "sms_opted_in": True,
+        },
+    )
     assert res.status_code == 200
     assert res.json()["phone_number"] == "+15551234567"
     assert res.json()["sms_opted_in"] is True

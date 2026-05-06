@@ -35,7 +35,9 @@ def _get_ses():
     return _ses
 
 
-def _send_email(to_email: str, subject: str, body: str, event_title: str = "", author_name: str = "") -> bool:
+def _send_email(
+    to_email: str, subject: str, body: str, event_title: str = "", author_name: str = ""
+) -> bool:
     """Send an email via SES. Returns True on success, False on failure."""
     html_body = _build_html_email(body, event_title, author_name)
     try:
@@ -59,12 +61,15 @@ def _send_email(to_email: str, subject: str, body: str, event_title: str = "", a
 def _build_html_email(body: str, event_title: str = "", author_name: str = "") -> str:
     """Build a styled HTML email for announcements with sender quote."""
     import html
+
     escaped_body = html.escape(body).replace("\n", "<br>")
     escaped_title = html.escape(event_title) if event_title else ""
     escaped_author = html.escape(author_name) if author_name else ""
 
     # Generate initials for avatar
-    initials = "".join(w[0] for w in author_name.split()[:2]).upper() if author_name else "?"
+    initials = (
+        "".join(w[0] for w in author_name.split()[:2]).upper() if author_name else "?"
+    )
 
     author_section = ""
     if escaped_author:

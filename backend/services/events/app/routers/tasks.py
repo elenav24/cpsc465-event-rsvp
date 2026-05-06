@@ -13,10 +13,14 @@ router = APIRouter()
 
 
 def _require_member(event_id: int, user_id: str, db: Session) -> EventMember:
-    member = db.query(EventMember).filter(
-        EventMember.event_id == event_id,
-        EventMember.user_id == user_id,
-    ).first()
+    member = (
+        db.query(EventMember)
+        .filter(
+            EventMember.event_id == event_id,
+            EventMember.user_id == user_id,
+        )
+        .first()
+    )
     if not member:
         raise HTTPException(status_code=403, detail="Not a member of this event")
     return member
@@ -37,10 +41,14 @@ def get_tasks(
 ):
     event = resolve_event(event_uuid, db)
     _require_member(event.id, user_id, db)
-    return db.query(Task).filter(Task.event_id == event.id).order_by(Task.created_at).all()
+    return (
+        db.query(Task).filter(Task.event_id == event.id).order_by(Task.created_at).all()
+    )
 
 
-@router.post("/{event_uuid}/tasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{event_uuid}/tasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED
+)
 def create_task(
     event_uuid: str,
     body: TaskCreate,
@@ -52,12 +60,18 @@ def create_task(
 
     # Validate assigned_to is a member if provided
     if body.assigned_to:
-        assignee = db.query(EventMember).filter(
-            EventMember.event_id == event.id,
-            EventMember.user_id == body.assigned_to,
-        ).first()
+        assignee = (
+            db.query(EventMember)
+            .filter(
+                EventMember.event_id == event.id,
+                EventMember.user_id == body.assigned_to,
+            )
+            .first()
+        )
         if not assignee:
-            raise HTTPException(status_code=400, detail="Assigned user is not a member of this event")
+            raise HTTPException(
+                status_code=400, detail="Assigned user is not a member of this event"
+            )
 
     task = Task(
         event_id=event.id,
@@ -73,6 +87,7 @@ def create_task(
     try:
         from app.utils.broadcast import broadcast_event_update
         from app.utils._broadcast_helpers import task_dict
+
         broadcast_event_update(event.id, "task", "create", task_dict(task))
     except Exception:
         pass
@@ -103,23 +118,41 @@ def update_task(
     if is_privileged:
         # Validate assigned_to if being changed
         if body.assigned_to is not None:
-            assignee = db.query(EventMember).filter(
-                EventMember.event_id == event.id,
-                EventMember.user_id == body.assigned_to,
-            ).first()
+            assignee = (
+                db.query(EventMember)
+                .filter(
+                    EventMember.event_id == event.id,
+                    EventMember.user_id == body.assigned_to,
+                )
+                .first()
+            )
             if not assignee:
-                raise HTTPException(status_code=400, detail="Assigned user is not a member of this event")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Assigned user is not a member of this event",
+                )
         for field, value in body.model_dump(exclude_unset=True).items():
             setattr(task, field, value)
     else:
         # Attendees: can volunteer for unassigned tasks or complete their own
         if body.assigned_to is not None and body.assigned_to != user_id:
-            raise HTTPException(status_code=403, detail="You can only assign tasks to yourself")
-        if body.assigned_to == user_id and task.assigned_to is not None and task.assigned_to != user_id:
-            raise HTTPException(status_code=403, detail="Task is already assigned to someone else")
+            raise HTTPException(
+                status_code=403, detail="You can only assign tasks to yourself"
+            )
+        if (
+            body.assigned_to == user_id
+            and task.assigned_to is not None
+            and task.assigned_to != user_id
+        ):
+            raise HTTPException(
+                status_code=403, detail="Task is already assigned to someone else"
+            )
         if body.is_completed is not None:
             if task.assigned_to != user_id:
-                raise HTTPException(status_code=403, detail="Only the assigned member can complete this task")
+                raise HTTPException(
+                    status_code=403,
+                    detail="Only the assigned member can complete this task",
+                )
             task.is_completed = body.is_completed
         if body.assigned_to is not None:
             task.assigned_to = body.assigned_to
@@ -129,6 +162,7 @@ def update_task(
     try:
         from app.utils.broadcast import broadcast_event_update
         from app.utils._broadcast_helpers import task_dict
+
         broadcast_event_update(event.id, "task", "upsert", task_dict(task))
     except Exception:
         pass
@@ -151,6 +185,7 @@ def delete_task(
     db.commit()
     try:
         from app.utils.broadcast import broadcast_event_update
+
         broadcast_event_update(event.id, "task", "delete", {"id": task_id})
     except Exception:
         pass

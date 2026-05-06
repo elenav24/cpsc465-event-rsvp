@@ -94,16 +94,16 @@ def handle(event: dict, context) -> dict:
         next_last_key = response["LastEvaluatedKey"]["message_id"]
 
     # Strip DynamoDB TTL field before sending to client
-    messages = [
-        {k: v for k, v in item.items() if k != "expires_at"}
-        for item in items
-    ]
+    messages = [{k: v for k, v in item.items() if k != "expires_at"} for item in items]
 
-    payload = json.dumps({
-        "type": "history",
-        "messages": messages,
-        "last_key": next_last_key,
-    }, cls=DecimalEncoder).encode("utf-8")
+    payload = json.dumps(
+        {
+            "type": "history",
+            "messages": messages,
+            "last_key": next_last_key,
+        },
+        cls=DecimalEncoder,
+    ).encode("utf-8")
 
     apigw = _get_apigw_client()
     try:

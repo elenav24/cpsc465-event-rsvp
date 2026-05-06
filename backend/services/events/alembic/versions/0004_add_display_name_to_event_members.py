@@ -4,9 +4,9 @@ Revision ID: 0004_display_name
 Revises: 0003_add_uuid_to_events
 Create Date: 2026-05-05
 """
+
 from alembic import op
 import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision = "0004_display_name"
@@ -16,7 +16,9 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("event_members", sa.Column("display_name", sa.String(), nullable=True))
+    op.add_column(
+        "event_members", sa.Column("display_name", sa.String(), nullable=True)
+    )
 
 
 def downgrade() -> None:

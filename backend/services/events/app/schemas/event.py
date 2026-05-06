@@ -9,7 +9,7 @@ class EventCreate(BaseModel):
     location: Optional[str] = None
     start_dt: Optional[datetime] = None
     end_dt: Optional[datetime] = None
-    recurrence_rule: Optional[str] = None       # DAILY | WEEKLY | MONTHLY
+    recurrence_rule: Optional[str] = None  # DAILY | WEEKLY | MONTHLY
     recurrence_end_dt: Optional[datetime] = None
     viewable_by_link: bool = False
 
@@ -59,6 +59,7 @@ class MemberOut(BaseModel):
 
 class JoinResult(BaseModel):
     """Returned by the join-via-invite endpoint so the frontend can redirect."""
+
     id: int
     event_id: int
     event_uuid: str

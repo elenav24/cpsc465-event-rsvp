@@ -5,6 +5,7 @@ Revises:
 Create Date: 2026-05-02
 
 """
+
 from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
@@ -21,7 +22,9 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("cognito_sub", sa.String(), nullable=False),
         sa.Column("email", sa.String(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("email"),
         sa.UniqueConstraint("cognito_sub", name="uq_users_cognito_sub"),

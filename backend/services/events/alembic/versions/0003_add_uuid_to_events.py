@@ -4,10 +4,10 @@ Revision ID: 0003
 Revises: 0002_full_schema
 Create Date: 2026-05-04
 """
+
 from alembic import op
 import sqlalchemy as sa
 import uuid
-
 
 # revision identifiers, used by Alembic.
 revision = "0003_add_uuid_to_events"

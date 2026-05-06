@@ -10,6 +10,7 @@ Fixtures:
   set_user    — callable that switches the active user sub
   client      — TestClient (use set_user to switch users mid-test)
 """
+
 import pytest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
@@ -22,7 +23,9 @@ from app.db.models import Base
 from app.deps.db import get_db
 from app.deps.auth import get_current_user_sub
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://test:test@localhost:5432/test_events")
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL", "postgresql://test:test@localhost:5432/test_events"
+)
 
 engine = create_engine(DATABASE_URL)
 TestingSessionLocal = sessionmaker(engine, expire_on_commit=False)
@@ -96,6 +99,7 @@ def set_user(client):
             res = client.post(f"/events/events/join/{event['invite_token']}")
             set_user(TEST_USER_SUB)  # switch back
     """
+
     def _set(sub: str):
         client._current_sub[0] = sub
 

@@ -43,8 +43,11 @@ def _sync_display_name(cognito_sub: str, display_name: str, db: Session) -> None
         # Import here to avoid circular deps — events DB models live in a sibling service
         # In production both services share the same RDS instance so we can query directly.
         from sqlalchemy import text
+
         rows = db.execute(
-            text("UPDATE event_members SET display_name = :name WHERE user_id = :uid RETURNING id, event_id, user_id, role, display_name, joined_at"),
+            text(
+                "UPDATE event_members SET display_name = :name WHERE user_id = :uid RETURNING id, event_id, user_id, role, display_name, joined_at"
+            ),
             {"name": display_name, "uid": cognito_sub},
         ).fetchall()
         db.commit()
@@ -52,15 +55,23 @@ def _sync_display_name(cognito_sub: str, display_name: str, db: Session) -> None
         # Broadcast member upsert for each affected event
         try:
             from app.utils.broadcast import broadcast_event_update  # type: ignore
+
             for row in rows:
-                broadcast_event_update(row.event_id, "member", "upsert", {
-                    "id": row.id,
-                    "event_id": row.event_id,
-                    "user_id": row.user_id,
-                    "role": row.role,
-                    "display_name": row.display_name,
-                    "joined_at": row.joined_at.isoformat() if row.joined_at else None,
-                })
+                broadcast_event_update(
+                    row.event_id,
+                    "member",
+                    "upsert",
+                    {
+                        "id": row.id,
+                        "event_id": row.event_id,
+                        "user_id": row.user_id,
+                        "role": row.role,
+                        "display_name": row.display_name,
+                        "joined_at": (
+                            row.joined_at.isoformat() if row.joined_at else None
+                        ),
+                    },
+                )
         except Exception:
             pass
     except Exception:

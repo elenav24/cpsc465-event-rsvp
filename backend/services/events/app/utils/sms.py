@@ -2,6 +2,7 @@
 SMS utility — sends text messages via AWS SNS direct publish.
 Used for announcements. Reminders are handled by EventBridge Scheduler.
 """
+
 import logging
 import boto3
 from botocore.exceptions import ClientError

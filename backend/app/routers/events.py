@@ -18,6 +18,7 @@ def _parse_dt(val: Optional[str]) -> Optional[datetime]:
 
 # ── Event CRUD ────────────────────────────────────────────────────────────────
 
+
 @router.get("", response_model=list[EventOut])
 def get_events(
     current_user: Annotated[User, Depends(get_current_user)],
@@ -93,7 +94,9 @@ def update_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     if event.host_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Only the host can update this event")
+        raise HTTPException(
+            status_code=403, detail="Only the host can update this event"
+        )
 
     if title is not None:
         event.title = title
@@ -127,7 +130,9 @@ def delete_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     if event.host_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Only the host can delete this event")
+        raise HTTPException(
+            status_code=403, detail="Only the host can delete this event"
+        )
     db.delete(event)
     db.commit()
     return {"message": "Event deleted successfully"}
