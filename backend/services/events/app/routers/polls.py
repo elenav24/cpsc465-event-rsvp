@@ -105,7 +105,14 @@ def create_poll(
 
     db.commit()
     db.refresh(poll)
-    return _build_poll_out(poll, user_id, True)
+    result = _build_poll_out(poll, user_id, True)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import poll_dict
+        broadcast_event_update(event.id, "poll", "create", poll_dict(poll))
+    except Exception:
+        pass
+    return result
 
 
 @router.post("/{event_uuid}/polls/{poll_id}/vote", response_model=PollOut)
@@ -151,7 +158,14 @@ def vote(
 
     db.commit()
     db.refresh(poll)
-    return _build_poll_out(poll, user_id, is_privileged)
+    result = _build_poll_out(poll, user_id, is_privileged)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import poll_dict
+        broadcast_event_update(event.id, "poll", "upsert", poll_dict(poll))
+    except Exception:
+        pass
+    return result
 
 
 @router.post("/{event_uuid}/polls/{poll_id}/close", response_model=PollOut)
@@ -169,7 +183,14 @@ def close_poll(
     poll.is_closed = True
     db.commit()
     db.refresh(poll)
-    return _build_poll_out(poll, user_id, True)
+    result = _build_poll_out(poll, user_id, True)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import poll_dict
+        broadcast_event_update(event.id, "poll", "upsert", poll_dict(poll))
+    except Exception:
+        pass
+    return result
 
 
 @router.delete("/{event_uuid}/polls/{poll_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -186,3 +207,8 @@ def delete_poll(
         raise HTTPException(status_code=404, detail="Poll not found")
     db.delete(poll)
     db.commit()
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        broadcast_event_update(event.id, "poll", "delete", {"id": poll_id})
+    except Exception:
+        pass

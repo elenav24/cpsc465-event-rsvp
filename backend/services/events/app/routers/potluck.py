@@ -76,7 +76,14 @@ def create_potluck_item(
     db.add(item)
     db.commit()
     db.refresh(item)
-    return _build_item_out(item)
+    result = _build_item_out(item)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import potluck_dict
+        broadcast_event_update(event.id, "potluck", "create", potluck_dict(item))
+    except Exception:
+        pass
+    return result
 
 
 @router.put("/{event_uuid}/potluck/{item_id}", response_model=PotluckItemOut)
@@ -96,7 +103,14 @@ def update_potluck_item(
         setattr(item, field, value)
     db.commit()
     db.refresh(item)
-    return _build_item_out(item)
+    result = _build_item_out(item)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import potluck_dict
+        broadcast_event_update(event.id, "potluck", "upsert", potluck_dict(item))
+    except Exception:
+        pass
+    return result
 
 
 @router.delete("/{event_uuid}/potluck/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -113,6 +127,11 @@ def delete_potluck_item(
         raise HTTPException(status_code=404, detail="Potluck item not found")
     db.delete(item)
     db.commit()
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        broadcast_event_update(event.id, "potluck", "delete", {"id": item_id})
+    except Exception:
+        pass
 
 
 @router.post("/{event_uuid}/potluck/{item_id}/claim", response_model=PotluckItemOut, status_code=status.HTTP_201_CREATED)
@@ -142,7 +161,14 @@ def claim_item(
     db.add(PotluckClaim(item_id=item_id, user_id=user_id))
     db.commit()
     db.refresh(item)
-    return _build_item_out(item)
+    result = _build_item_out(item)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import potluck_dict
+        broadcast_event_update(event.id, "potluck", "upsert", potluck_dict(item))
+    except Exception:
+        pass
+    return result
 
 
 @router.delete("/{event_uuid}/potluck/{item_id}/claim", status_code=status.HTTP_204_NO_CONTENT)
@@ -163,3 +189,11 @@ def unclaim_item(
         raise HTTPException(status_code=404, detail="No claim found")
     db.delete(claim)
     db.commit()
+    # Broadcast updated item state after unclaim
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import potluck_dict
+        db.refresh(item)
+        broadcast_event_update(event.id, "potluck", "upsert", potluck_dict(item))
+    except Exception:
+        pass

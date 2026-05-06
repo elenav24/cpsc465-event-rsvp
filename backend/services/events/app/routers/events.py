@@ -142,6 +142,12 @@ def update_event(
         setattr(event, field, value)
     db.commit()
     db.refresh(event)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import event_dict
+        broadcast_event_update(event.id, "event", "upsert", event_dict(event))
+    except Exception:
+        pass
     return event
 
 
@@ -241,6 +247,12 @@ def join_via_invite(
 
     db.commit()
     db.refresh(member)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import member_dict
+        broadcast_event_update(event.id, "member", "create", member_dict(member))
+    except Exception:
+        pass
     return JoinResult(
         id=member.id,
         event_id=member.event_id,
@@ -322,6 +334,12 @@ def update_member_role(
     target.role = body.role
     db.commit()
     db.refresh(target)
+    try:
+        from app.utils.broadcast import broadcast_event_update
+        from app.utils._broadcast_helpers import member_dict
+        broadcast_event_update(event.id, "member", "upsert", member_dict(target))
+    except Exception:
+        pass
     return target
 
 

@@ -26,7 +26,45 @@ def update_me(
         setattr(current_user, field, value)
     db.commit()
     db.refresh(current_user)
+
+    # If display_name changed, propagate to all event_members records and broadcast
+    if body.display_name is not None:
+        _sync_display_name(current_user.cognito_sub, body.display_name, db)
+
     return current_user
+
+
+def _sync_display_name(cognito_sub: str, display_name: str, db: Session) -> None:
+    """
+    Update display_name on every EventMember row for this user and broadcast
+    a member upsert to each affected event so all open clients update in real time.
+    """
+    try:
+        # Import here to avoid circular deps — events DB models live in a sibling service
+        # In production both services share the same RDS instance so we can query directly.
+        from sqlalchemy import text
+        rows = db.execute(
+            text("UPDATE event_members SET display_name = :name WHERE user_id = :uid RETURNING id, event_id, user_id, role, display_name, joined_at"),
+            {"name": display_name, "uid": cognito_sub},
+        ).fetchall()
+        db.commit()
+
+        # Broadcast member upsert for each affected event
+        try:
+            from app.utils.broadcast import broadcast_event_update  # type: ignore
+            for row in rows:
+                broadcast_event_update(row.event_id, "member", "upsert", {
+                    "id": row.id,
+                    "event_id": row.event_id,
+                    "user_id": row.user_id,
+                    "role": row.role,
+                    "display_name": row.display_name,
+                    "joined_at": row.joined_at.isoformat() if row.joined_at else None,
+                })
+        except Exception:
+            pass
+    except Exception:
+        pass
 
 
 @router.get("/{user_id}", response_model=UserOut)

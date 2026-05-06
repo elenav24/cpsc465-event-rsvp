@@ -19,6 +19,7 @@ import {
 } from '../api/events'
 import type { AiMessage } from '../api/events'
 import { EventChatSocket } from '../api/chat'
+import type { EventUpdate } from '../api/chat'
 import type {
   EventOut, MemberOut, RSVPOut, PollOut, PotluckItemOut,
   TaskOut, AnnouncementOut, RSVPStatus
@@ -41,9 +42,10 @@ function copyToClipboard(text: string) {
 }
 
 // ── Chat Panel (right column) ─────────────────────────────────────────────────
-function ChatPanel({ eventId, myId, myName, token, onMessagesChange }: {
+function ChatPanel({ eventId, myId, myName, token, onMessagesChange, onEventUpdate }: {
   eventId: string; myId: string; myName: string; token: string
   onMessagesChange?: (msgs: WsMessage[]) => void
+  onEventUpdate?: (update: import('../api/chat').EventUpdate) => void
 }) {
   const [messages, setMessages] = useState<WsMessage[]>([])
   const [input, setInput] = useState('')
@@ -61,6 +63,7 @@ function ChatPanel({ eventId, myId, myName, token, onMessagesChange }: {
       onHistory: (msgs) => { setMessages(msgs); onMessagesChange?.(msgs) },
       onConnect: () => setConnected(true),
       onDisconnect: () => setConnected(false),
+      onEventUpdate,
     })
     socketRef.current = socket
     return () => socket.close()
@@ -116,7 +119,7 @@ function ChatPanel({ eventId, myId, myName, token, onMessagesChange }: {
 }
 
 // ── Polls Tab ─────────────────────────────────────────────────────────────────
-function PollsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string; isHost: boolean }) {
+function PollsTab({ eventUuid, myId, isHost, version }: { eventUuid: string; myId: string; isHost: boolean; version: number }) {
   const [polls, setPolls] = useState<PollOut[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -132,6 +135,8 @@ function PollsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string
     getPolls(eventUuid).then(setPolls).catch(() => {}).finally(() => setLoading(false))
   }, [eventUuid])
   useEffect(() => { load() }, [load])
+  // Re-fetch when a remote update arrives
+  useEffect(() => { if (version > 0) load() }, [version]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleVote = async (pollId: number, optionId: number, multi: boolean, currentVotes: number[]) => {
     const ids = multi
@@ -248,7 +253,7 @@ function PollsTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string
 }
 
 // ── Potluck Tab ───────────────────────────────────────────────────────────────
-function PotluckTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: string; isHost: boolean }) {
+function PotluckTab({ eventUuid, myId, isHost, version }: { eventUuid: string; myId: string; isHost: boolean; version: number }) {
   const [items, setItems] = useState<PotluckItemOut[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -261,6 +266,7 @@ function PotluckTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: stri
     getPotluck(eventUuid).then(setItems).catch(() => {}).finally(() => setLoading(false))
   }, [eventUuid])
   useEffect(() => { load() }, [load])
+  useEffect(() => { if (version > 0) load() }, [version]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleClaim = async (itemId: number, hasClaim: boolean) => {
     try {
@@ -338,7 +344,11 @@ function PotluckTab({ eventUuid, myId, isHost }: { eventUuid: string; myId: stri
 }
 
 // ── Tasks Tab ─────────────────────────────────────────────────────────────────
-function TasksTab({ eventUuid, myId, isHost, members }: { eventUuid: string; myId: string; isHost: boolean; members: MemberOut[] }) {
+function TasksTab({ eventUuid, myId, isHost, members, version, onTasksChange }: {
+  eventUuid: string; myId: string; isHost: boolean; members: MemberOut[]
+  version: number
+  onTasksChange?: (tasks: TaskOut[]) => void
+}) {
   const [tasks, setTasks] = useState<TaskOut[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -349,9 +359,10 @@ function TasksTab({ eventUuid, myId, isHost, members }: { eventUuid: string; myI
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(() => {
-    getTasks(eventUuid).then(setTasks).catch(() => {}).finally(() => setLoading(false))
-  }, [eventUuid])
+    getTasks(eventUuid).then(t => { setTasks(t); onTasksChange?.(t) }).catch(() => {}).finally(() => setLoading(false))
+  }, [eventUuid]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [load])
+  useEffect(() => { if (version > 0) load() }, [version]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggle = async (task: TaskOut) => {
     try { const u = await updateTask(eventUuid, task.id, { is_completed: !task.is_completed }); setTasks(prev => prev.map(t => t.id === task.id ? u : t)) }
@@ -442,7 +453,7 @@ function TasksTab({ eventUuid, myId, isHost, members }: { eventUuid: string; myI
 }
 
 // ── Announcements Tab ─────────────────────────────────────────────────────────
-function AnnouncementsTab({ eventUuid, myId, isHost, onNew }: { eventUuid: string; myId: string; isHost: boolean; onNew?: () => void }) {
+function AnnouncementsTab({ eventUuid, myId, isHost, onNew, version }: { eventUuid: string; myId: string; isHost: boolean; onNew?: () => void; version: number }) {
   const [announcements, setAnnouncements] = useState<AnnouncementOut[]>([])
   const [loading, setLoading] = useState(true)
   const [body, setBody] = useState('')
@@ -453,6 +464,7 @@ function AnnouncementsTab({ eventUuid, myId, isHost, onNew }: { eventUuid: strin
     getAnnouncements(eventUuid).then(setAnnouncements).catch(() => {}).finally(() => setLoading(false))
   }, [eventUuid])
   useEffect(() => { load() }, [load])
+  useEffect(() => { if (version > 0) { load(); onNew?.() } }, [version]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault(); if (!body.trim()) return; setSaving(true)
@@ -738,6 +750,7 @@ export default function EventPage() {
   const [aiMessages, setAiMessages] = useState<AiMessage[]>([])
   const [liveChatMessages, setLiveChatMessages] = useState<WsMessage[]>([])
   const [unreadTabs, setUnreadTabs] = useState<Set<string>>(new Set())
+  const [resourceVersions, setResourceVersions] = useState<Record<string, number>>({})
 
   const markRead = (tab: string) => setUnreadTabs(prev => { const s = new Set(prev); s.delete(tab); return s })
   const markUnread = (tab: string) => setUnreadTabs(prev => activeTab === tab ? prev : new Set([...prev, tab]))
@@ -797,6 +810,54 @@ export default function EventPage() {
     try { const u = await revokeInvite(eventUuid); setEvent(u) }
     catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed') }
   }
+
+  // ── Real-time update handler ──────────────────────────────────────────────
+  const handleEventUpdate = useCallback((update: EventUpdate) => {
+    const { kind, action, data } = update
+
+    if (kind === 'rsvp') {
+      const rsvp = data as unknown as RSVPOut
+      if (action === 'upsert') {
+        setRsvps(prev => {
+          const exists = prev.find(r => r.user_id === rsvp.user_id)
+          return exists ? prev.map(r => r.user_id === rsvp.user_id ? rsvp : r) : [...prev, rsvp]
+        })
+        if (rsvp.user_id === myId) {
+          setMyRsvp(rsvp)
+          setGuestCount(rsvp.guest_count)
+        }
+      }
+    }
+
+    if (kind === 'event' && action === 'upsert') {
+      setEvent(data as unknown as EventOut)
+    }
+
+    if (kind === 'member') {
+      const member = data as unknown as MemberOut
+      if (action === 'create') {
+        setEventMembers(prev => prev.find(m => m.user_id === member.user_id) ? prev : [...prev, member])
+      } else if (action === 'upsert') {
+        setEventMembers(prev => prev.map(m => m.user_id === member.user_id ? member : m))
+        if (member.display_name) {
+          setLiveChatMessages(prev => prev.map(msg =>
+            msg.sender_id === member.user_id
+              ? { ...msg, sender_name: member.display_name! }
+              : msg
+          ))
+        }
+      } else if (action === 'delete') {
+        const id = (data as unknown as { id: number }).id
+        setEventMembers(prev => prev.filter(m => m.id !== id))
+      }
+    }
+
+    // For polls/tasks/potluck/announcements: signal the active tab to refresh
+    // We use a version counter per resource type — tabs watch it and re-fetch
+    if (['poll', 'task', 'potluck', 'announcement'].includes(kind)) {
+      setResourceVersions(prev => ({ ...prev, [kind]: (prev[kind] ?? 0) + 1 }))
+    }
+  }, [myId])
 
   const isHost = event?.host_id === myId || event?.host_id === myDbId
 
@@ -1107,11 +1168,11 @@ export default function EventPage() {
 
         {/* Tab content */}
         <div className="ep-tab-content">
-          {activeTab === 'polls' && <PollsTab eventUuid={eventUuid} myId={myId} isHost={isHost} />}
-          {activeTab === 'tasks' && <TasksTab eventUuid={eventUuid} myId={myId} isHost={isHost} members={eventMembers} />}
-          {activeTab === 'potluck' && <PotluckTab eventUuid={eventUuid} myId={myId} isHost={isHost} />}
+          {activeTab === 'polls' && <PollsTab eventUuid={eventUuid} myId={myId} isHost={isHost} version={resourceVersions['poll'] ?? 0} />}
+          {activeTab === 'tasks' && <TasksTab eventUuid={eventUuid} myId={myId} isHost={isHost} members={eventMembers} version={resourceVersions['task'] ?? 0} onTasksChange={setEventTasks} />}
+          {activeTab === 'potluck' && <PotluckTab eventUuid={eventUuid} myId={myId} isHost={isHost} version={resourceVersions['potluck'] ?? 0} />}
           {activeTab === 'announcements' && (
-            <AnnouncementsTab eventUuid={eventUuid} myId={myId} isHost={isHost} onNew={() => markUnread('announcements')} />
+            <AnnouncementsTab eventUuid={eventUuid} myId={myId} isHost={isHost} onNew={() => markUnread('announcements')} version={resourceVersions['announcement'] ?? 0} />
           )}
           {activeTab === 'ai' && (
             <AiTab eventUuid={eventUuid} messages={aiMessages} setMessages={setAiMessages}
@@ -1131,7 +1192,8 @@ export default function EventPage() {
           <span className="ep-live-label">LIVE</span>
         </div>
         <ChatPanel eventId={eventUuid} myId={myId} myName={myName} token={token}
-          onMessagesChange={(msgs) => { setLiveChatMessages(msgs); markUnread('chat') }} />
+          onMessagesChange={(msgs) => { setLiveChatMessages(msgs); markUnread('chat') }}
+          onEventUpdate={handleEventUpdate} />
       </div>
 
     </div>
