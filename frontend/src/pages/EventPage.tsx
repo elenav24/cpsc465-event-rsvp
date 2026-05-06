@@ -1,6 +1,12 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { marked } from 'marked'
+import {
+  FiCalendar, FiRepeat, FiLink, FiMapPin, FiStar,
+  FiCheck, FiX, FiBell,
+} from 'react-icons/fi'
+import { MdOutlineCelebration } from 'react-icons/md'
+import { BsStars } from 'react-icons/bs'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import {
@@ -775,7 +781,7 @@ function AiTab({
       <div className="chat-messages">
         {messages.length === 0 && !loading && (
           <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✨</div>
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}><BsStars size={32} color="var(--pink)" /></div>
             <div style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-dark)' }}>AI Event Assistant</div>
             <div>Ask anything about this event — guests, polls, tasks, or the chat.</div>
           </div>
@@ -783,7 +789,7 @@ function AiTab({
         {messages.map((msg, i) => (
           <div key={i} className={`chat-msg${msg.role === 'user' ? ' mine' : ''}`}>
             <div className="chat-bubble-avatar">
-              {msg.role === 'user' ? 'You' : '✨'}
+              {msg.role === 'user' ? 'You' : <BsStars size={12} />}
             </div>
             <div className="chat-bubble" style={msg.role === 'assistant' ? { background: 'var(--purple-pale)', color: 'var(--text-dark)' } : undefined}>
               <div className="chat-bubble-name">{msg.role === 'user' ? 'You' : 'AI Assistant'}</div>
@@ -796,7 +802,7 @@ function AiTab({
         ))}
         {loading && (
           <div className="chat-msg">
-            <div className="chat-bubble-avatar">✨</div>
+            <div className="chat-bubble-avatar"><BsStars size={12} /></div>
             <div className="chat-bubble" style={{ background: 'var(--purple-pale)' }}>
               <div className="chat-bubble-name">AI Assistant</div>
               <div className="chat-bubble-text" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
@@ -877,8 +883,8 @@ function RemindersTab({ eventUuid, hasStartDt }: { eventUuid: string; hasStartDt
 
   return (
     <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 600, marginBottom: '0.25rem' }}>
-        🔔 Email Reminders
+      <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 600, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <FiBell size={14} /> Email Reminders
       </div>
       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
         Get an email before the event starts. You'll receive reminders at the times you select below.
@@ -897,8 +903,8 @@ function RemindersTab({ eventUuid, hasStartDt }: { eventUuid: string; hasStartDt
         const reminder = reminders.find(r => r.offset_minutes === opt.minutes)
         return (
           <div key={opt.minutes} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: isActive ? '#e6f9ee' : 'white', border: `1px solid ${isActive ? '#b7ebc8' : 'var(--border)'}`, borderRadius: 8 }}>
-            <span style={{ fontSize: '0.85rem', color: isActive ? '#1a7a3c' : 'var(--text-mid)', fontWeight: isActive ? 600 : 400 }}>
-              {isActive && '✓ '}{opt.label}
+            <span style={{ fontSize: '0.85rem', color: isActive ? '#1a7a3c' : 'var(--text-mid)', fontWeight: isActive ? 600 : 400, display: 'flex', alignItems: 'center', gap: 4 }}>
+              {isActive && <FiCheck size={13} />}{opt.label}
             </span>
             {isActive ? (
               <button onClick={() => handleDelete(reminder!.id)} style={{ fontSize: '0.72rem', color: '#c00', background: 'none', border: '1px solid #fcc', borderRadius: 100, padding: '2px 8px', cursor: 'pointer', fontFamily: 'Albert Sans' }}>
@@ -1224,15 +1230,14 @@ export default function EventPage() {
 
   const isHost = event?.host_id === myId || event?.host_id === myDbId
 
-  const sidebarItems = [
-    { key: 'chat', label: 'Event Chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" /></svg> },
-    { key: 'ai', label: 'AI Assistant', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2a2 2 0 012 2v1a7 7 0 010 14v1a2 2 0 01-4 0v-1a7 7 0 010-14V4a2 2 0 012-2z" strokeLinecap="round" /><circle cx="12" cy="12" r="3" /></svg> },
+  const tabItems = [
+    { key: 'chat', label: 'Chat', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" /></svg> },
+    { key: 'ai', label: 'AI', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2a2 2 0 012 2v1a7 7 0 010 14v1a2 2 0 01-4 0v-1a7 7 0 010-14V4a2 2 0 012-2z" strokeLinecap="round" /><circle cx="12" cy="12" r="3" /></svg> },
     { key: 'polls', label: 'Polls', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="10" width="4" height="11" rx="1" /><rect x="10" y="6" width="4" height="15" rx="1" /><rect x="17" y="2" width="4" height="19" rx="1" /></svg> },
     { key: 'potluck', label: 'Potluck', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" strokeLinecap="round" /><path d="M8 12h8M12 8v8" strokeLinecap="round" /></svg> },
     { key: 'tasks', label: 'Tasks', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 11l3 3L22 4" strokeLinecap="round" strokeLinejoin="round" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeLinecap="round" strokeLinejoin="round" /></svg> },
-    { key: 'announcements', label: 'Announcements', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" /></svg> },
+    { key: 'announcements', label: 'Announce', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" /></svg> },
     { key: 'reminders', label: 'Reminders', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" /><path d="M13.73 21a2 2 0 01-3.46 0" /></svg> },
-    { key: 'guests', label: 'Guest List', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" /><path d="M16 3.13a4 4 0 010 7.75" /><path d="M21 21v-2a4 4 0 00-3-3.87" /></svg> },
   ]
 
   if (loading) return (
@@ -1256,7 +1261,7 @@ export default function EventPage() {
       {/* Main — tabs are the focus */}
       <div className="event-main">
         <div className="main-header">
-          <div className="event-cat-badge">🎉 Event</div>
+          <div className="event-cat-badge"><MdOutlineCelebration size={13} /> Event</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <h1 className="event-title">{event.title}</h1>
             {isHost && !editing && (
@@ -1270,10 +1275,7 @@ export default function EventPage() {
           </div>
           {event.location && (
             <div className="event-location">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 1.5A4.5 4.5 0 0113.5 6c0 3-4.5 8.5-4.5 8.5S4.5 9 4.5 6A4.5 4.5 0 018 1.5z" stroke="var(--text-muted)" strokeWidth="1.5" />
-                <circle cx="8" cy="6" r="1.5" stroke="var(--text-muted)" strokeWidth="1.5" />
-              </svg>
+              <FiMapPin size={14} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
               {event.location}
             </div>
           )}
@@ -1297,7 +1299,7 @@ export default function EventPage() {
 
         {/* Horizontal tab bar */}
         <div className="main-tabs">
-          {sidebarItems.map((item) => (
+          {tabItems.map((item) => (
             <button
               key={item.key}
               className={`main-tab${activeTab === item.key ? ' active' : ''}`}
@@ -1340,11 +1342,6 @@ export default function EventPage() {
           {activeTab === 'reminders' && (
             <div style={{ overflowY: 'auto', flex: 1 }}>
               <RemindersTab eventUuid={eventUuid} hasStartDt={!!event.start_dt} />
-            </div>
-          )}
-          {activeTab === 'guests' && (
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              <GuestsTab eventUuid={eventUuid} myId={myId} isHost={isHost} hostId={String(event.host_id)} rsvps={rsvps} />
             </div>
           )}
         </div>
@@ -1476,7 +1473,7 @@ export default function EventPage() {
             </div>
             {event.start_dt && (
               <div className="detail-row">
-                <span className="detail-icon">📅</span>
+                <FiCalendar size={14} style={{ flexShrink: 0, marginTop: 2, color: 'var(--text-muted)' }} />
                 <div>
                   <div className="detail-val">{formatDate(event.start_dt)}{event.end_dt ? ` – ${formatDate(event.end_dt)}` : ''}</div>
                 </div>
@@ -1484,7 +1481,7 @@ export default function EventPage() {
             )}
             {event.recurrence_rule && (
               <div className="detail-row">
-                <span className="detail-icon">🔁</span>
+                <FiRepeat size={14} style={{ flexShrink: 0, marginTop: 2, color: 'var(--text-muted)' }} />
                 <div>
                   <div className="detail-val">
                     {event.recurrence_rule.charAt(0) + event.recurrence_rule.slice(1).toLowerCase()}
@@ -1495,9 +1492,42 @@ export default function EventPage() {
             )}
             {event.viewable_by_link && (
               <div style={{ fontSize: '0.75rem', color: '#7F77DD', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                🔗 Viewable by anyone with the link
+                <FiLink size={12} /> Viewable by anyone with the link
               </div>
             )}
+          </div>
+
+          {/* Guest list */}
+          <div className="sidebar-section">
+            <div className="sidebar-section-title">Guests ({eventMembers.length})</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {eventMembers.slice(0, 8).map(m => {
+                const rsvp = rsvps.find(r => r.user_id === m.user_id)
+                const isMe = m.user_id === myId
+                const name = isMe ? 'You' : (m.display_name || m.user_id.slice(0, 8) + '…')
+                const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                return (
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, var(--purple-pale), var(--pink-pale))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem', fontWeight: 700, color: 'var(--pink)', flexShrink: 0 }}>
+                      {initials}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+                      <div style={{ fontSize: '0.68rem', color: m.role === 'host' ? 'var(--pink)' : m.role === 'co_host' ? '#7F77DD' : 'var(--text-muted)' }}>{m.role.replace('_', ' ')}</div>
+                    </div>
+                    {rsvp && (
+                      <span style={{ fontSize: '0.65rem', padding: '1px 6px', borderRadius: 100, background: rsvp.status === 'yes' ? '#e6f9ee' : rsvp.status === 'no' ? '#fff0f0' : '#fffbe6', color: rsvp.status === 'yes' ? '#1a7a3c' : rsvp.status === 'no' ? '#c00' : '#856404', fontWeight: 600, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {rsvp.status === 'yes' ? <FiCheck size={10} /> : rsvp.status === 'no' ? <FiX size={10} /> : <FiStar size={10} />}
+                        {rsvp.guest_count > 0 && ` +${rsvp.guest_count}`}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+              {eventMembers.length > 8 && (
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>+{eventMembers.length - 8} more</div>
+              )}
+            </div>
           </div>
 
           {/* Invite link (host only) */}
@@ -1533,8 +1563,8 @@ export default function EventPage() {
                         </svg>
                       )}
                     </button>
-                    <button onClick={handleCopyInvite} style={{ background: inviteCopied ? '#1a7a3c' : 'var(--pink)', color: 'white', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      {inviteCopied ? '✓' : 'Copy'}
+                    <button onClick={handleCopyInvite} style={{ background: inviteCopied ? '#1a7a3c' : 'var(--pink)', color: 'white', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'Albert Sans', fontWeight: 600, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {inviteCopied ? <><FiCheck size={12} /> Copied</> : 'Copy'}
                     </button>
                   </div>
                   <div style={{ display: 'flex', gap: 10 }}>
@@ -1562,7 +1592,7 @@ export default function EventPage() {
       <style>{`
         .event-page { display: flex; flex-direction: row-reverse; width: 100%; overflow: hidden; height: calc(100svh - var(--nav-height)); margin-top: var(--nav-height); }
 
-        /* ── Main (left) ── */
+        /* ── Main right (tabs) ── */
         .event-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; height: 100%; }
         .main-header { padding: 1.25rem 1.5rem 0.75rem; border-bottom: 1px solid var(--border); flex-shrink: 0; background: white; }
         .event-cat-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--pink-bg); border: 1px solid var(--pink-pale); border-radius: 100px; padding: 3px 10px; font-size: 0.75rem; color: var(--pink); font-weight: 600; margin-bottom: 0.4rem; }
@@ -1570,20 +1600,20 @@ export default function EventPage() {
         .event-location { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
 
         /* Tab bar */
-        .main-tabs { display: flex; gap: 0; padding: 0 1.5rem; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; flex-shrink: 0; background: white; }
+        .main-tabs { display: flex; gap: 0; padding: 0 1rem; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; flex-shrink: 0; background: white; }
         .main-tabs::-webkit-scrollbar { display: none; }
-        .main-tab { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: none; border: none; border-bottom: 2px solid transparent; font-family: 'Albert Sans', sans-serif; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; margin-bottom: -1px; }
+        .main-tab { display: flex; align-items: center; gap: 5px; padding: 9px 10px; background: none; border: none; border-bottom: 2px solid transparent; font-family: 'Albert Sans', sans-serif; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; margin-bottom: -1px; }
         .main-tab:hover { color: var(--text-dark); }
         .main-tab.active { color: var(--pink); border-bottom-color: var(--pink); font-weight: 600; }
         .main-tab-icon { display: flex; align-items: center; justify-content: center; }
-        .main-tab-icon svg { width: 14px; height: 14px; }
+        .main-tab-icon svg { width: 13px; height: 13px; }
 
-        /* Tab content area — fills remaining height, each tab scrolls internally */
+        /* Tab content */
         .main-tab-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
         .main-tab-content > div { flex: 1; overflow-y: auto; min-height: 0; }
 
-        /* ── Sidebar (right) ── */
-        .event-sidebar { width: 40%; flex-shrink: 0; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        /* ── Sidebar left (info) ── */
+        .event-sidebar { width: 50%; flex-shrink: 0; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
         .sidebar-hero { width: 100%; height: 150px; background: linear-gradient(135deg, var(--purple-pale) 0%, var(--pink-pale) 100%); flex-shrink: 0; overflow: hidden; position: relative; }
         .sidebar-hero img { width: 100%; height: 100%; object-fit: cover; }
         .sidebar-hero-clickable { cursor: zoom-in; }
@@ -1623,7 +1653,6 @@ export default function EventPage() {
 
         /* Detail rows */
         .detail-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 0.4rem; }
-        .detail-icon { font-size: 0.95rem; flex-shrink: 0; margin-top: 1px; }
         .detail-val { font-size: 0.82rem; color: var(--text-mid); line-height: 1.5; }
 
         /* Edit button */
@@ -1687,10 +1716,13 @@ export default function EventPage() {
         .ai-markdown hr { border: none; border-top: 1px solid var(--border); margin: 0.5em 0; }
 
         @media (max-width: 900px) {
-          .event-page { flex-direction: column; height: auto; overflow: visible; margin-top: var(--nav-height); }
-          .event-sidebar { width: 100%; height: auto; flex-shrink: 0; border-right: none; border-bottom: 1px solid var(--border); }
-          .sidebar-scroll { max-height: 60vh; }
-          .event-main { height: calc(100svh - var(--nav-height)); flex-shrink: 0; }
+          .event-page { flex-direction: column; height: auto; overflow: auto; margin-top: var(--nav-height); }
+          .event-sidebar { width: 100%; height: auto; flex-shrink: 0; border-right: none; border-bottom: 1px solid var(--border); overflow: visible; }
+          .sidebar-scroll { overflow-y: visible; max-height: none; }
+          .sidebar-hero { height: 120px; }
+          .event-main { height: 100svh; flex-shrink: 0; min-height: 100svh; }
+          .event-title { font-size: 1.3rem; }
+          .main-tab { padding: 8px 8px; font-size: 0.72rem; gap: 4px; }
         }
       `}</style>
     </div>
