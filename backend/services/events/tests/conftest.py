@@ -11,6 +11,7 @@ Fixtures:
   client      — TestClient (use set_user to switch users mid-test)
 """
 import pytest
+from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -35,6 +36,17 @@ def create_tables():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def patch_broadcast():
+    """
+    Suppress all real-time broadcast calls in every test.
+    broadcast_event_update tries to reach DynamoDB/API Gateway which are
+    not available in the test environment.
+    """
+    with patch("app.utils.broadcast.broadcast_event_update", return_value=None):
+        yield
 
 
 @pytest.fixture()

@@ -106,8 +106,11 @@ resource "aws_lambda_function" "events" {
 
   environment {
     variables = merge(local.lambda_common_env, {
-      S3_BUCKET  = aws_s3_bucket.flyers.bucket
-      S3_REGION  = var.aws_region
+      S3_BUCKET         = aws_s3_bucket.flyers.bucket
+      S3_REGION         = var.aws_region
+      # Real-time broadcast — fan out event updates to open WebSocket clients
+      CONNECTIONS_TABLE = aws_dynamodb_table.chat_connections.name
+      WS_ENDPOINT       = "${aws_apigatewayv2_api.chat_ws.id}.execute-api.${var.aws_region}.amazonaws.com/${aws_apigatewayv2_stage.chat_ws.name}"
     })
   }
 
@@ -127,7 +130,11 @@ resource "aws_lambda_function" "users" {
   memory_size   = 512
 
   environment {
-    variables = local.lambda_common_env
+    variables = merge(local.lambda_common_env, {
+      # Real-time broadcast — propagate display_name changes to open event pages
+      CONNECTIONS_TABLE = aws_dynamodb_table.chat_connections.name
+      WS_ENDPOINT       = "${aws_apigatewayv2_api.chat_ws.id}.execute-api.${var.aws_region}.amazonaws.com/${aws_apigatewayv2_stage.chat_ws.name}"
+    })
   }
 
   lifecycle {

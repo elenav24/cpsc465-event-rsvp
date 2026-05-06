@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -20,6 +21,13 @@ def create_tables():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def patch_broadcast():
+    """Suppress broadcast calls — DynamoDB/API Gateway not available in tests."""
+    with patch("app.routers.users._sync_display_name", return_value=None):
+        yield
 
 
 @pytest.fixture()
