@@ -5,6 +5,9 @@ import starSvg from '../assets/star.svg'
 import { HiUserGroup } from "react-icons/hi";
 import { FaClipboardList } from "react-icons/fa";
 import { BiParty } from "react-icons/bi";
+import setTheVibeImg from '../assets/set-the-vibe.png'
+import gatherYourPeopleImg from '../assets/gather-your-people.png'
+import decideTogether from '../assets/decide-together.png'
 
 
 interface Step {
@@ -26,40 +29,36 @@ interface Step {
 
 function TemplateCardVisual() {
     return (
-        <div className="w-full aspect-video bg-gradient-to-br from-pink-pale to-purple-pale rounded-xl flex items-center justify-center overflow-hidden">
-            <span className="material-symbols-outlined text-pink opacity-30 text-[clamp(24px,6vw,64px)]">
-                auto_fix_high
-            </span>
+        <div className="w-full rounded-xl overflow-hidden flex items-center justify-center" style={{ height: 220, background: '#fdf2f8' }}>
+            <img src={setTheVibeImg} alt="Set the vibe" className="w-full h-full object-contain" />
         </div>
     )
 }
 
 function InviteCardVisual() {
     return (
-        <div className="w-full aspect-video bg-gradient-to-br from-pink-pale to-pink-pale rounded-xl flex items-center justify-center overflow-hidden">
-            <span className="material-symbols-outlined text-pink opacity-30 text-[clamp(24px,6vw,64px)]">
-                send
-            </span>
+        <div className="w-full rounded-xl overflow-hidden flex items-center justify-center" style={{ height: 220, background: '#fdf2f8' }}>
+            <img src={gatherYourPeopleImg} alt="Gather your people" className="w-full h-full object-contain" />
         </div>
     )
 }
 
 function PollCardVisual() {
     return (
-        <div className="w-full aspect-video bg-gradient-to-br from-pink-pale to-pink-pale rounded-xl flex items-center justify-center overflow-hidden">
-            <span className="material-symbols-outlined text-pink opacity-30 text-[clamp(24px,6vw,64px)]">
-                poll
-            </span>
+        <div className="w-full rounded-xl overflow-hidden flex items-center justify-center" style={{ height: 220, background: '#fdf2f8' }}>
+            <img src={decideTogether} alt="Decide together" className="w-full h-full object-contain" />
         </div>
     )
 }
 
 function LoungeCardVisual() {
     return (
-        <div className="w-full aspect-video bg-gradient-to-br from-pink-pale to-purple-light rounded-xl flex items-center justify-center overflow-hidden">
-            <span className="material-symbols-outlined text-purple-btn opacity-30 text-[clamp(24px,6vw,64px)]">
-                nightlife
-            </span>
+        <div className="w-full rounded-xl overflow-hidden" style={{ height: 220 }}>
+            <img
+                src="https://images.unsplash.com/photo-1529543544282-ea669407fca3?w=800&q=80"
+                alt="Enjoy the moment"
+                className="w-full h-full object-cover object-center"
+            />
         </div>
     )
 }

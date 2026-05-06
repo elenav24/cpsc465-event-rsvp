@@ -40,7 +40,9 @@ resource "aws_lambda_function" "notifications" {
 
   environment {
     variables = {
-      ENV = var.environment
+      ENV          = var.environment
+      FROM_EMAIL   = "no-reply@cohosted.cloud"
+      DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
     }
   }
 
@@ -56,6 +58,14 @@ resource "aws_lambda_permission" "notifications_sns" {
   function_name = aws_lambda_function.notifications.function_name
   principal     = "sns.amazonaws.com"
   source_arn    = aws_sns_topic.announcements.arn
+}
+
+# Allow EventBridge Scheduler to invoke the notifications Lambda for reminders
+resource "aws_lambda_permission" "notifications_scheduler" {
+  statement_id  = "AllowSchedulerInvokeNotifications"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.notifications.function_name
+  principal     = "scheduler.amazonaws.com"
 }
 
 # Subscribe the notifications Lambda to the announcements SNS topic

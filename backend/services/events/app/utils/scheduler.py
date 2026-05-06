@@ -42,7 +42,6 @@ def _rule_name(event_id: int, user_id: str, offset_minutes: int) -> str:
 def create_reminder_schedule(
     event_id: int,
     user_id: str,
-    phone_number: str,
     event_title: str,
     event_start: datetime,
     offset_minutes: int,
@@ -70,7 +69,6 @@ def create_reminder_schedule(
     payload = {
         "event_id": event_id,
         "user_id": user_id,
-        "phone_number": phone_number,
         "message": message,
     }
 

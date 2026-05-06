@@ -66,23 +66,9 @@ def create_reminder(
     if existing:
         raise HTTPException(status_code=400, detail="Reminder with this offset already exists")
 
-    # Get user's phone number from EventMember denormalized field
-    member = db.query(EventMember).filter(
-        EventMember.event_id == event.id,
-        EventMember.user_id == user_id,
-    ).first()
-
-    phone = getattr(member, "phone_number", None)
-    if not phone:
-        raise HTTPException(
-            status_code=400,
-            detail="No phone number on file. Update your profile to enable SMS reminders.",
-        )
-
     rule_name = create_reminder_schedule(
         event_id=event.id,
         user_id=user_id,
-        phone_number=phone,
         event_title=event.title,
         event_start=event.start_dt,
         offset_minutes=body.offset_minutes,
