@@ -42,17 +42,11 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
   signing_protocol                  = "sigv4"
 }
 
-# ── Response Headers Policy (security headers + HSTS) ────────────────────────
+# ── Response Headers Policy (security headers, no HSTS — eduroam/Infoblox incompatible) ──
 resource "aws_cloudfront_response_headers_policy" "frontend" {
   name = "${var.app_name}-security-headers"
 
   security_headers_config {
-    strict_transport_security {
-      access_control_max_age_sec = 31536000
-      include_subdomains         = true
-      preload                    = true
-      override                   = true
-    }
     content_type_options {
       override = true
     }
