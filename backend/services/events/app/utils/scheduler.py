@@ -55,7 +55,9 @@ def create_reminder_schedule(
         return None
 
     fire_at = event_start - timedelta(minutes=offset_minutes)
-    if fire_at <= datetime.now(timezone.utc):
+    # Normalize to UTC-aware for comparison — DB datetimes are stored as naive UTC
+    fire_at_aware = fire_at.replace(tzinfo=timezone.utc) if fire_at.tzinfo is None else fire_at
+    if fire_at_aware <= datetime.now(timezone.utc):
         logger.info("Reminder fire time is in the past — skipping")
         return None
 
