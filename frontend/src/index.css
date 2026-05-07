@@ -552,3 +552,68 @@ h2 {
   justify-content: center;
   min-height: 60vh;
 }
+
+/* ─── EventPage — things that can't be expressed in Tailwind ─────────────────── */
+
+/* Guest row: show actions on hover, hide RSVP badge only when actions exist */
+.ep-guest-row { position: relative; }
+.ep-guest-actions { display: none; align-items: center; gap: 4px; flex-shrink: 0; }
+.ep-guest-row:hover .ep-guest-actions { display: flex; }
+.ep-guest-row:has(.ep-guest-actions):hover .ep-guest-rsvp { display: none; }
+
+/* Poll option: relative bar + text layering */
+.ep-poll-bar { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(208,99,149,0.08); transition: width 0.3s; }
+.ep-poll-option.voted .ep-poll-bar { background: rgba(208,99,149,0.12); }
+.ep-poll-pct { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: var(--text-muted); z-index: 1; }
+
+/* Flyer expand icon: opacity on parent hover */
+.ep-flyer-expand { opacity: 0; transition: opacity 0.2s; }
+.ep-flyer-card:hover .ep-flyer-expand { opacity: 1; }
+
+/* Live dot pulse animation */
+@keyframes ep-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.ep-live-dot { animation: ep-pulse 2s infinite; }
+
+/* AI typing dots */
+@keyframes ep-ai-bounce { 0%,80%,100%{transform:translateY(0);opacity:0.4} 40%{transform:translateY(-4px);opacity:1} }
+.ep-ai-dot { animation: ep-ai-bounce 1.2s ease-in-out infinite; }
+
+/* AI markdown styles */
+.ep-ai-markdown { font-size: 0.82rem; line-height: 1.6; color: var(--text-dark); }
+.ep-ai-markdown p { margin: 0 0 0.5em; }
+.ep-ai-markdown p:last-child { margin-bottom: 0; }
+.ep-ai-markdown ul, .ep-ai-markdown ol { margin: 0.25em 0 0.5em 1.25em; padding: 0; }
+.ep-ai-markdown li { margin-bottom: 0.2em; }
+.ep-ai-markdown strong { font-weight: 700; color: #be185d; }
+.ep-ai-markdown code { background: #fce7f3; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 0.82em; color: #be185d; }
+.ep-ai-markdown pre { background: #fce7f3; border-radius: 6px; padding: 0.75em 1em; overflow-x: auto; margin: 0.5em 0; }
+.ep-ai-markdown pre code { background: none; padding: 0; }
+.ep-ai-markdown h1,.ep-ai-markdown h2,.ep-ai-markdown h3 { font-family: 'Albert Sans',sans-serif; font-weight: 700; margin: 0.5em 0 0.25em; color: #be185d; }
+.ep-ai-markdown blockquote { border-left: 3px solid #f9a8d4; margin: 0.5em 0; padding-left: 0.75em; color: var(--text-muted); }
+.ep-ai-markdown a { color: var(--pink); text-decoration: underline; }
+
+/* Tab label responsive */
+.ep-tab-label-mobile { display: none; }
+.ep-tab-label-desktop { display: inline; }
+@media (max-width: 500px) {
+  .ep-tab-label-mobile { display: inline; }
+  .ep-tab-label-desktop { display: none; }
+}
+
+/* EventPage root responsive layout */
+.ep-root {
+  display: flex; flex-direction: row; width: 100%; overflow: hidden;
+  height: calc(100svh - var(--nav-height)); margin-top: var(--nav-height);
+  background: #fdf0f5; gap: 14px; padding: 14px; box-sizing: border-box;
+}
+@media (max-width: 1200px) { .ep-root { gap: 10px; padding: 10px; } }
+@media (max-width: 900px) {
+  .ep-root { flex-direction: column; height: auto; min-height: 100svh; overflow: auto; padding: 10px; gap: 12px; }
+  .ep-sidebar { flex: none !important; width: 100% !important; height: auto !important; overflow: visible !important; }
+  .ep-sidebar-inner { overflow-y: visible !important; flex-direction: row !important; flex-wrap: wrap !important; gap: 10px !important; }
+  .ep-sidebar-title-row { width: 100% !important; }
+  .ep-info-card { flex: 1; min-width: 200px; }
+  .ep-main { flex: none !important; width: 100% !important; height: 70vh !important; border-radius: 12px !important; }
+  .ep-chat-col { flex: none !important; width: 100% !important; height: 60vh !important; border-radius: 12px !important; }
+}
+@media (max-width: 1200px) { .ep-ai-brain-stats { display: none !important; } }
