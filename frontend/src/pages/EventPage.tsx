@@ -1063,7 +1063,9 @@ export default function EventPage() {
   const [inviteLinkVisible, setInviteLinkVisible] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [guestListOpen, setGuestListOpen] = useState(false);
-  const [aiMessages, setAiMessages] = useState<AiMessage[]>([]);
+  const [aiMessages, setAiMessages] = useState<AiMessage[]>([
+    { role: "assistant", content: "Hey! I'm your Cohost AI. Ask me anything about this event, guest counts, what's on the potluck list, task status, or ideas to make it even better. I'm here to help 🎉" },
+  ]);
   const [liveChatMessages, setLiveChatMessages] = useState<WsMessage[]>([]);
   const [unreadTabs, setUnreadTabs] = useState<Set<string>>(new Set());
   const [resourceVersions, setResourceVersions] = useState<
