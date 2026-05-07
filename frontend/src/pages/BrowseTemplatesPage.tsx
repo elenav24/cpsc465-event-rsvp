@@ -599,51 +599,73 @@ export default function BrowseTemplatesPage() {
   return (
     <div className="flex-1 pt-[var(--nav-height)] w-full min-h-screen">
       {/* ── Hero ── */}
-      <div className="container text-center relative pt-4 pb-12">
-        <span className="font-heading text-purple-deep text-lg block pt-5 mb-4 uppercase tracking-[0.2em]">
+      <div className="container text-center relative pt-4 pb-8 px-4">
+        <span className="font-heading text-purple-deep text-base block pt-5 mb-3 uppercase tracking-[0.2em]">
           Hand-Picked for Every Occasion
         </span>
-        <h1 className="font-display uppercase text-text-heading mb-6 text-7xl leading-none tracking-wider">
+        <h1 className="font-display uppercase text-text-heading mb-4 leading-none tracking-wider" style={{ fontSize: 'clamp(2.2rem, 8vw, 4.5rem)' }}>
           START WITH A <span className="text-[#6a3593]">VIBE</span>
         </h1>
-        <p className="font-sans text-lg text-text-dark max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="font-sans text-base text-text-dark max-w-2xl mx-auto mb-8 leading-relaxed px-2">
           Choose from our hand-picked event templates to get your gathering
           started in seconds. Customize everything to make it yours.
         </p>
       </div>
 
       {/* ── Body: sidebar + grid ── */}
-      <div className="max-w-[1300px] mx-auto px-6 pb-20 flex gap-8 items-start">
-        {/* ── Left sidebar ── */}
-        <aside className="w-44 flex-shrink-0 sticky top-[calc(var(--nav-height)+24px)]">
-          <p className="text-[0.7rem] font-bold uppercase tracking-widest text-text-muted mb-3 px-1">
+      <div className="max-w-[1300px] mx-auto px-4 md:px-6 pb-20 flex flex-col md:flex-row gap-6 md:gap-8 items-start">
+
+        {/* ── Sidebar — horizontal pill row on mobile, vertical on desktop ── */}
+        <aside className="w-full md:w-36 md:flex-shrink-0 md:sticky md:top-[calc(var(--nav-height)+24px)]">
+          <p className="text-[0.7rem] font-bold uppercase tracking-widest text-text-muted mb-2 px-1 hidden md:block">
             Filter Categories
           </p>
-          <nav className="flex flex-col gap-0.5">
+          {/* Mobile: horizontal scroll row */}
+          <div className="flex md:hidden gap-2 overflow-x-auto pb-1 scrollbar-none">
             {CATEGORIES.map((cat) => {
-              const active = cat === activeCategory;
+              const active = cat === activeCategory
               return (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
                   className={[
-                    "text-left px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer border-none outline-none font-sans",
+                    'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer border-none outline-none font-sans whitespace-nowrap',
                     active
-                      ? "bg-purple-pale text-purple-deep"
-                      : "bg-transparent text-text hover:bg-purple-pale/50 hover:text-purple-deep",
-                  ].join(" ")}
+                      ? 'bg-purple-deep text-white'
+                      : 'bg-purple-pale text-purple-deep',
+                  ].join(' ')}
+                >
+                  {cat}
+                </button>
+              )
+            })}
+          </div>
+          {/* Desktop: vertical list */}
+          <nav className="hidden md:flex flex-col gap-0.5">
+            {CATEGORIES.map((cat) => {
+              const active = cat === activeCategory
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={[
+                    'text-left px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer border-none outline-none font-sans',
+                    active
+                      ? 'bg-purple-pale text-purple-deep'
+                      : 'bg-transparent text-text hover:bg-purple-pale/50 hover:text-purple-deep',
+                  ].join(' ')}
                 >
                   {active && <span className="mr-1">•</span>}
                   {cat}
                 </button>
-              );
+              )
             })}
           </nav>
         </aside>
 
         {/* ── Template grid ── */}
-        <div className="flex-1 min-w-0">
-          <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
+        <div className="flex-1 min-w-0 w-full">
+          <div className="grid gap-4 md:gap-5 [grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr))]">
             {filtered.map((t) => (
               <TemplateCard key={t.id} template={t} onUse={handleUse} />
             ))}
@@ -660,7 +682,7 @@ export default function BrowseTemplatesPage() {
       {/* ── Bottom CTA ── */}
       <div className="container mb-20">
         <div className="max-w-3xl mx-auto">
-          <div className="relative overflow-hidden rounded-[48px] py-14 px-10 text-center bg-purple-deep shadow-[0_8px_40px_rgba(108,52,131,0.35)]">
+          <div className="relative overflow-hidden rounded-[32px] md:rounded-[48px] py-10 md:py-14 px-6 md:px-10 text-center bg-purple-deep shadow-[0_8px_40px_rgba(108,52,131,0.35)]">
             {/* decorative star */}
             <img
               src={starSvg}

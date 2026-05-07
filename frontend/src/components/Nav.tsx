@@ -57,20 +57,20 @@ export default function Nav() {
     profile?.display_name ?? profile?.email?.split("@")[0] ?? "Account";
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[100] h-[var(--nav-height)] flex items-center justify-between px-10 transition-[background,border-color] duration-300 ease-in-out bg-white/70 backdrop-blur-md border-b border-white/40">
+    <nav className="fixed top-0 left-0 right-0 z-[100] h-[var(--nav-height)] flex items-center justify-between px-6 max-[850px]:px-4 transition-[background,border-color] duration-300 ease-in-out bg-white/70 backdrop-blur-md border-b border-white/40">
       {/* Logo */}
       <Link
         to={loggedIn ? "/events" : "/"}
         className="font-heading text-[#1a1a1a] flex items-center gap-2 no-underline flex-shrink-0 z-[1] hover:no-underline hover:text-[#1a1a1a]"
       >
-        <LogoIcon size={40} />
-        <span className="font-heading text-[30px] text-black leading-none">
+        <LogoIcon size={40} className="max-[850px]:w-[28px] max-[850px]:h-[28px]" />
+        <span className="font-heading text-[30px] max-[850px]:text-[20px] text-black leading-none">
           cohosted
         </span>
       </Link>
 
-      {/* Center links — fade out on scroll, hidden on event page */}
-      {
+      {/* Center links — only shown when logged out, fade out on scroll, hidden on event page */}
+      {!loggedIn && (
         <div
           className="absolute left-1/2 -translate-x-1/2 flex items-center gap-10 transition-opacity duration-300 ease-in-out max-[850px]:hidden"
           style={{
@@ -91,10 +91,10 @@ export default function Nav() {
             Browse Templates
           </Link>
         </div>
-      }
+      )}
 
-      {/* Right actions */}
-      <div className="flex items-center gap-3 flex-shrink-0 z-[1]">
+      {/* Right actions — hidden on mobile */}
+      <div className="flex items-center gap-3 flex-shrink-0 z-[1] max-[850px]:hidden">
         {loggedIn ? (
           <>
             <Link
