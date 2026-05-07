@@ -734,7 +734,7 @@ function AnnouncementsTab({
       {announcements.length === 0 && (
         <div className="bg-pink-bg border border-pink-pale rounded-[10px] px-[14px] py-3">
           <div className="text-[0.85rem] text-text-dark leading-[1.6] font-semibold">🎉 Welcome to {eventTitle}!</div>
-          <div className="text-[0.85rem] text-text-muted leading-[1.6] mt-1">You're all set! RSVP, vote in polls, and grab a spot on the potluck list. Check back here often — the host will post all the important updates right in this feed.</div>
+          <div className="text-[0.85rem] text-text-muted leading-[1.6] mt-1">You're all set! RSVP, vote in polls, and grab a spot on the potluck list. Check back here often because the host will post all the important updates right in this feed.</div>
           <div className="text-[0.72rem] text-text-muted mt-1.5">Pinned by Cohosted</div>
         </div>
       )}
