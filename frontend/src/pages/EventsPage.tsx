@@ -602,12 +602,12 @@ export default function EventsPage() {
         />
       )}
 
-      <div className="pt-[calc(var(--nav-height)+2.5rem)] px-12 pb-16 flex-1 w-full max-[640px]:pt-6 max-[640px]:px-4">
+      <div className="pt-[calc(var(--nav-height)+2.5rem)] px-12 pb-16 flex-1 w-full max-[640px]:pt-[calc(var(--nav-height)+1.25rem)] max-[640px]:px-4">
         {/* ── Header row ── */}
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
           <div className="flex items-center gap-5 flex-wrap">
             <h1 className="font-display text-[2.6rem] leading-[1.1] text-text-dark">
-              My Celebrations
+              My Events
             </h1>
 
             {/* Stat pills — only when loaded */}
