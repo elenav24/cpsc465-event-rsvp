@@ -1054,7 +1054,7 @@ export default function EventPage() {
   const [eventTasks, setEventTasks] = useState<TaskOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("polls");
+  const [activeTab, setActiveTab] = useState("announcements");
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -1301,7 +1301,7 @@ export default function EventPage() {
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-text-muted">
-        Loading event…
+        Loading events…
       </div>
     );
   if (error && !event)
