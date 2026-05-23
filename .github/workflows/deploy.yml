@@ -181,8 +181,11 @@ jobs:
               ENV=production,
               COGNITO_REGION=${{ env.AWS_REGION }},
               COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID }},
-              S3_BUCKET=${{ env.APP_NAME }}-flyers,
-              S3_REGION=${{ env.AWS_REGION }},
+              R2_BUCKET=${{ secrets.R2_BUCKET }},
+              R2_ENDPOINT_URL=${{ secrets.R2_ENDPOINT_URL }},
+              R2_PUBLIC_URL=${{ secrets.R2_PUBLIC_URL }},
+              AWS_ACCESS_KEY_ID=${{ secrets.R2_ACCESS_KEY_ID }},
+              AWS_SECRET_ACCESS_KEY=${{ secrets.R2_SECRET_ACCESS_KEY }},
               ANNOUNCEMENTS_SNS_TOPIC_ARN=$SNS_ARN,
               SCHEDULER_ROLE_ARN=$SCHEDULER_ROLE,
               NOTIFICATIONS_LAMBDA_ARN=$NOTIF_ARN
@@ -441,28 +444,22 @@ jobs:
               ENV=production,
               COGNITO_REGION=${{ env.AWS_REGION }},
               COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID }},
-              MESSAGES_TABLE=$MESSAGES_TABLE
+              MESSAGES_TABLE=$MESSAGES_TABLE,
+              OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }},
+              OPENROUTER_MODEL=${{ secrets.OPENROUTER_MODEL }}
             }"
 
-  # ── 7. Build & deploy frontend to S3 ─────────────────────────────────────
+  # ── 7. Build & deploy frontend to Vercel ─────────────────────────────────
   deploy-frontend:
     name: Deploy Frontend
     runs-on: ubuntu-latest
-    needs: [changes, terraform]
+    needs: [changes]
     if: |
       always() &&
-      needs.changes.outputs.frontend == 'true' &&
-      (needs.terraform.result == 'success' || needs.terraform.result == 'skipped')
+      needs.changes.outputs.frontend == 'true'
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -471,34 +468,16 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install & Build
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy to Vercel
         working-directory: frontend
         env:
-          VITE_COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
-          VITE_COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
-          VITE_COGNITO_DOMAIN: ${{ secrets.VITE_COGNITO_DOMAIN }}
-          VITE_EVENTS_API_URL: https://api.cohosted.cloud/events
-          VITE_USERS_API_URL: https://api.cohosted.cloud/users
-          VITE_AI_API_URL: https://api.cohosted.cloud
-          VITE_CHAT_WS_URL: ${{ secrets.VITE_CHAT_WS_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npm ci
-          npm run build
-
-      - name: Sync to S3
-        run: |
-          aws s3 sync frontend/dist s3://${{ env.APP_NAME }}-frontend \
-            --delete \
-            --cache-control "public,max-age=31536000,immutable" \
-            --exclude "index.html"
-          aws s3 cp frontend/dist/index.html s3://${{ env.APP_NAME }}-frontend/index.html \
-            --cache-control "no-cache,no-store,must-revalidate"
-
-      - name: Invalidate CloudFront cache
-        run: |
-          DIST_ID=$(aws cloudfront list-distributions \
-            --query "DistributionList.Items[?contains(Aliases.Items,'cohosted.cloud')].Id" \
-            --output text)
-          aws cloudfront create-invalidation \
-            --distribution-id "$DIST_ID" \
-            --paths "/*"
+          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          vercel build --prod --token=$VERCEL_TOKEN
+          vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN

@@ -21,7 +21,7 @@ from starlette.requests import Request
 
 from app.auth import get_current_user_sub
 from app.context import gather_event_context, build_system_prompt
-from app.bedrock import chat as bedrock_chat
+from app.bedrock import chat as openrouter_chat
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -88,7 +88,7 @@ def event_chat(
     system_prompt = build_system_prompt(ctx)
 
     try:
-        reply = bedrock_chat(
+        reply = openrouter_chat(
             system_prompt=system_prompt,
             messages=[{"role": m.role, "content": m.content} for m in body.messages],
         )

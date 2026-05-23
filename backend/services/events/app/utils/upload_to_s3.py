@@ -3,31 +3,33 @@ import uuid
 
 import boto3
 from fastapi import UploadFile
-from app.core.config import S3_BUCKET, S3_REGION
+from app.core.config import R2_BUCKET, R2_ENDPOINT_URL, R2_PUBLIC_URL
 
 _s3_client = None
 
 
-def _get_s3():
+def _get_r2():
     global _s3_client
     if _s3_client is None:
-        _s3_client = boto3.client("s3")
+        # R2 is S3-compatible — boto3 works with a custom endpoint
+        _s3_client = boto3.client("s3", endpoint_url=R2_ENDPOINT_URL)
     return _s3_client
 
 
 def upload_file_to_s3(file: UploadFile) -> str:
+    """Upload a file to Cloudflare R2. Returns the public URL."""
     file_extension = file.filename.split(".")[-1]
     unique_filename = f"flyers/{uuid.uuid4()}.{file_extension}"
 
     try:
-        _get_s3().upload_fileobj(
+        _get_r2().upload_fileobj(
             file.file,
-            S3_BUCKET,
+            R2_BUCKET,
             unique_filename,
             ExtraArgs={"ContentType": file.content_type},
         )
     except Exception as e:
-        logging.error(f"S3 Upload Error: {e}")
+        logging.error(f"R2 Upload Error: {e}")
         raise e
 
-    return f"https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com/{unique_filename}"
+    return f"{R2_PUBLIC_URL.rstrip('/')}/{unique_filename}"

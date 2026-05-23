@@ -1,8 +1,8 @@
 """
 Integration tests for the AI HTTP endpoint (app/main.py).
 
-Both gather_event_context and bedrock.chat are mocked so tests run
-without any real AWS or DB infrastructure.
+Both gather_event_context and openrouter_chat are mocked so tests run
+without any real network or DB infrastructure.
 """
 
 import pytest
@@ -17,7 +17,7 @@ class TestChatEndpoint:
     def test_basic_request_returns_reply(self, client):
         with patch(
             "app.main.gather_event_context", return_value=MOCK_EVENT_CONTEXT
-        ), patch("app.main.bedrock_chat", return_value="The party starts at 6pm!"):
+        ), patch("app.main.openrouter_chat", return_value="The party starts at 6pm!"):
             res = client.post(
                 CHAT_URL,
                 json={
@@ -34,8 +34,8 @@ class TestChatEndpoint:
         with patch(
             "app.main.gather_event_context", return_value=MOCK_EVENT_CONTEXT
         ), patch(
-            "app.main.bedrock_chat", return_value="Alice and Bob are going."
-        ) as mock_bedrock:
+            "app.main.openrouter_chat", return_value="Alice and Bob are going."
+        ) as mock_chat:
             res = client.post(
                 CHAT_URL,
                 json={
@@ -48,8 +48,8 @@ class TestChatEndpoint:
             )
 
         assert res.status_code == 200
-        # All 3 messages should be forwarded to bedrock
-        call_messages = mock_bedrock.call_args.kwargs["messages"]
+        # All 3 messages should be forwarded to openrouter
+        call_messages = mock_chat.call_args.kwargs["messages"]
         assert len(call_messages) == 3
 
     def test_empty_messages_returns_400(self, client):
@@ -85,11 +85,11 @@ class TestChatEndpoint:
             )
         assert res.status_code == 500
 
-    def test_bedrock_error_returns_502(self, client):
+    def test_openrouter_error_returns_502(self, client):
         with patch(
             "app.main.gather_event_context", return_value=MOCK_EVENT_CONTEXT
         ), patch(
-            "app.main.bedrock_chat", side_effect=RuntimeError("Bedrock call failed")
+            "app.main.openrouter_chat", side_effect=RuntimeError("OpenRouter call failed")
         ):
             res = client.post(
                 CHAT_URL, json={"messages": [{"role": "user", "content": "hello"}]}
@@ -109,15 +109,15 @@ class TestChatEndpoint:
         assert res.status_code in (401, 403, 422)
 
     def test_system_prompt_contains_event_title(self, client):
-        """Verify the system prompt built from context is passed to bedrock."""
+        """Verify the system prompt built from context is passed to openrouter."""
         with patch(
             "app.main.gather_event_context", return_value=MOCK_EVENT_CONTEXT
-        ), patch("app.main.bedrock_chat", return_value="ok") as mock_bedrock:
+        ), patch("app.main.openrouter_chat", return_value="ok") as mock_chat:
             client.post(
                 CHAT_URL, json={"messages": [{"role": "user", "content": "hi"}]}
             )
 
-        system_prompt = mock_bedrock.call_args.kwargs["system_prompt"]
+        system_prompt = mock_chat.call_args.kwargs["system_prompt"]
         assert "Test Party" in system_prompt
 
     def test_health_endpoint(self, client):
@@ -129,7 +129,7 @@ class TestChatEndpoint:
         """gather_event_context should be called with the UUID from the URL."""
         with patch(
             "app.main.gather_event_context", return_value=MOCK_EVENT_CONTEXT
-        ) as mock_ctx, patch("app.main.bedrock_chat", return_value="ok"):
+        ) as mock_ctx, patch("app.main.openrouter_chat", return_value="ok"):
             client.post(
                 "/ai/my-special-uuid/chat",
                 json={"messages": [{"role": "user", "content": "hi"}]},
@@ -141,7 +141,7 @@ class TestChatEndpoint:
         """assistant role in messages should be accepted."""
         with patch(
             "app.main.gather_event_context", return_value=MOCK_EVENT_CONTEXT
-        ), patch("app.main.bedrock_chat", return_value="sure"):
+        ), patch("app.main.openrouter_chat", return_value="sure"):
             res = client.post(
                 CHAT_URL,
                 json={

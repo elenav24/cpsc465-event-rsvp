@@ -1,13 +1,11 @@
 """
-Unit tests for app/bedrock.py.
+Unit tests for app/bedrock.py (OpenRouter backend).
 
-Mocks the boto3 bedrock-runtime client — no real AWS calls.
+Mocks httpx.Client — no real network calls.
 """
 
-import json
 import pytest
 from unittest.mock import patch, MagicMock
-from botocore.exceptions import ClientError
 
 from app.bedrock import chat
 
@@ -15,72 +13,61 @@ SYSTEM_PROMPT = "You are a helpful assistant."
 MESSAGES = [{"role": "user", "content": "What time is the party?"}]
 
 
-def _make_bedrock_response(text: str) -> dict:
-    """Build a minimal Bedrock converse API response."""
-    return {"output": {"message": {"content": [{"text": text}]}}}
+def _make_openrouter_response(text: str) -> MagicMock:
+    """Build a minimal OpenRouter chat completions response mock."""
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {
+        "choices": [{"message": {"content": text}}]
+    }
+    mock_resp.raise_for_status = MagicMock()
+    return mock_resp
 
 
-class TestBedrockChat:
+class TestOpenRouterChat:
     def test_returns_reply_text(self):
         with patch("app.bedrock._get_client") as mock_get:
             client = MagicMock()
-            client.converse.return_value = _make_bedrock_response(
-                "The party is at 7pm!"
-            )
+            client.post.return_value = _make_openrouter_response("The party is at 7pm!")
             mock_get.return_value = client
 
             result = chat(SYSTEM_PROMPT, MESSAGES)
 
         assert result == "The party is at 7pm!"
 
-    def test_passes_system_prompt(self):
+    def test_passes_system_prompt_as_first_message(self):
         with patch("app.bedrock._get_client") as mock_get:
             client = MagicMock()
-            client.converse.return_value = _make_bedrock_response("ok")
+            client.post.return_value = _make_openrouter_response("ok")
             mock_get.return_value = client
 
             chat(SYSTEM_PROMPT, MESSAGES)
 
-            call_kwargs = client.converse.call_args.kwargs
-            assert call_kwargs["system"] == [{"text": SYSTEM_PROMPT}]
+            call_kwargs = client.post.call_args.kwargs
+            messages = call_kwargs["json"]["messages"]
+            assert messages[0] == {"role": "system", "content": SYSTEM_PROMPT}
 
-    def test_passes_messages_in_correct_format(self):
+    def test_passes_user_messages_after_system(self):
         with patch("app.bedrock._get_client") as mock_get:
             client = MagicMock()
-            client.converse.return_value = _make_bedrock_response("ok")
+            client.post.return_value = _make_openrouter_response("ok")
             mock_get.return_value = client
 
             chat(SYSTEM_PROMPT, MESSAGES)
 
-            call_kwargs = client.converse.call_args.kwargs
-            assert call_kwargs["messages"] == [
-                {"role": "user", "content": [{"text": "What time is the party?"}]}
-            ]
-
-    def test_passes_correct_model_id(self):
-        from app.config import BEDROCK_MODEL_ID
-
-        assert "claude-haiku-4-5" in BEDROCK_MODEL_ID
-        with patch("app.bedrock._get_client") as mock_get:
-            client = MagicMock()
-            client.converse.return_value = _make_bedrock_response("ok")
-            mock_get.return_value = client
-
-            chat(SYSTEM_PROMPT, MESSAGES)
-
-            call_kwargs = client.converse.call_args.kwargs
-            assert call_kwargs["modelId"] == BEDROCK_MODEL_ID
+            call_kwargs = client.post.call_args.kwargs
+            messages = call_kwargs["json"]["messages"]
+            assert messages[1] == {"role": "user", "content": "What time is the party?"}
 
     def test_respects_max_tokens(self):
         with patch("app.bedrock._get_client") as mock_get:
             client = MagicMock()
-            client.converse.return_value = _make_bedrock_response("ok")
+            client.post.return_value = _make_openrouter_response("ok")
             mock_get.return_value = client
 
             chat(SYSTEM_PROMPT, MESSAGES, max_tokens=512)
 
-            call_kwargs = client.converse.call_args.kwargs
-            assert call_kwargs["inferenceConfig"]["maxTokens"] == 512
+            call_kwargs = client.post.call_args.kwargs
+            assert call_kwargs["json"]["max_tokens"] == 512
 
     def test_multi_turn_conversation(self):
         messages = [
@@ -90,7 +77,7 @@ class TestBedrockChat:
         ]
         with patch("app.bedrock._get_client") as mock_get:
             client = MagicMock()
-            client.converse.return_value = _make_bedrock_response(
+            client.post.return_value = _make_openrouter_response(
                 "Charlie hasn't RSVPed yet."
             )
             mock_get.return_value = client
@@ -99,32 +86,31 @@ class TestBedrockChat:
 
         assert "Charlie" in result
 
-    def test_raises_runtime_error_on_client_error(self):
+    def test_raises_runtime_error_on_http_error(self):
+        import httpx
+
         with patch("app.bedrock._get_client") as mock_get:
             client = MagicMock()
-            client.converse.side_effect = ClientError(
-                {
-                    "Error": {
-                        "Code": "AccessDeniedException",
-                        "Message": "Not authorized",
-                    }
-                },
-                "Converse",
+            mock_resp = MagicMock()
+            mock_resp.status_code = 429
+            mock_resp.text = "Rate limited"
+            client.post.return_value.raise_for_status.side_effect = (
+                httpx.HTTPStatusError("Rate limited", request=MagicMock(), response=mock_resp)
             )
             mock_get.return_value = client
 
-            with pytest.raises(RuntimeError, match="Bedrock call failed"):
+            with pytest.raises(RuntimeError, match="OpenRouter call failed"):
                 chat(SYSTEM_PROMPT, MESSAGES)
 
     def test_client_is_reused_across_calls(self):
-        """The boto3 client should be cached (lazy singleton)."""
-        with patch("app.bedrock._bedrock", None), patch("boto3.client") as mock_boto:
-            mock_boto_client = MagicMock()
-            mock_boto_client.converse.return_value = _make_bedrock_response("ok")
-            mock_boto.return_value = mock_boto_client
+        """The httpx client should be cached (lazy singleton)."""
+        with patch("app.bedrock._client", None), patch("httpx.Client") as mock_cls:
+            mock_instance = MagicMock()
+            mock_instance.post.return_value = _make_openrouter_response("ok")
+            mock_cls.return_value = mock_instance
 
             chat(SYSTEM_PROMPT, MESSAGES)
             chat(SYSTEM_PROMPT, MESSAGES)
 
-            # boto3.client should only be called once
-            assert mock_boto.call_count == 1
+            # httpx.Client should only be instantiated once
+            assert mock_cls.call_count == 1
