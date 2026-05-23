@@ -24,24 +24,19 @@ output "lambda_users_name" {
 }
 
 output "s3_bucket_name" {
-  description = "S3 bucket for flyer uploads"
-  value       = aws_s3_bucket.flyers.bucket
+  description = "Cloudflare R2 bucket for flyer uploads"
+  value       = var.r2_bucket
 }
 
 output "rds_endpoint" {
-  description = "RDS PostgreSQL endpoint"
+  description = "RDS PostgreSQL endpoint (being migrated to Neon)"
   value       = aws_db_instance.postgres.address
   sensitive   = true
 }
 
-output "frontend_bucket_name" {
-  description = "S3 bucket for frontend static site"
-  value       = aws_s3_bucket.frontend.bucket
-}
-
 output "frontend_url" {
-  description = "S3 static website URL"
-  value       = aws_s3_bucket_website_configuration.frontend.website_endpoint
+  description = "Frontend URL (hosted on Vercel)"
+  value       = "https://cohosted.cloud"
 }
 
 output "cognito_user_pool_id" {
