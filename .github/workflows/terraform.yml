@@ -41,7 +41,13 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color -var="db_password=${{ secrets.TF_DB_PASSWORD }}" -var="cognito_user_pool_id=${{ secrets.COGNITO_USER_POOL_ID }}"
+        run: |
+          terraform plan -no-color \
+            -var="db_password=${{ secrets.TF_DB_PASSWORD }}" \
+            -var="cognito_user_pool_id=${{ secrets.COGNITO_USER_POOL_ID }}" \
+            -var="r2_access_key_id=${{ secrets.R2_ACCESS_KEY_ID }}" \
+            -var="r2_secret_access_key=${{ secrets.R2_SECRET_ACCESS_KEY }}" \
+            -var="openrouter_api_key=${{ secrets.OPENROUTER_API_KEY }}"
         continue-on-error: true
 
       - name: Post Plan to PR

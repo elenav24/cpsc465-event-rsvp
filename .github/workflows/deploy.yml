@@ -103,7 +103,10 @@ jobs:
             -var="db_password=${{ secrets.TF_DB_PASSWORD }}" \
             -var="cognito_user_pool_id=${{ secrets.COGNITO_USER_POOL_ID }}" \
             -var="google_client_id=${{ secrets.GOOGLE_CLIENT_ID }}" \
-            -var="google_client_secret=${{ secrets.GOOGLE_CLIENT_SECRET }}"
+            -var="google_client_secret=${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+            -var="r2_access_key_id=${{ secrets.R2_ACCESS_KEY_ID }}" \
+            -var="r2_secret_access_key=${{ secrets.R2_SECRET_ACCESS_KEY }}" \
+            -var="openrouter_api_key=${{ secrets.OPENROUTER_API_KEY }}"
 
   # ── 2. Deploy events service ──────────────────────────────────────────────
   deploy-events:
