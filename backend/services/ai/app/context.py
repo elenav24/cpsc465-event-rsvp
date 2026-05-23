@@ -33,11 +33,7 @@ def _get_engine():
     global _engine
     if _engine is None:
         _engine = create_engine(
-            DATABASE_URL,
-            pool_pre_ping=True,
-            pool_size=2,
-            max_overflow=0,
-            connect_args={"options": "-csearch_path=public"},
+            DATABASE_URL, pool_pre_ping=True, pool_size=2, max_overflow=0
         )
     return _engine
 
