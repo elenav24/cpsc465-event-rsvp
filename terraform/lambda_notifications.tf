@@ -42,7 +42,7 @@ resource "aws_lambda_function" "notifications" {
     variables = {
       ENV          = var.environment
       FROM_EMAIL   = "no-reply@cohosted.cloud"
-      DATABASE_URL = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
+      DATABASE_URL = var.database_url
     }
   }
 

@@ -66,7 +66,7 @@ resource "aws_iam_role_policy" "lambda_permissions" {
 
 locals {
   lambda_common_env = {
-    DATABASE_URL         = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
+    DATABASE_URL         = var.database_url
     ENV                  = var.environment
     COGNITO_REGION       = var.aws_region
     COGNITO_USER_POOL_ID = var.cognito_user_pool_id

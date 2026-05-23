@@ -1,18 +1,11 @@
-# Lambda runs outside the VPC — no NAT gateway needed ($0 saved vs $32/month).
-# RDS is made publicly accessible so Lambda can reach it directly over the
-# internet. Access is restricted to port 5432 with SSL enforced at the DB level.
+# Lambda runs outside the VPC — no NAT gateway needed.
+# RDS has been removed (migrated to Neon), so the RDS subnet route is no
+# longer needed. The VPC and subnets remain as they were created outside
+# of Terraform and are not managed here.
 
 data "aws_vpc" "main" {
   filter {
     name   = "tag:Name"
     values = ["event-rsvp-vpc"]
   }
-}
-
-# Route table for the RDS subnet — needs an IGW route so the DB is reachable
-# from the internet (Lambda runs outside the VPC).
-resource "aws_route" "rds_subnet_igw" {
-  route_table_id         = "rtb-05607e6e1de265fbd"
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = "igw-0642db481432634f4"
 }

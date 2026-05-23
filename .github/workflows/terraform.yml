@@ -43,7 +43,7 @@ jobs:
         id: plan
         run: |
           terraform plan -no-color \
-            -var="db_password=${{ secrets.TF_DB_PASSWORD }}" \
+            -var="database_url=${{ secrets.DATABASE_URL }}" \
             -var="cognito_user_pool_id=${{ secrets.COGNITO_USER_POOL_ID }}" \
             -var="r2_access_key_id=${{ secrets.R2_ACCESS_KEY_ID }}" \
             -var="r2_secret_access_key=${{ secrets.R2_SECRET_ACCESS_KEY }}" \

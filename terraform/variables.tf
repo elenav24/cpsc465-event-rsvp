@@ -16,25 +16,6 @@ variable "environment" {
   default     = "production"
 }
 
-variable "db_username" {
-  description = "RDS master username"
-  type        = string
-  default     = "postgres"
-  sensitive   = true
-}
-
-variable "db_password" {
-  description = "RDS master password"
-  type        = string
-  sensitive   = true
-}
-
-variable "db_name" {
-  description = "RDS database name"
-  type        = string
-  default     = "eventrsvp"
-}
-
 variable "cognito_user_pool_id" {
   description = "Cognito User Pool ID"
   type        = string
@@ -49,6 +30,13 @@ variable "google_client_id" {
 
 variable "google_client_secret" {
   description = "Google OAuth client secret"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "database_url" {
+  description = "PostgreSQL connection string (Neon)"
   type        = string
   sensitive   = true
   default     = ""
@@ -100,5 +88,5 @@ variable "openrouter_api_key" {
 variable "openrouter_model" {
   description = "OpenRouter model ID to use for the AI assistant"
   type        = string
-  default     = "meta-llama/llama-3.1-8b-instruct:free"
+  default     = "anthropic/claude-haiku-4-5"
 }
