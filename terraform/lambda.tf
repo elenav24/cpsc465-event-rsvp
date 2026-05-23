@@ -19,12 +19,6 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 }
 
 data "aws_iam_policy_document" "lambda_permissions" {
-  # S3 flyer uploads (events service only, but shared role keeps things simple)
-  statement {
-    actions   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
-    resources = ["${aws_s3_bucket.flyers.arn}/*"]
-  }
-
   # DynamoDB access for chat service
   statement {
     actions = [
@@ -59,24 +53,9 @@ data "aws_iam_policy_document" "lambda_permissions" {
     resources = ["*"]
   }
 
-  # Allow AI Lambda to call Bedrock (Claude Haiku 4.5 via cross-region inference profile)
-  statement {
-    actions = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
-    resources = [
-      "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-      "arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
-    ]
-  }
-
-  # Required for Anthropic Marketplace model subscription
-  statement {
-    actions = [
-      "aws-marketplace:ViewSubscriptions",
-      "aws-marketplace:Subscribe",
-      "aws-marketplace:Unsubscribe",
-    ]
-    resources = ["*"]
-  }
+  # NOTE: Bedrock permissions removed — AI service now uses OpenRouter (HTTP).
+  # NOTE: S3 flyer permissions removed — events service now uses Cloudflare R2.
+  #       R2 credentials are passed as env vars (R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY).
 }
 
 resource "aws_iam_role_policy" "lambda_permissions" {
@@ -106,8 +85,9 @@ resource "aws_lambda_function" "events" {
 
   environment {
     variables = merge(local.lambda_common_env, {
-      S3_BUCKET                = aws_s3_bucket.flyers.bucket
-      S3_REGION                = var.aws_region
+      R2_BUCKET                = var.r2_bucket
+      R2_ENDPOINT_URL          = var.r2_endpoint_url
+      R2_PUBLIC_URL            = var.r2_public_url
       # Real-time broadcast — fan out event updates to open WebSocket clients
       CONNECTIONS_TABLE        = aws_dynamodb_table.chat_connections.name
       WS_ENDPOINT              = "${aws_apigatewayv2_api.chat_ws.id}.execute-api.${var.aws_region}.amazonaws.com/${aws_apigatewayv2_stage.chat_ws.name}"
@@ -192,7 +172,9 @@ resource "aws_lambda_function" "ai" {
 
   environment {
     variables = merge(local.lambda_common_env, {
-      MESSAGES_TABLE = aws_dynamodb_table.chat_messages.name
+      MESSAGES_TABLE     = aws_dynamodb_table.chat_messages.name
+      OPENROUTER_API_KEY = var.openrouter_api_key
+      OPENROUTER_MODEL   = var.openrouter_model
     })
   }
 
