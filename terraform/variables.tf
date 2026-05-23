@@ -74,6 +74,20 @@ variable "r2_public_url" {
   default     = ""
 }
 
+variable "r2_access_key_id" {
+  description = "Cloudflare R2 Access Key ID"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "r2_secret_access_key" {
+  description = "Cloudflare R2 Secret Access Key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 # ── OpenRouter ────────────────────────────────────────────────────────────────
 
 variable "openrouter_api_key" {

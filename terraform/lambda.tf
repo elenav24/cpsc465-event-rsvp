@@ -88,6 +88,8 @@ resource "aws_lambda_function" "events" {
       R2_BUCKET                = var.r2_bucket
       R2_ENDPOINT_URL          = var.r2_endpoint_url
       R2_PUBLIC_URL            = var.r2_public_url
+      R2_ACCESS_KEY_ID         = var.r2_access_key_id
+      R2_SECRET_ACCESS_KEY     = var.r2_secret_access_key
       # Real-time broadcast — fan out event updates to open WebSocket clients
       CONNECTIONS_TABLE        = aws_dynamodb_table.chat_connections.name
       WS_ENDPOINT              = "${aws_apigatewayv2_api.chat_ws.id}.execute-api.${var.aws_region}.amazonaws.com/${aws_apigatewayv2_stage.chat_ws.name}"

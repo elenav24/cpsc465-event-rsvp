@@ -13,4 +13,6 @@ AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 # Cloudflare R2 (S3-compatible)
 R2_BUCKET = os.getenv("R2_BUCKET", "")
 R2_ENDPOINT_URL = os.getenv("R2_ENDPOINT_URL", "")  # https://<account_id>.r2.cloudflarestorage.com
-R2_PUBLIC_URL = os.getenv("R2_PUBLIC_URL", "")       # https://pub-<hash>.r2.dev or custom domain
+R2_PUBLIC_URL = os.getenv("R2_PUBLIC_URL", "")       # https://r2.cohosted.cloud
+R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID", "")
+R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY", "")

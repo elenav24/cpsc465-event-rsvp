@@ -3,7 +3,7 @@ import uuid
 
 import boto3
 from fastapi import UploadFile
-from app.core.config import R2_BUCKET, R2_ENDPOINT_URL, R2_PUBLIC_URL
+from app.core.config import R2_BUCKET, R2_ENDPOINT_URL, R2_PUBLIC_URL, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
 
 _s3_client = None
 
@@ -11,8 +11,15 @@ _s3_client = None
 def _get_r2():
     global _s3_client
     if _s3_client is None:
-        # R2 is S3-compatible — boto3 works with a custom endpoint
-        _s3_client = boto3.client("s3", endpoint_url=R2_ENDPOINT_URL)
+        # R2 is S3-compatible — pass credentials explicitly so boto3 doesn't
+        # fall back to the Lambda IAM role, which has no R2 access.
+        _s3_client = boto3.client(
+            "s3",
+            endpoint_url=R2_ENDPOINT_URL,
+            aws_access_key_id=R2_ACCESS_KEY_ID,
+            aws_secret_access_key=R2_SECRET_ACCESS_KEY,
+            region_name="auto",
+        )
     return _s3_client
 
 
