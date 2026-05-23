@@ -2,11 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.core.config import DATABASE_URL, DEBUG
 
-engine = create_engine(
-    DATABASE_URL,
-    echo=DEBUG,
-    connect_args={"options": "-csearch_path=public"},
-)
+engine = create_engine(DATABASE_URL, echo=DEBUG)
 SessionLocal = sessionmaker(engine, expire_on_commit=False)
 
 
