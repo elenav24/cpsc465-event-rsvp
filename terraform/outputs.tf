@@ -29,9 +29,9 @@ output "s3_bucket_name" {
 }
 
 output "rds_endpoint" {
-  description = "RDS PostgreSQL endpoint (being migrated to Neon)"
-  value       = aws_db_instance.postgres.address
-  sensitive   = true
+  description = "RDS PostgreSQL endpoint (migrated to Neon — this output is kept for reference only)"
+  value       = "migrated-to-neon"
+  sensitive   = false
 }
 
 output "frontend_url" {
