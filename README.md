@@ -16,6 +16,8 @@ A collaborative event planning platform where hosts, co-hosts, and attendees sha
 
 </div>
 
+<img width="1408" height="768" alt="Gemini_Generated_Image_9rz02j9rz02j9rz0" src="https://github.com/user-attachments/assets/df4aff0a-a405-4388-9fd6-63712fbc1ba3" />
+
 ---
 
 ## How It Works
